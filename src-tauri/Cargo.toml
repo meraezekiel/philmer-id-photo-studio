@@ -1,0 +1,73 @@
+[package]
+name = "philmer-id-photo-studio"
+version = "1.0.0"
+description = "Philmer ID Photo Studio"
+authors = ["Philmer Digi Art"]
+edition = "2021"
+rust-version = "1.88"
+
+[lib]
+# The_lib suffix keeps the name distinct from the binary on Windows.
+name = "photo_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-store = "2"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+# ort 2.0.0-rc.13 targets ONNX Runtime 1.28 and ndarray 0.17.
+# load-dynamic: we ship onnxruntime.dll as a resource and load it at startup,
+# so nothing is linked at build time. api-27 (not api-28) keeps us compatible
+# with a 1.27 runtime too, should the bundled dll ever be swapped.
+ort = { version = "=2.0.0-rc.13", default-features = false, features = [
+  "std",
+  "ndarray",
+  "load-dynamic",
+  "api-27",
+] }
+ndarray = "0.17"
+
+image = { version = "0.25", default-features = false, features = [
+  "jpeg",
+  "png",
+  "webp",
+  "bmp",
+] }
+fast_image_resize = { version = "6.1", features = ["image", "rayon"] }
+kamadak-exif = "0.6"
+
+sha2 = "0.10"
+num_cpus = "1"
+parking_lot = "0.12"
+rayon = "1"
+log = "0.4"
+env_logger = "0.11"
+
+[dev-dependencies]
+anyhow = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
+
+# Segmentation in a debug build is unusably slow, so optimise the hot crates
+# even when the rest of the app is built for debugging.
+[profile.dev.package.image]
+opt-level = 3
+[profile.dev.package.fast_image_resize]
+opt-level = 3
+[profile.dev.package.ndarray]
+opt-level = 3

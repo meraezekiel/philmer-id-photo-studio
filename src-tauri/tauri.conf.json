@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Philmer ID Photo Studio",
+  "version": "1.0.0",
+  "identifier": "art.philmerdigi.idphotostudio",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Philmer ID Photo Studio",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1366,
+        "minHeight": 720,
+        "resizable": true,
+        "center": true,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "resources/onnxruntime.dll": "resources/onnxruntime.dll",
+      "resources/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx": "resources/BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx",
+      "resources/face_detection_yunet_2023mar.onnx": "resources/face_detection_yunet_2023mar.onnx"
+    },
+    "copyright": "© Philmer Digi Art",
+    "shortDescription": "Print-ready ID photos, offline",
+    "longDescription": "Turns an ordinary photo into print-ready ID photos: offline AI background removal at full resolution, automatic face alignment, size presets and print sheets at true 300 DPI.",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English"]
+      }
+    }
+  },
+  "plugins": {}
+}
