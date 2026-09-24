@@ -27,7 +27,7 @@ pub fn default_intra_threads() -> usize {
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .filter(|n| *n > 0)
-        .unwrap_or_else(|| num_cpus::get_physical())
+        .unwrap_or_else(num_cpus::get_physical)
         .max(1)
 }
 
@@ -114,7 +114,22 @@ impl Engine {
     }
 
     pub fn segmentation_session(&self, model: SegModel) -> Result<SharedSession> {
-        self.session_for(&self.paths.segmentation(model))
+        let wanted = self.paths.segmentation(model);
+
+        // Drop the *other* segmentation model before loading this one. Lite is
+        // 224 MB on disk and HD is 973 MB, and ORT's arena allocator keeps
+        // several times that resident once a session has run — benchmarking a
+        // handful of sessions in one process reached 11 GB. A shop laptop
+        // toggling Standard <-> HD must not accumulate both.
+        let other = self.paths.segmentation(match model {
+            SegModel::Lite => SegModel::Hd,
+            SegModel::Hd => SegModel::Lite,
+        });
+        if other != wanted && self.sessions.lock().remove(&other).is_some() {
+            log::info!("released the {} session to free memory", other.display());
+        }
+
+        self.session_for(&wanted)
     }
 
     pub fn face_session(&self) -> Result<SharedSession> {
