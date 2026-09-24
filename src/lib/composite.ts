@@ -415,3 +415,32 @@ export function crop(
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
+
+/**
+ * Top-most foreground row of the mask within a horizontal span — the real
+ * crown, *including hair* (BUILD_PLAN §5).
+ *
+ * A face box stops at the hairline, so aligning to it puts tall or voluminous
+ * hair outside the crop. The mask already knows where the subject ends, so the
+ * span is limited to the face's own columns to avoid catching a raised hand or
+ * a shoulder.
+ */
+export function findCrownY(
+  mask: Bitmap,
+  xStart: number,
+  xEnd: number,
+  threshold = 128,
+): number | null {
+  const left = Math.max(0, Math.floor(Math.min(xStart, xEnd)))
+  const right = Math.min(mask.width - 1, Math.ceil(Math.max(xStart, xEnd)))
+  if (right < left) return null
+  const stride = mask.data.length / (mask.width * mask.height)
+
+  for (let y = 0; y < mask.height; y++) {
+    const row = y * mask.width
+    for (let x = left; x <= right; x++) {
+      if (mask.data[(row + x) * stride] >= threshold) return y
+    }
+  }
+  return null
+}

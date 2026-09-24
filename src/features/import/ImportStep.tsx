@@ -43,8 +43,9 @@ export function ImportStep() {
 
   const fromFile = useCallback(
     async (file: File) => {
-      const bytes = Array.from(new Uint8Array(await file.arrayBuffer()))
-      void run({ bytes })
+      // Straight through as bytes: Array.from would turn a multi-megabyte
+      // buffer into a JS number array and then JSON over the IPC bridge.
+      void run({ bytes: await file.arrayBuffer() })
     },
     [run],
   )

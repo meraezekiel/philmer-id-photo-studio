@@ -91,7 +91,7 @@ export function asAppError(error: unknown): AppErrorShape {
 
 export type SegModel = 'lite' | 'hd'
 
-export function loadImage(args: { path?: string; bytes?: number[] }): Promise<LoadedImageInfo> {
+export function loadImage(args: { path?: string; bytes?: ArrayBuffer }): Promise<LoadedImageInfo> {
   return invoke('load_image', { args })
 }
 
@@ -125,7 +125,7 @@ export function importModel(args: { path: string }): Promise<ModelStatus> {
   return invoke('import_model', { args })
 }
 
-export function saveFile(args: { path: string; bytes: number[] }): Promise<string> {
+export function saveFile(args: { path: string; bytes: ArrayBuffer }): Promise<string> {
   return invoke('save_file', { args })
 }
 

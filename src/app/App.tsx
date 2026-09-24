@@ -10,7 +10,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { AdjustCanvas, AdjustPanel } from '../features/adjust/AdjustStep'
+import { AdjustCanvas } from '../features/adjust/AdjustCanvas'
+import { AdjustPanel } from '../features/adjust/AdjustStep'
 import { BackgroundCanvas, BackgroundPanel } from '../features/background/BackgroundStep'
 import { ExportCanvas, ExportPanel } from '../features/export/ExportStep'
 import { ImportStep } from '../features/import/ImportStep'

@@ -13,6 +13,7 @@ import type { Bitmap } from '../lib/composite'
 import { PHOTO_PRESETS, type PhotoPresetId } from '../lib/presets'
 import {
   asAppError,
+  releaseImage,
   type AppErrorShape,
   type Face,
   type LoadedImageInfo,
@@ -172,7 +173,12 @@ export const useJob = create<JobState>((set) => ({
   setHairDetail: (hairDetail) => set({ hairDetail }),
   setQuality: (quality) => set({ quality }),
 
-  reset: () =>
+  reset: () => {
+    // Hand the native side back its buffers. Without this the full-resolution
+    // original and its cached mask stay in the Rust store for the life of the
+    // process, so a counter serving customers back to back accumulates every
+    // photo it has ever opened.
+    void releaseImage()
     set({
       step: 'import',
       ...PHOTO_FIELDS,
@@ -182,7 +188,8 @@ export const useJob = create<JobState>((set) => ({
       offsetY: 0,
       crownOverride: null,
       chinOverride: null,
-    }),
+    })
+  },
 }))
 
 /** Is this step reachable given what has been loaded? */

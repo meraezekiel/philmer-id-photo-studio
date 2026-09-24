@@ -103,7 +103,7 @@ export function ExportPanel() {
         const stamped =
           format === 'jpeg' ? setJpegDpi(encoded, PRINT_DPI) : setPngDpi(encoded, PRINT_DPI)
 
-        await saveFile({ path, bytes: Array.from(stamped) })
+        await saveFile({ path, bytes: stamped.buffer as ArrayBuffer })
         setState({ phase: 'done', path })
       } catch (error) {
         setState({

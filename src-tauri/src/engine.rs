@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use ort::ep::CPU;
 use ort::session::builder::GraphOptimizationLevel;
 use ort::session::Session;
 use parking_lot::Mutex;
@@ -97,6 +98,15 @@ impl Engine {
 
         let started = std::time::Instant::now();
         let session = Session::builder()?
+            // ORT's arena allocator never returns memory to the OS, and it
+            // grows to BiRefNet's peak intermediate tensors: measured at
+            // 6.5 GB retained after a single photo, on a machine that also has
+            // to run a browser and a print spooler. The memory-pattern planner
+            // compounds it by pre-allocating one block big enough for every
+            // tensor. Turning both off trades a little speed for memory that
+            // comes back, which is the right trade for a shop counter.
+            .with_execution_providers([CPU::default().with_arena_allocator(false).build()])?
+            .with_memory_pattern(false)?
             .with_optimization_level(GraphOptimizationLevel::Level3)?
             .with_intra_threads(self.intra_threads)?
             .commit_from_file(path)?;

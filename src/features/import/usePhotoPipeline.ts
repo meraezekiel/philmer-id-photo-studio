@@ -36,7 +36,7 @@ export function usePhotoPipeline() {
   const store = useJob
 
   const run = useCallback(
-    async (source: { path?: string; bytes?: number[] }) => {
+    async (source: { path?: string; bytes?: ArrayBuffer }) => {
       const s = store.getState()
       s.setStatus('loading')
       s.setProgress(null)
