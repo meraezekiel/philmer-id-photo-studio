@@ -1,30 +1,32 @@
 /**
- * The single window: top bar with the step flow, photo canvas, properties
- * panel, action bar (DESIGN_BRIEF §2 layout skeleton).
+ * The single window, laid out exactly as the design in `design/`:
+ * a 64 px header carrying the brand and the numbered step flow, the photo
+ * canvas, a 360 px properties panel, and a 76 px action bar.
  *
- * M1 wires Import -> Background -> Export. Adjust (M2) and Print sheet (M3)
- * appear in the stepper as disabled, so the shape of the flow is visible from
- * the first run rather than changing under the operator later.
+ * Adjust (M2) is wired. Print sheet (M3) shows in the stepper but is not yet
+ * reachable — the flow keeps its final shape from the first run rather than
+ * growing steps under the operator later.
  */
 
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
+import { AdjustCanvas, AdjustPanel } from '../features/adjust/AdjustStep'
 import { BackgroundCanvas, BackgroundPanel } from '../features/background/BackgroundStep'
 import { ExportCanvas, ExportPanel } from '../features/export/ExportStep'
 import { ImportStep } from '../features/import/ImportStep'
 import { useSegmentProgressListener } from '../features/import/usePhotoPipeline'
 import { APP_NAME, PHOTO_PRESETS, PHOTO_PRESET_ORDER, VENDOR } from '../lib/presets'
 import { runtimeInfo, type RuntimeInfo } from '../lib/tauri'
-import { M1_STEPS, STEP_LABELS, stepEnabled, useJob, type Step } from '../store/job'
-import { AppMark, Button, Panel } from './components/ui'
-import { useState } from 'react'
-
-/** Every step in the final flow, including the ones M2/M3 will fill in. */
-const ALL_STEPS: Step[] = ['import', 'adjust', 'background', 'sheet', 'export']
+import {
+  ACTIVE_STEPS,
+  ALL_STEPS,
+  STEP_LABELS,
+  useJob,
+} from '../store/job'
+import { AppMark, Icon, ICONS, IconButton, Section, Segmented } from './components/ui'
 
 export function App() {
   const step = useJob((s) => s.step)
-  const status = useJob((s) => s.status)
   const setStep = useJob((s) => s.setStep)
   const reset = useJob((s) => s.reset)
 
@@ -32,23 +34,27 @@ export function App() {
   useSegmentProgressListener()
 
   useEffect(() => {
-    runtimeInfo().then(setRuntime).catch(() => setRuntime(null))
+    runtimeInfo()
+      .then(setRuntime)
+      .catch(() => setRuntime(null))
   }, [])
 
-  const index = M1_STEPS.indexOf(step)
-  const goNext = useCallback(() => {
-    const next = M1_STEPS[index + 1]
-    if (next) setStep(next)
-  }, [index, setStep])
-  const goBack = useCallback(() => {
-    const previous = M1_STEPS[index - 1]
-    if (previous) setStep(previous)
-  }, [index, setStep])
+  const index = ACTIVE_STEPS.indexOf(step)
+  const nextStep = ACTIVE_STEPS[index + 1]
+  const previousStep = ACTIVE_STEPS[index - 1]
 
-  // DESIGN_BRIEF §6 keyboard map, the parts M1 can honour.
+  const goNext = useCallback(() => {
+    if (nextStep) setStep(nextStep)
+  }, [nextStep, setStep])
+  const goBack = useCallback(() => {
+    if (previousStep) setStep(previousStep)
+  }, [previousStep, setStep])
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!event.ctrlKey) return
+      const target = event.target as HTMLElement | null
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
+      if (!event.ctrlKey && !event.metaKey) return
       if (event.key === 'ArrowRight') {
         event.preventDefault()
         goNext()
@@ -64,141 +70,210 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [goNext, goBack, reset])
 
-  const nextStep = M1_STEPS[index + 1]
+  const showChrome = step !== 'import'
 
   return (
-    <div className="flex h-full flex-col bg-bg text-text">
-      <TopBar runtime={runtime} />
+    <div
+      data-app=""
+      className="fixed inset-0 flex flex-col overflow-hidden"
+      style={{ background: 'var(--color-neutral-300)' }}
+    >
+      <Header runtime={runtime} />
 
-      <main className="flex min-h-0 flex-1">
-        <section className="flex min-w-0 flex-1 items-center justify-center bg-canvas">
+      <div className="flex min-h-0 flex-1">
+        <div className="relative min-w-0 flex-1 overflow-hidden" style={{ background: 'var(--canvas)' }}>
           {step === 'import' && <ImportStep />}
+          {step === 'adjust' && <AdjustCanvas />}
           {step === 'background' && <BackgroundCanvas />}
           {step === 'export' && <ExportCanvas />}
-        </section>
+        </div>
 
-        {step !== 'import' && (
-          <aside className="flex w-[var(--panel-width)] shrink-0 flex-col gap-3 overflow-y-auto border-l border-border bg-surface p-3">
-            <SizePanel />
+        {showChrome && (
+          <aside
+            className="flex w-[var(--panel-width)] flex-none flex-col overflow-y-auto border-l-2 border-divider"
+            style={{ background: 'var(--panel)' }}
+          >
+            <SizeSection />
+            {step === 'adjust' && <AdjustPanel />}
             {step === 'background' && <BackgroundPanel />}
             {step === 'export' && <ExportPanel />}
           </aside>
         )}
-      </main>
+      </div>
 
-      {step !== 'import' && (
-        <footer className="flex h-[var(--actionbar-height)] shrink-0 items-center justify-between border-t border-border bg-surface px-4">
-          <Button variant="ghost" onClick={reset}>
-            New photo
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button onClick={goBack} disabled={index <= 0}>
-              Back
-            </Button>
-            <Button variant="primary" onClick={goNext} disabled={!nextStep}>
-              {nextStep ? `Next: ${STEP_LABELS[nextStep]}` : 'Done'}
-            </Button>
-          </div>
-        </footer>
+      {showChrome && (
+        <ActionBar
+          onBack={goBack}
+          onNext={goNext}
+          canGoBack={Boolean(previousStep)}
+          nextLabel={nextStep ? `Next: ${STEP_LABELS[nextStep]}` : 'New photo'}
+          onNewPhoto={reset}
+          isLast={!nextStep}
+        />
       )}
-
-      {status === 'error' && step !== 'import' && <ErrorBar />}
     </div>
   )
 }
 
-function TopBar({ runtime }: { runtime: RuntimeInfo | null }) {
+function Header({ runtime }: { runtime: RuntimeInfo | null }) {
   const step = useJob((s) => s.step)
   const status = useJob((s) => s.status)
   const setStep = useJob((s) => s.setStep)
 
+  const currentIndex = ALL_STEPS.indexOf(step)
+
   return (
-    <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-4 border-b border-border bg-surface px-4">
-      <div className="flex items-center gap-2.5">
+    <header
+      className="flex h-[var(--topbar-height)] flex-none items-center gap-5 border-b-2 border-divider pl-5 pr-4"
+      style={{ background: 'var(--color-bg)' }}
+    >
+      <div className="flex flex-none items-center gap-3">
         <AppMark />
-        <div className="leading-tight">
-          <div className="text-sm font-semibold">{APP_NAME}</div>
-          <div className="text-xs text-text-subtle">{VENDOR}</div>
+        <div className="flex flex-col leading-[1.1]">
+          <span className="font-heading text-base font-extrabold">{APP_NAME}</span>
+          <span className="text-xs text-muted">{VENDOR}</span>
         </div>
       </div>
 
-      <nav className="ml-4 flex items-center gap-1" aria-label="Steps">
+      <div className="h-8 w-0.5 flex-none bg-divider" />
+
+      <nav className="flex min-w-0 items-center gap-3" aria-label="Steps">
         {ALL_STEPS.map((candidate, i) => {
-          const planned = !M1_STEPS.includes(candidate)
-          const enabled = !planned && stepEnabled(candidate, status)
-          const active = candidate === step
+          const isCurrent = candidate === step
+          const isDone = i < currentIndex && status === 'ready'
+          const reachable = ACTIVE_STEPS.includes(candidate) && status === 'ready'
+
           return (
-            <div key={candidate} className="flex items-center">
-              {i > 0 && <span className="mx-1 h-px w-4 bg-border" aria-hidden />}
-              <button
-                type="button"
-                disabled={!enabled}
-                onClick={() => setStep(candidate)}
-                title={planned ? 'Coming in a later milestone' : undefined}
-                className={`rounded-sm px-2.5 py-1 text-sm transition-colors duration-[var(--duration-fast)] ${
-                  active
-                    ? 'bg-accent-soft font-medium text-accent'
-                    : enabled
-                      ? 'text-text-muted hover:bg-accent-soft hover:text-text'
-                      : 'cursor-not-allowed text-text-subtle/60'
-                }`}
-              >
-                <span className="tabular mr-1.5 text-xs">{i + 1}</span>
-                {STEP_LABELS[candidate]}
-              </button>
+            <div key={candidate} className="flex items-center gap-3">
+              {i > 0 && <div className="h-0.5 w-7 flex-none bg-divider" />}
+              {isCurrent ? (
+                <div className="flex h-10 flex-none items-center gap-2.5">
+                  <span
+                    className="tabular grid h-7 w-7 place-items-center text-sm font-extrabold"
+                    style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="whitespace-nowrap text-[15px] font-extrabold">
+                    {STEP_LABELS[candidate]}
+                  </span>
+                </div>
+              ) : isDone ? (
+                <button
+                  type="button"
+                  onClick={() => setStep(candidate)}
+                  title="Go back to this step"
+                  className="flex h-10 flex-none items-center gap-2.5 pr-2 hover:text-accent-700"
+                >
+                  <span className="grid h-7 w-7 place-items-center border-2 border-current">
+                    <Icon path={ICONS.check} size={14} strokeWidth={3} />
+                  </span>
+                  <span className="whitespace-nowrap text-[15px] font-semibold">
+                    {STEP_LABELS[candidate]}
+                  </span>
+                </button>
+              ) : (
+                <div
+                  className="flex h-10 flex-none items-center gap-2.5 text-muted"
+                  title={reachable ? undefined : 'Not available yet'}
+                >
+                  <span className="tabular grid h-7 w-7 place-items-center border border-divider text-sm">
+                    {i + 1}
+                  </span>
+                  <span className="whitespace-nowrap text-[15px]">{STEP_LABELS[candidate]}</span>
+                </div>
+              )}
             </div>
           )
         })}
       </nav>
 
-      <div className="ml-auto flex items-center gap-2 text-sm text-text-muted">
-        <span
-          className={`h-2 w-2 rounded-full ${runtime?.ortLoaded ? 'bg-success' : 'bg-danger'}`}
-          aria-hidden
-        />
-        {runtime?.ortLoaded ? 'Offline & ready' : 'Runtime unavailable'}
+      <div className="ml-auto flex flex-none items-center gap-3">
+        <span className="flex items-center gap-2 text-[13px] text-muted">
+          <span
+            className="h-2 w-2"
+            style={{ background: runtime?.ortLoaded ? 'var(--ok-line)' : 'var(--danger)' }}
+            aria-hidden
+          />
+          {runtime?.ortLoaded ? 'Offline & ready' : 'Runtime unavailable'}
+        </span>
+        <IconButton title="Settings">
+          <Icon path={ICONS.settings} size={18} />
+        </IconButton>
       </div>
     </header>
   )
 }
 
-function SizePanel() {
+function SizeSection() {
   const presetId = useJob((s) => s.presetId)
   const setPreset = useJob((s) => s.setPreset)
+  const preset = PHOTO_PRESETS[presetId]
 
   return (
-    <Panel title="Size">
-      <div className="grid grid-cols-4 gap-1 rounded-sm bg-bg p-1">
-        {PHOTO_PRESET_ORDER.map((id) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setPreset(id)}
-            className={`rounded-sm px-2 py-1.5 text-sm transition-colors duration-[var(--duration-fast)] ${
-              presetId === id
-                ? 'bg-surface font-medium text-accent shadow-sm'
-                : 'text-text-muted hover:text-text'
-            }`}
-          >
-            {PHOTO_PRESETS[id].label}
-          </button>
-        ))}
-      </div>
-      <p className="mt-2 text-xs text-text-subtle">{PHOTO_PRESETS[presetId].sublabel}</p>
-    </Panel>
+    <Section title="Size">
+      <Segmented
+        options={PHOTO_PRESET_ORDER.map((id) => ({
+          value: id,
+          label: PHOTO_PRESETS[id].label,
+        }))}
+        value={presetId}
+        onChange={setPreset}
+        columns={4}
+      />
+      <p className="tabular text-xs text-muted">{preset.sublabel}</p>
+      {preset.note && <p className="text-xs text-muted">{preset.note}</p>}
+    </Section>
   )
 }
 
-function ErrorBar() {
-  const error = useJob((s) => s.error)
-  const reset = useJob((s) => s.reset)
-  if (!error) return null
+function ActionBar({
+  onBack,
+  onNext,
+  canGoBack,
+  nextLabel,
+  onNewPhoto,
+  isLast,
+}: {
+  onBack: () => void
+  onNext: () => void
+  canGoBack: boolean
+  nextLabel: string
+  onNewPhoto: () => void
+  isLast: boolean
+}) {
   return (
-    <div className="border-t border-danger/30 bg-danger-soft px-4 py-2 text-sm text-danger">
-      <span>{error.message}</span>
-      <button type="button" onClick={reset} className="ml-3 underline">
-        Start over
+    <footer
+      className="flex h-[var(--actionbar-height)] flex-none items-center justify-between gap-4 border-t-2 border-divider px-5"
+      style={{ background: 'var(--color-bg)' }}
+    >
+      <button
+        type="button"
+        onClick={onNewPhoto}
+        className="px-1 text-sm font-extrabold text-accent hover:underline"
+      >
+        New photo
       </button>
-    </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={!canGoBack}
+          className="flex h-11 items-center gap-2 border border-divider px-4 text-sm font-extrabold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--hover)] disabled:opacity-45"
+        >
+          <Icon path={ICONS.back} size={16} />
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={isLast ? onNewPhoto : onNext}
+          className="h-11 px-6 text-[15px] font-extrabold transition-colors duration-[var(--duration-fast)]"
+          style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
+        >
+          {nextLabel}
+        </button>
+      </div>
+    </footer>
   )
 }

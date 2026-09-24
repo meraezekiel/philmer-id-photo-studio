@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { save } from '@tauri-apps/plugin-dialog'
 
-import { Banner, Button, Field, FieldList, Panel } from '../../app/components/ui'
+import { Button, Field, FieldList, Notice, Section } from '../../app/components/ui'
 import { decodeToBitmap, drawBitmap, encodeBitmap } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
 import { defaultFileName, setJpegDpi, setPngDpi } from '../../lib/dpi'
@@ -119,7 +119,7 @@ export function ExportPanel() {
 
   return (
     <>
-      <Panel title="This photo">
+      <Section title="This photo">
         <FieldList>
           <Field label="Size">
             <span className="tabular">
@@ -143,11 +143,11 @@ export function ExportPanel() {
           Exported at the photo's own resolution — no downscale. Cropping to{' '}
           {preset.label} arrives with the Adjust step.
         </p>
-      </Panel>
+      </Section>
 
-      <Panel title="Save">
+      <Section title="Save">
         <div className="flex flex-col gap-2">
-          <Button variant="primary" size="lg" onClick={() => exportSingle('jpeg')} disabled={busy}>
+          <Button variant="primary" onClick={() => exportSingle('jpeg')} disabled={busy}>
             Save as JPG
           </Button>
           <Button onClick={() => exportSingle('png')} disabled={busy}>
@@ -160,24 +160,24 @@ export function ExportPanel() {
         )}
         {state.phase === 'done' && (
           <div className="mt-3">
-            <Banner tone="success">Saved to {state.path}</Banner>
+            <Notice tone="ok">Saved to {state.path}</Notice>
           </div>
         )}
         {state.phase === 'failed' && (
           <div className="mt-3">
-            <Banner tone="danger">{state.message}</Banner>
+            <Notice tone="danger">{state.message}</Notice>
           </div>
         )}
-      </Panel>
+      </Section>
 
-      <Panel title="Next customer">
-        <Button size="lg" onClick={reset} disabled={busy}>
+      <Section title="Next customer">
+        <Button onClick={reset} disabled={busy}>
           New photo
         </Button>
         <p className="mt-2 text-xs text-text-subtle">
           Keeps the size, background and quality settings.
         </p>
-      </Panel>
+      </Section>
     </>
   )
 }

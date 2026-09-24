@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="1375f978-ec30-4682-98cb-4af603ed383a"></script>
+
+
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* Modernist — design-system tokens and component classes. This file is the source of truth for the system's look; retune it here and see readme.md. */
+/* vietnamese */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("a67c18fc-61c2-4c54-bd64-a566ae965dd4") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("9eb97192-072a-4e78-9983-90bd746020f0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("6e6d862d-d8d1-473c-914e-18bb449fa46a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("a67c18fc-61c2-4c54-bd64-a566ae965dd4") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("9eb97192-072a-4e78-9983-90bd746020f0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("6e6d862d-d8d1-473c-914e-18bb449fa46a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("a67c18fc-61c2-4c54-bd64-a566ae965dd4") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("9eb97192-072a-4e78-9983-90bd746020f0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url("6e6d862d-d8d1-473c-914e-18bb449fa46a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+
+:root {
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201e1d;
+  --color-accent: #ec3013;
+  --color-accent-2: #e15b47;
+  --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
+
+  /* Tonal ramps — generated in OKLCH on one shared lightness scale, so the
+     same step of any role matches the others in visual value. */
+  --color-neutral-100: #f8f4f4;
+  --color-neutral-200: #eae7e7;
+  --color-neutral-300: #d7d3d3;
+  --color-neutral-400: #bab6b6;
+  --color-neutral-500: #9b9797;
+  --color-neutral-600: #7d7979;
+  --color-neutral-700: #605d5d;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
+
+  --color-accent-100: #fff2ef;
+  --color-accent-200: #ffe0d9;
+  --color-accent-300: #ffc4b8;
+  --color-accent-400: #ff9783;
+  --color-accent-500: #ff563c;
+  --color-accent-600: #dd2b0f;
+  --color-accent-700: #ae1800;
+  --color-accent-800: #7c1405;
+  --color-accent-900: #4d170e;
+
+  --color-accent-2-100: #fff2ef;
+  --color-accent-2-200: #ffe0da;
+  --color-accent-2-300: #ffc4b9;
+  --color-accent-2-400: #ff9784;
+  --color-accent-2-500: #ef6853;
+  --color-accent-2-600: #c94b39;
+  --color-accent-2-700: #9e3526;
+  --color-accent-2-800: #71261b;
+  --color-accent-2-900: #471d16;
+
+  --font-heading: "Archivo", system-ui, sans-serif;
+  --font-heading-weight: 800;
+  --font-body: "Archivo", system-ui, sans-serif;
+
+  --space-1: 4.0px;
+  --space-2: 8.0px;
+  --space-3: 12.0px;
+  --space-4: 16.0px;
+  --space-6: 24.0px;
+  --space-8: 32.0px;
+
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+
+  /* Elevation — derived from the ground: soft ink-tinted shadows on a
+     light theme, a hairline edge + ambient darkness on a dark one. */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
+
+.grayscale{filter:grayscale(1) contrast(1.08)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Components — built with the tokens above. Plain CSS
+   on plain HTML: no JavaScript, no build step. Each class is documented in
+   readme.md and demonstrated in foundations/ and components/.
+   ══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  line-height: 1.12; letter-spacing: -0.015em; margin: 0 0 var(--space-2);
+}
+h1 { font-size: 42px; }
+h2 { font-size: 32px; }
+h3 { font-size: 25px; }
+h4 { font-size: 20px; }
+h5 { font-size: 16px; }
+h6 { font-size: 13px; }
+h6 { letter-spacing: 0.08em; text-transform: uppercase; }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent); text-underline-offset: 3px; }
+img { display: block; max-width: 100%; }
+figure { margin: 0; }
+figcaption {
+  font-size: 11px; margin-top: var(--space-1);
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.text-muted { color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+/* — rules — */
+.hr {
+  height: 2px; border: 0; margin: var(--space-4) 0;
+  background: var(--color-divider);
+}
+
+/* — buttons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text); /* matches the .input's 14px —
+     the pair sits side by side in sign-up rows */
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.btn svg { display: block; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); color: var(--color-bg); }
+.btn-primary:hover { background: var(--color-accent-600); }
+.btn-primary:active { background: var(--color-accent-700); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-block { width: 100%; margin-top: var(--space-2); justify-content: flex-start; text-align: left; }
+
+/* — forms — */
+.field > label {
+  display: block; font-size: 12px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+textarea.input { min-height: 90px; resize: vertical; }
+.radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.radio input, .seg-opt input {
+  position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+}
+.radio .dot {
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 1.5px solid var(--color-divider);
+}
+.radio:hover .dot { border-color: var(--color-accent); }
+.radio input:checked + .dot {
+  border-color: var(--color-accent); background: var(--color-accent);
+  box-shadow: inset 0 0 0 4px var(--color-bg);
+}
+.radio input:focus-visible + .dot { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.seg {
+  display: inline-flex; overflow: hidden;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.seg-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
+.seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+
+/* — cards — */
+.card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface);
+}
+.card-kicker { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
+.card-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 17px; line-height: 1.2;
+}
+.card-body { margin: 0; font-size: 13px; opacity: 0.8; flex: 1; }
+.card-meta {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+
+/* — tags — */
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+}
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-accent-2 { background: var(--color-accent-2-100); color: var(--color-accent-2-800); }
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
+
+/* — navigation — */
+.nav {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 2px solid var(--color-divider);
+}
+.nav-brand {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 18px; margin-right: auto;
+}
+.nav a { color: inherit; text-decoration: none; font-size: 14px; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+
+/* — tables — */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  padding: var(--space-2); border-bottom: 2px solid var(--color-divider);
+}
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-divider);
+}
+.table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+
+/* — dialog — */
+.dialog-backdrop {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+}
+.dialog {
+  width: min(440px, 100%); display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  background: var(--color-surface); box-shadow: var(--shadow-lg);
+}
+.dialog-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 20px;
+}
+.dialog-body { font-size: 14px; opacity: 0.85; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+
+</style>
+<script src="21c1e42a-91d4-4fc7-a4ab-60026b40e9ba"></script>
+<title>ID Photo Studio</title>
+<style>
+body{margin:0;overflow:hidden}
+button,input,select{font-family:inherit;color:inherit}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent)}
+[data-app]{--panel:#faf8f8;--canvas:#9b9797;--on-accent:#ffffff;--muted:color-mix(in srgb,var(--color-text) 64%,transparent);--hover:color-mix(in srgb,var(--color-text) 7%,transparent);--ok:#0f6b3f;--ok-bg:#eef7f1;--ok-line:#1f9d5c;--warn:#8a4b00;--warn-bg:#fff4e2;--warn-line:#e39a1f;--danger:#ae1800;--danger-bg:#fff2ef;--dim:rgba(24,22,21,.58)}
+[data-app][data-theme="dark"]{--color-bg:#1d1c1b;--color-surface:#2a2827;--color-text:#f3f1f0;--color-divider:color-mix(in srgb,#f3f1f0 28%,transparent);--panel:#242221;--canvas:#5e5b5b;--ok:#86d9a9;--ok-bg:#16301f;--warn:#f2c078;--warn-bg:#3a2a10;--danger:#ff9783;--danger-bg:#3a1712;--color-neutral-300:#3a3837}
+input[type=range]{accent-color:var(--color-accent)}
+@keyframes scan{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes sheetIn{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+</style>
+</helmet>
+<div data-app="" data-theme="{{ theme }}" style="position:fixed;inset:0;background:var(--color-neutral-300);overflow:hidden;font-family:var(--font-body);color:var(--color-text);-webkit-font-smoothing:antialiased">
+<div style="{{ frameStyle }}">
+
+<header style="height:64px;flex:none;display:flex;align-items:center;gap:20px;padding:0 16px 0 20px;border-bottom:2px solid var(--color-divider);background:var(--color-bg)">
+<div style="display:flex;align-items:center;gap:12px;flex:none">
+<svg width="32" height="32" sc-camel-view-box="0 0 32 32" aria-label="ID Photo Studio"><rect width="32" height="32" fill="#ec3013"></rect><rect x="8" y="6" width="16" height="20" fill="#ffffff"></rect><circle cx="16" cy="14" r="4" fill="#ec3013"></circle><path d="M10 26a6 6 0 0 1 12 0z" fill="#ec3013"></path></svg>
+<div style="display:flex;flex-direction:column;line-height:1.1"><span style="font-family:var(--font-heading);font-weight:800;font-size:16px">ID Photo Studio</span><span style="font-size:12px;color:var(--muted)">Philmer Digi Art</span></div>
+</div>
+<div style="width:2px;height:32px;background:var(--color-divider);flex:none"></div>
+<nav style="display:flex;align-items:center;gap:12px;min-width:0">
+<sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+<sc-if value="{{ s.notFirst }}" hint-placeholder-val="{{ true }}"><div style="width:28px;height:2px;background:var(--color-divider);flex:none"></div></sc-if>
+<sc-if value="{{ s.current }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;height:40px;flex:none"><span style="width:28px;height:28px;background:var(--color-accent);color:var(--on-accent);display:grid;place-items:center;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums">{{ s.n }}</span><span style="font-weight:800;font-size:15px;white-space:nowrap">{{ s.label }}</span></div></sc-if>
+<sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ s.go }}" title="Go back to this step" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 8px 0 0;background:none;border:0;cursor:pointer;flex:none" style-hover="color:var(--color-accent-700)"><span style="width:28px;height:28px;border:2px solid currentColor;display:grid;place-items:center"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="font-weight:600;font-size:15px;white-space:nowrap">{{ s.label }}</span></button></sc-if>
+<sc-if value="{{ s.todo }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:10px;height:40px;color:var(--muted);flex:none"><span style="width:28px;height:28px;border:1px solid var(--color-divider);display:grid;place-items:center;font-size:14px;font-variant-numeric:tabular-nums">{{ s.n }}</span><span style="font-size:15px;white-space:nowrap">{{ s.label }}</span></div></sc-if>
+</sc-for>
+</nav>
+<div style="margin-left:auto;display:flex;align-items:center;gap:4px;flex:none">
+<button sc-camel-on-click="{{ undo }}" disabled="{{ noUndo }}" title="Undo (Ctrl+Z)" style="width:40px;height:40px;display:grid;place-items:center;background:none;border:0;cursor:pointer" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></svg></button>
+<button sc-camel-on-click="{{ redo }}" disabled="{{ noRedo }}" title="Redo (Ctrl+Y)" style="width:40px;height:40px;display:grid;place-items:center;background:none;border:0;cursor:pointer" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"></path></svg></button>
+<div style="width:1px;height:24px;background:var(--color-divider);margin:0 6px"></div>
+<button sc-camel-on-click="{{ openSettings }}" title="Settings" style="height:40px;display:flex;align-items:center;gap:8px;padding:0 12px;background:none;border:1px solid var(--color-divider);cursor:pointer;font-size:14px;font-weight:600" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</button>
+</div>
+</header>
+
+<div style="flex:1;display:flex;min-height:0">
+<div style="flex:1;position:relative;overflow:hidden;background:var(--canvas);min-width:0">
+
+<sc-if value="{{ isImportIdle }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;inset:0;background:var(--color-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;padding:40px">
+<div style="width:100%;max-width:1040px;display:flex;flex-direction:column;gap:16px">
+<sc-if value="{{ unsupported }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--warn-bg);color:var(--warn);border-top:2px solid var(--warn-line);font-size:15px">
+<svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+<span><strong>customer_photo.heic</strong> — HEIC isn’t supported yet. Please convert to JPG.</span>
+<button sc-camel-on-click="{{ dismissUnsupported }}" style="margin-left:auto;background:none;border:0;cursor:pointer;width:32px;height:32px;display:grid;place-items:center" title="Dismiss"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</sc-if>
+<button sc-camel-on-click="{{ startImport }}" style="height:460px;width:100%;border:2px dashed var(--color-divider);background:var(--color-surface);cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:16px;padding:48px;text-align:left" style-hover="border-color:var(--color-accent);background:color-mix(in srgb,var(--color-accent) 5%,var(--color-surface))">
+<svg width="56" height="56" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+<span style="font-family:var(--font-heading);font-weight:800;font-size:40px;letter-spacing:-.015em;line-height:1.1">Drop a photo here, or click to browse</span>
+<span style="font-size:17px;color:var(--muted)">You can also paste an image with Ctrl+V</span>
+<span style="display:flex;gap:8px;margin-top:8px"><span style="font-size:13px;padding:4px 10px;border:1px solid var(--color-divider);font-weight:600">JPG</span><span style="font-size:13px;padding:4px 10px;border:1px solid var(--color-divider);font-weight:600">PNG</span><span style="font-size:13px;padding:4px 10px;border:1px solid var(--color-divider);font-weight:600">WebP</span><span style="font-size:13px;padding:4px 10px;border:1px solid var(--color-divider);font-weight:600">BMP</span></span>
+</button>
+</div>
+<div style="width:100%;max-width:1040px;border-top:2px solid var(--color-divider);padding-top:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Recent</span><span style="font-size:11px;padding:2px 8px;background:var(--color-accent-100);color:var(--color-accent-800)">v1.1</span></div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px">
+<sc-for list="{{ recent }}" as="r" hint-placeholder-count="4">
+<div style="display:flex;gap:12px;align-items:center;padding:8px;background:var(--color-surface)">
+<div style="width:48px;height:48px;flex:none"><dc-import name="Portrait" w="48" h="48" crown="{{ r.crown }}" chin="{{ r.chin }}" bg="{{ r.bg }}" hint-size="48px,48px"></dc-import></div>
+<div style="display:flex;flex-direction:column;min-width:0"><span style="font-size:14px;font-weight:700">{{ r.size }}</span><span style="font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums">{{ r.time }}</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:56px;background:var(--canvas)">
+<div style="position:relative;width:440px;height:550px;overflow:hidden;box-shadow:var(--shadow-lg)">
+<dc-import name="Portrait" w="440" h="550" crown="150" chin="350" before="{{ true }}" hint-size="440px,550px"></dc-import>
+{{ shimmer }}
+</div>
+<div style="width:420px;display:flex;flex-direction:column;gap:20px;background:var(--color-bg);padding:28px;box-shadow:var(--shadow-md)">
+<span style="font-family:var(--font-heading);font-weight:800;font-size:28px;line-height:1.15">Preparing photo</span>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:16px">
+<sc-for list="{{ procSteps }}" as="p" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px">
+<sc-if value="{{ p.done }}" hint-placeholder-val="{{ false }}"><span style="width:22px;height:22px;background:var(--ok-line);color:#fff;display:grid;place-items:center"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="color:var(--muted)">{{ p.doneLabel }}</span></sc-if>
+<sc-if value="{{ p.active }}" hint-placeholder-val="{{ true }}"><span style="width:22px;height:22px;border:2px solid var(--color-accent)"></span><span style="font-weight:700">{{ p.label }}</span></sc-if>
+<sc-if value="{{ p.waiting }}" hint-placeholder-val="{{ false }}"><span style="width:22px;height:22px;border:1px solid var(--color-divider)"></span><span style="color:var(--muted)">{{ p.label }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+<div style="height:6px;background:var(--color-surface);position:relative"><div style="{{ procBar }}"></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--muted)"><span style="font-variant-numeric:tabular-nums">{{ procPct }} · Standard model</span><button sc-camel-on-click="{{ cancelImport }}" style="height:40px;padding:0 14px;background:none;border:1px solid var(--color-divider);cursor:pointer;font-weight:700;font-size:14px" style-hover="background:var(--hover)">Cancel</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAdjust }}" hint-placeholder-val="{{ false }}">
+<div style="{{ viewWrap }}">
+<div style="{{ adj.photoBox }}"><dc-import name="Portrait" w="{{ adj.pw }}" h="{{ adj.ph }}" crown="{{ adj.pcrown }}" chin="{{ adj.pchin }}" bg="{{ bgHex }}" before="{{ compareHeld }}" rot="{{ rot }}" crowd="{{ multi }}" filter="{{ photoFilter }}" hint-size="100%,100%"></dc-import></div>
+<div ref="{{ cropRef }}" style="{{ adj.crop }}">
+<div style="{{ adj.center }}"></div>
+<div style="{{ adj.crownLine }}"></div>
+<div style="{{ adj.eyeLine }}"></div>
+<div style="{{ adj.chinBand }}"></div>
+<div sc-camel-on-mouse-down="{{ dragCrown }}" title="Drag to set the crown" style="{{ adj.crownHandle }}"></div>
+<div sc-camel-on-mouse-down="{{ dragChin }}" title="Drag to set the chin" style="{{ adj.chinHandle }}"></div>
+<div style="{{ adj.crownLabel }}">Crown</div>
+<div style="{{ adj.eyeLabel }}">Eyes</div>
+<div style="{{ adj.chinLabel }}">Chin range</div>
+</div>
+<sc-if value="{{ showPicker }}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{ adj.faces }}" as="f" hint-placeholder-count="3">
+<button sc-camel-on-click="{{ pickFace }}" style="{{ f.style }}" style-hover="background:rgba(236,48,19,.18)"><span style="position:absolute;left:-2px;top:-26px;background:var(--color-accent);color:#fff;font-size:12px;font-weight:700;padding:3px 8px;white-space:nowrap">{{ f.label }}</span></button>
+</sc-for>
+</sc-if>
+</div>
+<div style="position:absolute;left:24px;top:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;max-width:520px">
+<sc-if value="{{ st.ok }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:10px;height:40px;padding:0 14px;background:var(--ok-bg);color:var(--ok);font-weight:700;font-size:15px;box-shadow:var(--shadow-sm)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"></path></svg>Head size OK</div></sc-if>
+<sc-if value="{{ st.warn }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;height:40px;padding:0 14px;background:var(--warn-bg);color:var(--warn);font-weight:700;font-size:15px;box-shadow:var(--shadow-sm)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>{{ st.text }}</div></sc-if>
+<sc-if value="{{ noFace }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--color-bg);border-top:2px solid var(--color-accent);font-size:15px;box-shadow:var(--shadow-sm)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>No face detected — adjust the crop manually.</div></sc-if>
+<sc-if value="{{ lowRes }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--warn-bg);color:var(--warn);border-top:2px solid var(--warn-line);font-size:15px;box-shadow:var(--shadow-sm)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><span>This photo is small; the print may look soft. <span style="font-variant-numeric:tabular-nums">412 × 412 px crop, 600 px needed.</span></span></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isBg }}" hint-placeholder-val="{{ false }}">
+<div style="{{ viewWrap }}">
+<div ref="{{ cmpRef }}" sc-camel-on-mouse-down="{{ startSplit }}" style="{{ cmp.box }}">
+<div style="position:absolute;inset:0"><dc-import name="Portrait" w="{{ cmp.w }}" h="{{ cmp.h }}" crown="{{ cmp.crown }}" chin="{{ cmp.chin }}" bg="{{ bgHex }}" rot="{{ rot }}" filter="{{ photoFilter }}" tag="{{ tagShown }}" hint-size="100%,100%"></dc-import></div>
+<div style="{{ cmp.beforeClip }}"><dc-import name="Portrait" w="{{ cmp.w }}" h="{{ cmp.h }}" crown="{{ cmp.crown }}" chin="{{ cmp.chin }}" before="{{ true }}" rot="{{ rot }}" hint-size="100%,100%"></dc-import></div>
+<div style="{{ cmp.handle }}"><div style="position:absolute;left:-17px;top:50%;margin-top:-18px;width:36px;height:36px;background:#fff;box-shadow:var(--shadow-md);display:grid;place-items:center;color:#201e1d"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18-6-6 6-6"></path><path d="m15 6 6 6-6 6"></path></svg></div></div>
+<span style="position:absolute;left:12px;top:12px;background:rgba(32,30,29,.8);color:#fff;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;pointer-events:none">Before</span>
+<span style="position:absolute;right:12px;top:12px;background:rgba(32,30,29,.8);color:#fff;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;pointer-events:none">After</span>
+</div>
+</div>
+<div style="position:absolute;left:24px;top:20px;display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+<div style="height:36px;display:flex;align-items:center;padding:0 12px;background:var(--color-bg);font-size:14px;font-variant-numeric:tabular-nums;box-shadow:var(--shadow-sm)">{{ sizeText }}</div>
+<sc-if value="{{ inspecting }}" hint-placeholder-val="{{ false }}"><div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--color-text);color:var(--color-bg);font-size:14px;font-weight:700">Inspecting edges at 100%</div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSheetView }}" hint-placeholder-val="{{ false }}">
+<div style="{{ sh.paper }}">
+<div style="{{ sh.margin }}"></div>
+<sc-for list="{{ sh.tiles }}" as="t" hint-placeholder-count="6">
+<div style="{{ t.style }}"><dc-import name="Portrait" w="{{ t.w }}" h="{{ t.h }}" crown="{{ t.crown }}" chin="{{ t.chin }}" bg="{{ bgHex }}" rot="{{ rot }}" filter="{{ photoFilter }}" tag="{{ t.tag }}" hint-size="100%,100%"></dc-import></div>
+</sc-for>
+<sc-for list="{{ sh.ticks }}" as="k" hint-placeholder-count="0"><div style="{{ k.s }}"></div></sc-for>
+</div>
+<div style="{{ sh.captionPos }}"><span style="font-weight:800">{{ paperLabel }}</span><span>{{ paperDim }}</span><span>·</span><span>{{ sh.orientText }}</span><span>·</span><span>{{ sh.countText }}</span></div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ hasPanel }}" hint-placeholder-val="{{ false }}">
+<aside style="width:360px;flex:none;border-left:2px solid var(--color-divider);background:var(--panel);overflow-y:auto;display:flex;flex-direction:column">
+
+<sc-if value="{{ showPreset }}" hint-placeholder-val="{{ true }}">
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Size preset</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--color-divider)">
+<sc-for list="{{ presetOpts }}" as="o" hint-placeholder-count="4">
+<sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ o.pick }}" style="height:44px;border:0;background:var(--color-accent);color:var(--on-accent);font-weight:800;font-size:14px;cursor:pointer;padding:0 10px;text-align:left">{{ o.label }}</button></sc-if>
+<sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ o.pick }}" style="height:44px;border:0;background:transparent;font-weight:600;font-size:14px;cursor:pointer;padding:0 10px;text-align:left" style-hover="background:var(--hover)">{{ o.label }}</button></sc-if>
+</sc-for>
+</div>
+<sc-if value="{{ isCustom }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">Width<input value="{{ customWVal }}" sc-camel-on-change="{{ setCustomW }}" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:15px;font-variant-numeric:tabular-nums;color:var(--color-text)" style-focus="border-color:var(--color-accent);outline:none"></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">Height<input value="{{ customHVal }}" sc-camel-on-change="{{ setCustomH }}" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:15px;font-variant-numeric:tabular-nums;color:var(--color-text)" style-focus="border-color:var(--color-accent);outline:none"></label>
+<div style="display:flex;border:1px solid var(--color-divider);height:40px">
+<sc-for list="{{ unitOpts }}" as="o" hint-placeholder-count="2">
+<sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ o.pick }}" style="width:44px;border:0;background:var(--color-text);color:var(--color-bg);font-weight:700;font-size:13px;cursor:pointer">{{ o.label }}</button></sc-if>
+<sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ o.pick }}" style="width:44px;border:0;background:transparent;font-size:13px;cursor:pointer" style-hover="background:var(--hover)">{{ o.label }}</button></sc-if>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<div style="font-size:14px;font-variant-numeric:tabular-nums">{{ sizeText }}</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isAdjust }}" hint-placeholder-val="{{ false }}">
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Face</div>
+<sc-if value="{{ showPicker }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;background:var(--color-accent-100);color:var(--color-accent-800);font-size:14px;font-weight:600;border-top:2px solid var(--color-accent)">3 faces found — click one on the photo.</div></sc-if>
+<button sc-camel-on-click="{{ autoAlign }}" style="height:48px;display:flex;align-items:center;gap:10px;padding:0 14px;background:transparent;border:1px solid var(--color-divider);cursor:pointer;font-weight:800;font-size:15px;text-align:left;white-space:nowrap" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path></svg>Auto-align<span style="margin-left:auto;font-weight:400;font-size:13px;color:var(--muted)">Re-run</span></button>
+<div style="display:flex;align-items:center;justify-content:space-between;height:40px;font-size:15px"><span>Level eyes</span>
+<button sc-camel-on-click="{{ toggleLevel }}" style="width:44px;height:24px;border:0;padding:0;cursor:pointer;background:transparent"><sc-if value="{{ levelEyes }}" hint-placeholder-val="{{ true }}"><span style="display:block;width:44px;height:24px;background:var(--color-accent);position:relative"><span style="position:absolute;right:3px;top:3px;width:18px;height:18px;background:#fff"></span></span></sc-if><sc-if value="{{ levelOff }}" hint-placeholder-val="{{ false }}"><span style="display:block;width:44px;height:24px;background:var(--color-neutral-400);position:relative"><span style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff"></span></span></sc-if></button>
+</div>
+</section>
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Transform</span><button sc-camel-on-click="{{ resetTransform }}" style="height:32px;display:flex;align-items:center;gap:6px;padding:0 8px;background:none;border:0;color:var(--color-accent-700);font-weight:700;font-size:13px;cursor:pointer" style-hover="background:var(--hover)"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>Reset</button></div>
+<sc-for list="{{ adjSliders }}" as="s" hint-placeholder-count="2">
+<label sc-camel-on-double-click="{{ s.reset }}" title="Double-click to reset" style="display:flex;flex-direction:column;gap:6px">
+<span style="display:flex;justify-content:space-between;font-size:14px"><span>{{ s.label }}</span><span style="font-variant-numeric:tabular-nums;font-weight:700">{{ s.text }}</span></span>
+<input type="range" min="{{ s.min }}" max="{{ s.max }}" step="{{ s.step }}" value="{{ s.value }}" sc-camel-on-change="{{ s.onChange }}" style="width:100%;height:24px;margin:0">
+</label>
+</sc-for>
+<div style="font-size:13px;color:var(--muted)">Drag the crown and chin handles on the photo to correct by hand.</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isBg }}" hint-placeholder-val="{{ false }}">
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Background</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<sc-for list="{{ swatches }}" as="w" hint-placeholder-count="6">
+<sc-if value="{{ w.on }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ w.pick }}" style="height:80px;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:6px;border:2px solid var(--color-accent);background:var(--color-bg);cursor:pointer;text-align:left"><span style="{{ w.chip }}"></span><span style="display:flex;align-items:center;gap:4px;font-size:13px;font-weight:800"><svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="3.5"><path d="M20 6 9 17l-5-5"></path></svg>{{ w.label }}</span></button></sc-if>
+<sc-if value="{{ w.off }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ w.pick }}" style="height:80px;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:7px;border:1px solid var(--color-divider);background:transparent;cursor:pointer;text-align:left" style-hover="background:var(--hover)"><span style="{{ w.chip }}"></span><span style="font-size:13px;font-weight:600">{{ w.label }}</span></button></sc-if>
+</sc-for>
+</div>
+<sc-if value="{{ bgCustom }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;align-items:center"><input type="color" value="{{ customHex }}" sc-camel-on-change="{{ setCustomHex }}" style="width:48px;height:40px;padding:0;border:1px solid var(--color-divider);background:none;cursor:pointer"><input value="{{ customHex }}" sc-camel-on-change="{{ setCustomHex }}" style="flex:1;height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:15px;font-variant-numeric:tabular-nums;text-transform:uppercase;color:var(--color-text)" style-focus="border-color:var(--color-accent);outline:none"></div>
+</sc-if>
+<sc-if value="{{ passportNotWhite }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:8px;align-items:flex-start;padding:10px 12px;background:var(--color-surface);font-size:14px;border-top:2px solid var(--color-divider)"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><span>Passports usually require a white background. <a href="#" sc-camel-on-click="{{ pickWhite }}">Use white</a></span></div></sc-if>
+</section>
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:16px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Edges</div>
+<sc-for list="{{ edgeSliders }}" as="s" hint-placeholder-count="2">
+<label sc-camel-on-double-click="{{ s.reset }}" title="Double-click to reset" style="display:flex;flex-direction:column;gap:6px">
+<span style="display:flex;justify-content:space-between;font-size:14px"><span>{{ s.label }}</span><span style="font-variant-numeric:tabular-nums;font-weight:700">{{ s.text }}</span></span>
+<input type="range" min="{{ s.min }}" max="{{ s.max }}" step="{{ s.step }}" value="{{ s.value }}" sc-camel-on-change="{{ s.onChange }}" style="width:100%;height:24px;margin:0">
+</label>
+</sc-for>
+</section>
+<section style="border-bottom:2px solid var(--color-divider)">
+<button sc-camel-on-click="{{ toggleAdjOpen }}" style="width:100%;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:none;border:0;cursor:pointer;text-align:left" style-hover="background:var(--hover)"><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Adjust photo</span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="{{ adjChevron }}"><path d="m6 9 6 6 6-6"></path></svg></button>
+<sc-if value="{{ adjOpen }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 24px 20px;display:flex;flex-direction:column;gap:16px">
+<sc-for list="{{ photoSliders }}" as="s" hint-placeholder-count="3">
+<label sc-camel-on-double-click="{{ s.reset }}" title="Double-click to reset" style="display:flex;flex-direction:column;gap:6px">
+<span style="display:flex;justify-content:space-between;font-size:14px"><span>{{ s.label }}</span><span style="font-variant-numeric:tabular-nums;font-weight:700">{{ s.text }}</span></span>
+<input type="range" min="{{ s.min }}" max="{{ s.max }}" step="{{ s.step }}" value="{{ s.value }}" sc-camel-on-change="{{ s.onChange }}" style="width:100%;height:24px;margin:0">
+</label>
+</sc-for>
+</div>
+</sc-if>
+</section>
+<section style="border-bottom:2px solid var(--color-divider)">
+<button sc-camel-on-click="{{ toggleTagOpen }}" style="width:100%;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:none;border:0;cursor:pointer;text-align:left" style-hover="background:var(--hover)"><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Name tag</span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="{{ tagChevron }}"><path d="m6 9 6 6 6-6"></path></svg></button>
+<sc-if value="{{ tagOpen }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 24px 20px;display:flex;flex-direction:column;gap:12px">
+<sc-if value="{{ isPassport }}" hint-placeholder-val="{{ false }}"><div title="Passport photos must not carry text or marks." style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:var(--color-surface);font-size:14px;color:var(--muted)"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>Not available for passport photos.</div></sc-if>
+<sc-if value="{{ tagAllowed }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;justify-content:space-between;height:40px;font-size:15px"><span>Print name under photo</span>
+<button sc-camel-on-click="{{ toggleTag }}" style="width:44px;height:24px;border:0;padding:0;cursor:pointer;background:transparent"><sc-if value="{{ tagOn }}" hint-placeholder-val="{{ false }}"><span style="display:block;width:44px;height:24px;background:var(--color-accent);position:relative"><span style="position:absolute;right:3px;top:3px;width:18px;height:18px;background:#fff"></span></span></sc-if><sc-if value="{{ tagOff }}" hint-placeholder-val="{{ true }}"><span style="display:block;width:44px;height:24px;background:var(--color-neutral-400);position:relative"><span style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff"></span></span></sc-if></button>
+</div>
+<input value="{{ tagText }}" sc-camel-on-change="{{ setTagText }}" disabled="{{ tagOff }}" placeholder="Customer name" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:15px;text-transform:uppercase;color:var(--color-text)" style-focus="border-color:var(--color-accent);outline:none">
+<sc-if value="{{ tagOn }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:12px;align-items:center"><div style="width:96px;height:96px;flex:none;box-shadow:var(--shadow-sm)"><dc-import name="Portrait" w="96" h="96" crown="{{ tagPrev.crown }}" chin="{{ tagPrev.chin }}" bg="{{ bgHex }}" tag="{{ tagShown }}" hint-size="96px,96px"></dc-import></div><span style="font-size:13px;color:var(--muted)">Live preview at print proportions</span></div></sc-if>
+</sc-if>
+</div>
+</sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{ isSheet }}" hint-placeholder-val="{{ false }}">
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Paper</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<sc-for list="{{ paperOpts }}" as="o" hint-placeholder-count="4">
+<sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ o.pick }}" style="height:60px;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 12px;border:2px solid var(--color-accent);background:var(--color-bg);cursor:pointer;text-align:left"><span style="font-weight:800;font-size:15px">{{ o.label }}</span><span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">{{ o.dim }}</span></button></sc-if>
+<sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ o.pick }}" style="height:60px;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 13px;border:1px solid var(--color-divider);background:transparent;cursor:pointer;text-align:left" style-hover="background:var(--hover)"><span style="font-weight:600;font-size:15px">{{ o.label }}</span><span style="font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums">{{ o.dim }}</span></button></sc-if>
+</sc-for>
+</div>
+</section>
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Layout</div>
+<div style="display:flex;flex-direction:column;border:1px solid var(--color-divider)">
+<sc-for list="{{ modeOpts }}" as="o" hint-placeholder-count="3">
+<button sc-camel-on-click="{{ o.pick }}" style="height:52px;display:flex;align-items:center;gap:12px;padding:0 14px;background:transparent;border:0;border-bottom:1px solid var(--color-divider);cursor:pointer;text-align:left;font-size:15px" style-hover="background:var(--hover)">
+<sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><span style="width:18px;height:18px;border:2px solid var(--color-accent);display:grid;place-items:center"><span style="width:8px;height:8px;background:var(--color-accent)"></span></span><span style="font-weight:800">{{ o.label }}</span></sc-if>
+<sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><span style="width:18px;height:18px;border:1px solid var(--color-divider)"></span><span>{{ o.label }}</span></sc-if>
+<span style="margin-left:auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums">{{ o.note }}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ isExact }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:15px">Quantity</span>
+<div style="display:flex;align-items:center;border:1px solid var(--color-divider)"><button sc-camel-on-click="{{ qtyDec }}" style="width:44px;height:44px;border:0;background:none;cursor:pointer;font-size:20px;font-weight:800" style-hover="background:var(--hover)">−</button><span style="width:48px;text-align:center;font-weight:800;font-size:17px;font-variant-numeric:tabular-nums">{{ qty }}</span><button sc-camel-on-click="{{ qtyInc }}" style="width:44px;height:44px;border:0;background:none;cursor:pointer;font-size:20px;font-weight:800" style-hover="background:var(--hover)">+</button></div>
+</div>
+</sc-if>
+<sc-if value="{{ isPackage }}" hint-placeholder-val="{{ false }}">
+<sc-raw-select sc-camel-on-change="{{ pickSaved }}" value="{{ savedVal }}" style="height:44px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;color:var(--color-text);cursor:pointer">
+<option value="">Saved packages…</option>
+<sc-for list="{{ savedOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</sc-raw-select>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ pkgRows }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:8px">
+<div style="display:flex;border:1px solid var(--color-divider);flex:1;min-width:0">
+<sc-for list="{{ r.sizes }}" as="o" hint-placeholder-count="3">
+<sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ o.pick }}" style="flex:1;height:40px;border:0;background:var(--color-text);color:var(--color-bg);font-weight:700;font-size:13px;cursor:pointer;padding:0 6px;text-align:left">{{ o.label }}</button></sc-if>
+<sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ o.pick }}" style="flex:1;height:40px;border:0;background:transparent;font-size:13px;cursor:pointer;padding:0 6px;text-align:left" style-hover="background:var(--hover)">{{ o.label }}</button></sc-if>
+</sc-for>
+</div>
+<span style="font-size:13px;color:var(--muted)">×</span>
+<div style="display:flex;align-items:center;border:1px solid var(--color-divider)"><button sc-camel-on-click="{{ r.dec }}" style="width:32px;height:40px;border:0;background:none;cursor:pointer;font-weight:800" style-hover="background:var(--hover)">−</button><span style="width:26px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums">{{ r.qty }}</span><button sc-camel-on-click="{{ r.inc }}" style="width:32px;height:40px;border:0;background:none;cursor:pointer;font-weight:800" style-hover="background:var(--hover)">+</button></div>
+<button sc-camel-on-click="{{ r.remove }}" title="Remove row" style="width:32px;height:40px;border:0;background:none;cursor:pointer;display:grid;place-items:center;color:var(--muted)" style-hover="color:var(--danger)"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</sc-for>
+<button sc-camel-on-click="{{ addRow }}" style="height:40px;display:flex;align-items:center;gap:8px;padding:0 8px;background:none;border:0;color:var(--color-accent-700);font-weight:700;font-size:14px;cursor:pointer;align-self:flex-start" style-hover="background:var(--hover)"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add size</button>
+</div>
+</sc-if>
+<sc-if value="{{ fit.ok }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--ok-bg);color:var(--ok);font-weight:700;font-size:14px"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"></path></svg>Fits — {{ fit.count }} photos on {{ paperLabel }}</div></sc-if>
+<sc-if value="{{ fit.bad }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--warn-bg);color:var(--warn);border-top:2px solid var(--warn-line);font-size:14px"><span style="display:flex;align-items:center;gap:8px;font-weight:700"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>{{ fit.text }}</span><sc-if value="{{ fit.hasFix }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ fit.fix }}" style="height:40px;align-self:flex-start;padding:0 14px;background:var(--color-text);color:var(--color-bg);border:0;font-weight:800;font-size:14px;cursor:pointer">{{ fit.fixLabel }}</button></sc-if></div></sc-if>
+<sc-if value="{{ callout }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--color-accent-100);color:var(--color-accent-800);border-top:2px solid var(--color-accent);font-size:14px"><span style="font-weight:700">Only 2 pcs 2x2 fit on 4R.</span><span>Add 1x1s to fill the sheet, or move to a bigger paper.</span><span style="display:flex;gap:8px"><button sc-camel-on-click="{{ useCombo }}" style="height:40px;padding:0 12px;background:var(--color-accent);color:var(--on-accent);border:0;font-weight:800;font-size:13px;cursor:pointer" style-hover="background:var(--color-accent-600)">Use 4R Combo</button><button sc-camel-on-click="{{ toA4 }}" style="height:40px;padding:0 12px;background:transparent;color:inherit;border:1px solid currentColor;font-weight:700;font-size:13px;cursor:pointer">Switch to A4</button></span></div></sc-if>
+</section>
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Options</div>
+<div style="display:flex;align-items:center;justify-content:space-between;height:40px;font-size:15px"><span>Cut marks</span>
+<button sc-camel-on-click="{{ toggleCut }}" style="width:44px;height:24px;border:0;padding:0;cursor:pointer;background:transparent"><sc-if value="{{ cutMarks }}" hint-placeholder-val="{{ true }}"><span style="display:block;width:44px;height:24px;background:var(--color-accent);position:relative"><span style="position:absolute;right:3px;top:3px;width:18px;height:18px;background:#fff"></span></span></sc-if><sc-if value="{{ cutOff }}" hint-placeholder-val="{{ false }}"><span style="display:block;width:44px;height:24px;background:var(--color-neutral-400);position:relative"><span style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:#fff"></span></span></sc-if></button>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px">Orientation</span>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--color-divider)">
+<sc-for list="{{ orientOpts }}" as="o" hint-placeholder-count="3">
+<sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ o.pick }}" style="height:40px;border:0;background:var(--color-text);color:var(--color-bg);font-weight:700;font-size:13px;cursor:pointer;padding:0 10px;text-align:left">{{ o.label }}</button></sc-if>
+<sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ o.pick }}" style="height:40px;border:0;background:transparent;font-size:13px;cursor:pointer;padding:0 10px;text-align:left" style-hover="background:var(--hover)">{{ o.label }}</button></sc-if>
+</sc-for>
+</div></div>
+<div style="font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums">Margins 5 mm · gap 2 mm · change in Settings</div>
+</section>
+</sc-if>
+
+<sc-if value="{{ isExport }}" hint-placeholder-val="{{ false }}">
+<section style="padding:20px 24px;border-bottom:2px solid var(--color-divider);display:flex;flex-direction:column;gap:16px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Summary</div>
+<div style="display:flex;gap:16px;align-items:flex-start">
+<div style="{{ thumbBox }}"><dc-import name="Portrait" w="{{ thumb.w }}" h="{{ thumb.h }}" crown="{{ thumb.crown }}" chin="{{ thumb.chin }}" bg="{{ bgHex }}" rot="{{ rot }}" filter="{{ photoFilter }}" tag="{{ tagShown }}" hint-size="96px,96px"></dc-import></div>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:var(--font-heading);font-weight:800;font-size:22px">{{ presetLabel }}</span><span style="font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums">{{ sizeText }}</span></div>
+</div>
+<div style="display:flex;flex-direction:column;border-top:2px solid var(--color-divider)">
+<sc-for list="{{ summary }}" as="r" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;justify-content:space-between;height:44px;border-bottom:1px solid var(--color-divider);font-size:14px"><span style="color:var(--muted)">{{ r.k }}</span><span style="display:flex;align-items:center;gap:8px;font-weight:700;font-variant-numeric:tabular-nums"><sc-if value="{{ r.hasSw }}" hint-placeholder-val="{{ false }}"><span style="{{ r.sw }}"></span></sc-if>{{ r.v }}</span></div>
+</sc-for>
+</div>
+</section>
+<section style="padding:20px 24px;display:flex;flex-direction:column;gap:12px">
+<button sc-camel-on-click="{{ doPrint }}" style="height:64px;display:flex;align-items:center;gap:12px;padding:0 20px;background:var(--color-accent);color:var(--on-accent);border:0;cursor:pointer;font-family:var(--font-heading);font-weight:800;font-size:20px;text-align:left" style-hover="background:var(--color-accent-600)" style-active="background:var(--color-accent-700)"><svg width="22" height="22" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3h12v6"></path><rect x="6" y="14" width="12" height="8"></rect></svg><span>{{ printLabel }}</span><span style="margin-left:auto;font-family:var(--font-body);font-weight:400;font-size:13px;opacity:.9">Ctrl+P</span></button>
+<div style="display:flex;gap:10px;padding:12px 14px;background:var(--color-surface);font-size:14px;line-height:1.45;border-top:2px solid var(--color-text)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><span>In the print dialog, choose <strong>Actual size / 100%</strong>, not Fit to page.</span></div>
+<div style="display:flex;flex-direction:column;border-top:2px solid var(--color-divider);margin-top:8px">
+<sc-for list="{{ saveOpts }}" as="o" hint-placeholder-count="3">
+<button sc-camel-on-click="{{ o.go }}" style="height:52px;display:flex;align-items:center;gap:12px;padding:0 4px;background:none;border:0;border-bottom:1px solid var(--color-divider);cursor:pointer;font-size:15px;font-weight:600;text-align:left" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>{{ o.label }}<span style="margin-left:auto;font-size:13px;font-weight:400;color:var(--muted)">{{ o.hint }}</span></button>
+</sc-for>
+</div>
+</section>
+</sc-if>
+
+</aside>
+</sc-if>
+</div>
+
+<footer style="height:76px;flex:none;display:flex;align-items:center;gap:8px;padding:0 24px;border-top:2px solid var(--color-divider);background:var(--color-bg)">
+<sc-if value="{{ showViewTools }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;border:1px solid var(--color-divider)">
+<button sc-camel-on-click="{{ zoomOut }}" title="Zoom out (Ctrl+scroll)" style="width:40px;height:40px;border:0;background:none;cursor:pointer;display:grid;place-items:center" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path><path d="M8 11h6"></path></svg></button>
+<span style="width:56px;text-align:center;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">{{ viewZoomText }}</span>
+<button sc-camel-on-click="{{ zoomIn }}" title="Zoom in (Ctrl+scroll)" style="width:40px;height:40px;border:0;background:none;cursor:pointer;display:grid;place-items:center" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path><path d="M11 8v6"></path><path d="M8 11h6"></path></svg></button>
+</div>
+<button sc-camel-on-click="{{ fitView }}" style="height:40px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-size:14px;font-weight:600" style-hover="background:var(--hover)"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>Fit</button>
+<sc-if value="{{ isBg }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ inspect100 }}" style="height:40px;padding:0 12px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-size:14px;font-weight:600;white-space:nowrap" style-hover="background:var(--hover)">100% edges</button></sc-if>
+<sc-if value="{{ showCompare }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-mouse-down="{{ holdOn }}" sc-camel-on-mouse-up="{{ holdOff }}" sc-camel-on-mouse-leave="{{ holdOff }}" title="Hold to see the original" style="height:40px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-size:14px;font-weight:600;margin-left:8px;white-space:nowrap" style-hover="background:var(--hover)" style-active="background:var(--color-text);color:var(--color-bg)"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3"></rect><path d="M12 3v18"></path></svg>Hold for before</button><span style="font-size:13px;color:var(--muted);margin-left:4px;white-space:nowrap">or hold \</span></sc-if>
+</sc-if>
+<div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+<span style="font-size:13px;color:var(--muted)">{{ nextHint }}</span>
+<sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ back }}" style="height:52px;display:flex;align-items:center;gap:10px;padding:0 18px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-family:var(--font-heading);font-weight:800;font-size:16px" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>Back</button></sc-if>
+<sc-if value="{{ canNext }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ next }}" style="height:52px;min-width:260px;display:flex;align-items:center;gap:12px;padding:0 20px;border:0;background:var(--color-accent);color:var(--on-accent);cursor:pointer;font-family:var(--font-heading);font-weight:800;font-size:16px;text-align:left" style-hover="background:var(--color-accent-600)" style-active="background:var(--color-accent-700)"><span>{{ nextLabel }}</span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button></sc-if>
+<sc-if value="{{ nextDisabled }}" hint-placeholder-val="{{ true }}"><button disabled="" style="height:52px;min-width:260px;display:flex;align-items:center;gap:12px;padding:0 20px;border:0;background:var(--color-accent);color:var(--on-accent);opacity:.45;cursor:not-allowed;font-family:var(--font-heading);font-weight:800;font-size:16px;text-align:left"><span>{{ nextLabel }}</span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button></sc-if>
+</div>
+</footer>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;right:384px;bottom:96px;width:460px;background:var(--color-bg);box-shadow:var(--shadow-lg);animation:toastIn .18s ease-out;display:flex;flex-direction:column">
+<sc-if value="{{ toastOk }}" hint-placeholder-val="{{ true }}"><div style="height:4px;background:var(--ok-line)"></div></sc-if>
+<sc-if value="{{ toastErr }}" hint-placeholder-val="{{ false }}"><div style="height:4px;background:var(--color-accent)"></div></sc-if>
+<div style="padding:18px 20px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font-family:var(--font-heading);font-weight:800;font-size:18px">{{ toastTitle }}</span><button sc-camel-on-click="{{ closeToast }}" title="Dismiss" style="width:32px;height:32px;border:0;background:none;cursor:pointer;display:grid;place-items:center"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<span style="font-size:14px;color:var(--muted);word-break:break-all">{{ toastBody }}</span>
+</div>
+<sc-if value="{{ toastOk }}" hint-placeholder-val="{{ true }}"><div style="display:grid;grid-template-columns:auto 1fr;gap:8px;padding:0 20px 20px"><button sc-camel-on-click="{{ closeToast }}" style="height:52px;display:flex;align-items:center;gap:8px;padding:0 16px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-weight:700;font-size:15px" style-hover="background:var(--hover)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>Open folder</button><button sc-camel-on-click="{{ newPhoto }}" style="height:52px;display:flex;align-items:center;gap:10px;padding:0 16px;border:0;background:var(--color-accent);color:var(--on-accent);cursor:pointer;font-family:var(--font-heading);font-weight:800;font-size:16px;text-align:left" style-hover="background:var(--color-accent-600)"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New photo<span style="margin-left:auto;font-family:var(--font-body);font-weight:400;font-size:13px">Ctrl+N</span></button></div></sc-if>
+<sc-if value="{{ toastErr }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:8px;padding:0 20px 20px"><button sc-camel-on-click="{{ openSettings }}" style="height:44px;padding:0 16px;border:0;background:var(--color-text);color:var(--color-bg);cursor:pointer;font-weight:800;font-size:14px">Choose another folder</button><button sc-camel-on-click="{{ doPrint }}" style="height:44px;padding:0 16px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-weight:700;font-size:14px" style-hover="background:var(--hover)">Try again</button></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+<div sc-camel-on-click="{{ closeSettings }}" style="position:absolute;inset:64px 0 0 0;background:var(--dim)"></div>
+<div style="position:absolute;top:64px;right:0;bottom:0;width:600px;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;animation:sheetIn .18s ease-out">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px 0"><span style="font-family:var(--font-heading);font-weight:800;font-size:28px">Settings</span><button sc-camel-on-click="{{ closeSettings }}" title="Close (Esc)" style="width:40px;height:40px;border:0;background:none;cursor:pointer;display:grid;place-items:center" style-hover="background:var(--hover)"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<div style="display:flex;gap:24px;padding:12px 28px 0;border-bottom:2px solid var(--color-divider)">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ t.pick }}" style="height:44px;border:0;border-bottom:4px solid var(--color-accent);margin-bottom:-2px;background:none;cursor:pointer;font-weight:800;font-size:15px;padding:0">{{ t.label }}</button></sc-if>
+<sc-if value="{{ t.off }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ t.pick }}" style="height:44px;border:0;background:none;cursor:pointer;font-size:15px;padding:0;color:var(--muted)" style-hover="color:var(--color-text)">{{ t.label }}</button></sc-if>
+</sc-for>
+</div>
+<div style="flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:24px">
+
+<sc-if value="{{ tabDefaults }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">Size preset<sc-raw-select style="height:40px;padding:0 8px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;color:var(--color-text)"><option>2x2</option><option>1x1</option><option>Passport</option></sc-raw-select></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">Background<sc-raw-select style="height:40px;padding:0 8px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;color:var(--color-text)"><option>White</option><option>Blue</option><option>Light blue</option><option>Red</option><option>Light gray</option></sc-raw-select></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">Paper<sc-raw-select style="height:40px;padding:0 8px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;color:var(--color-text)"><option>4R</option><option>A4</option><option>Short bond</option><option>Long bond</option></sc-raw-select></label>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Margins per paper (mm)</span>
+<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px">
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">4R<input sc-camel-default-value="5" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-text)"></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">A4<input sc-camel-default-value="5" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-text)"></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">Short<input sc-camel-default-value="6" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-text)"></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">Long<input sc-camel-default-value="6" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-text)"></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">Gap<input sc-camel-default-value="2" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-text)"></label>
+</div></div>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">Export folder<span style="display:flex;gap:8px"><input sc-camel-default-value="C:\Users\Philmer\Documents\ID Photos" style="flex:1;height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;color:var(--color-text)"><button style="height:40px;padding:0 14px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-weight:700;font-size:14px;color:var(--color-text)">Browse…</button></span></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)">File name pattern<input sc-camel-default-value="{date}_{size}_{n}" style="height:40px;padding:0 10px;background:var(--color-surface);border:1px solid var(--color-divider);font-size:14px;color:var(--color-text)"><span style="font-variant-numeric:tabular-nums">Example: 2026-09-24_2x2_001.pdf</span></label>
+</sc-if>
+
+<sc-if value="{{ tabModels }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted)">Processing quality</span>
+<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--color-divider)">
+<sc-for list="{{ qualityOpts }}" as="o" hint-placeholder-count="2">
+<sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ o.pick }}" style="height:48px;border:0;background:var(--color-accent);color:var(--on-accent);font-weight:800;font-size:15px;cursor:pointer;padding:0 14px;text-align:left">{{ o.label }}</button></sc-if>
+<sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ o.pick }}" style="height:48px;border:0;background:transparent;font-size:15px;cursor:pointer;padding:0 14px;text-align:left" style-hover="background:var(--hover)">{{ o.label }}</button></sc-if>
+<sc-if value="{{ o.disabled }}" hint-placeholder-val="{{ false }}"><div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:var(--muted);font-size:15px;background:var(--color-surface)"><span>{{ o.label }}</span><a href="#" sc-camel-on-click="{{ getHd }}" style="font-size:13px;font-weight:700">Get HD model</a></div></sc-if>
+</sc-for>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="background:var(--color-surface);padding:18px 20px;display:flex;flex-direction:column;gap:6px;border-top:2px solid var(--color-divider)">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-heading);font-weight:800;font-size:18px">Standard (Lite)</span><span style="font-size:12px;padding:3px 10px;background:var(--ok-bg);color:var(--ok);font-weight:700">Installed · built-in</span></div>
+<span style="font-size:14px;color:var(--muted)">Fast background removal for everyday jobs. Always available offline.</span>
+</div>
+<div style="background:var(--color-surface);padding:18px 20px;display:flex;flex-direction:column;gap:12px;border-top:2px solid var(--color-divider)">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:var(--font-heading);font-weight:800;font-size:18px">HD Portrait</span>
+<sc-if value="{{ hdInstalled }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;padding:3px 10px;background:var(--ok-bg);color:var(--ok);font-weight:700">Installed</span></sc-if>
+<sc-if value="{{ hdNotInstalled }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;padding:3px 10px;background:var(--color-neutral-100);color:var(--color-neutral-800);font-weight:700">Not installed</span></sc-if>
+</div>
+<span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums">973 MB · slower · best hair detail</span>
+<sc-if value="{{ hdIdle }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:8px"><button sc-camel-on-click="{{ hdDownload }}" style="height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;border:0;background:var(--color-accent);color:var(--on-accent);cursor:pointer;font-weight:800;font-size:14px" style-hover="background:var(--color-accent-600)"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>Download</button><button style="height:44px;padding:0 16px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-weight:700;font-size:14px" style-hover="background:var(--hover)">Import file…</button></div></sc-if>
+<sc-if value="{{ hdBusy }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px"><div style="height:8px;background:var(--color-bg);position:relative"><div style="{{ hdBar }}"></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;font-variant-numeric:tabular-nums"><span>{{ hdText }}</span>
+<sc-if value="{{ hdDownloading }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ hdPause }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-weight:700;font-size:13px" style-hover="background:var(--hover)"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="currentColor"><rect x="14" y="4" width="4" height="16"></rect><rect x="6" y="4" width="4" height="16"></rect></svg>Pause</button></sc-if>
+<sc-if value="{{ hdPaused }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ hdResume }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-weight:700;font-size:13px" style-hover="background:var(--hover)"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>Resume</button></sc-if>
+</div></div>
+</sc-if>
+<sc-if value="{{ hdInstalled }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;justify-content:space-between"><span style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--ok);font-weight:700"><svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"></path></svg>Checksum verified</span><button sc-camel-on-click="{{ hdRemove }}" style="height:36px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid var(--color-divider);background:none;cursor:pointer;font-weight:700;font-size:13px" style-hover="color:var(--danger)"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14H5V6"></path><path d="M8 6V3h8v3"></path></svg>Remove</button></div></sc-if>
+<sc-if value="{{ hdError }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-direction:column;gap:10px;padding:12px;background:var(--danger-bg);color:var(--danger);border-top:2px solid var(--color-accent);font-size:14px"><span style="font-weight:700">{{ hdErrTitle }}</span><span>{{ hdErrBody }}</span><span style="display:flex;gap:8px"><button sc-camel-on-click="{{ hdDownload }}" style="height:40px;padding:0 14px;border:0;background:var(--color-accent);color:var(--on-accent);cursor:pointer;font-weight:800;font-size:13px">Retry download</button><button style="height:40px;padding:0 14px;border:1px solid currentColor;background:none;color:inherit;cursor:pointer;font-weight:700;font-size:13px">Import file instead…</button></span></div></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabAbout }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:16px"><svg width="64" height="64" sc-camel-view-box="0 0 32 32"><rect width="32" height="32" fill="#ec3013"></rect><rect x="8" y="6" width="16" height="20" fill="#ffffff"></rect><circle cx="16" cy="14" r="4" fill="#ec3013"></circle><path d="M10 26a6 6 0 0 1 12 0z" fill="#ec3013"></path></svg><div style="display:flex;flex-direction:column"><span style="font-family:var(--font-heading);font-weight:800;font-size:22px">ID Photo Studio</span><span style="font-size:14px;color:var(--muted)">Version 1.0.0 · by Philmer Digi Art</span></div></div>
+<div style="display:flex;flex-direction:column;border-top:2px solid var(--color-divider)">
+<div style="display:flex;justify-content:space-between;height:44px;align-items:center;border-bottom:1px solid var(--color-divider);font-size:14px"><span>BiRefNet</span><span style="color:var(--muted)">MIT</span></div>
+<div style="display:flex;justify-content:space-between;height:44px;align-items:center;border-bottom:1px solid var(--color-divider);font-size:14px"><span>YuNet</span><span style="color:var(--muted)">MIT</span></div>
+<div style="display:flex;justify-content:space-between;height:44px;align-items:center;border-bottom:1px solid var(--color-divider);font-size:14px"><span>ONNX Runtime</span><span style="color:var(--muted)">MIT</span></div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Light&quot;,&quot;Dark&quot;],&quot;default&quot;:&quot;Light&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;frame&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;1920 × 1080&quot;,&quot;1366 × 768&quot;],&quot;default&quot;:&quot;1920 × 1080&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;None&quot;,&quot;Unsupported file&quot;,&quot;No face found&quot;,&quot;Multiple faces&quot;,&quot;Low resolution&quot;,&quot;Doesn't fit on paper&quot;,&quot;Download failed&quot;,&quot;Checksum mismatch&quot;,&quot;Export failure&quot;],&quot;default&quot;:&quot;None&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;States&quot;}}">
+const PAPERS = { '4R': { label: '4R', w: 101.6, h: 152.4, dim: '4 × 6 in' }, A4: { label: 'A4', w: 210, h: 297, dim: '210 × 297 mm' }, short: { label: 'Short bond', w: 215.9, h: 279.4, dim: '8.5 × 11 in' }, long: { label: 'Long bond', w: 215.9, h: 330.2, dim: '8.5 × 13 in' } };
+const PORDER = ['4R', 'A4', 'short', 'long'];
+const SIZES = { '1x1': { label: '1x1', w: 25.4, h: 25.4, crown: .10, cmin: .70, cmax: .80 }, '2x2': { label: '2x2', w: 50.8, h: 50.8, crown: .12, cmin: .64, cmax: .74 }, passport: { label: 'Passport', w: 35, h: 45, crown: .08, cmin: .78, cmax: .87 } };
+const BGS = [{ k: 'white', label: 'White', hex: '#FFFFFF' }, { k: 'blue', label: 'Blue', hex: '#1E5BC6' }, { k: 'lblue', label: 'Light blue', hex: '#8EC5FF' }, { k: 'red', label: 'Red', hex: '#C62828' }, { k: 'gray', label: 'Light gray', hex: '#E9E9E9' }];
+const STEPS = ['Import', 'Adjust', 'Background', 'Print sheet', 'Export'];
+const NEXT = ['Next: Adjust', 'Next: Background', 'Next: Print sheet', 'Next: Export', 'New photo'];
+const SAVED = [{ label: '4R Combo: 2 pcs 2x2 + 4 pcs 1x1', paper: '4R', rows: [['2x2', 2], ['1x1', 4]] }, { label: 'Student set: 2 pcs 2x2 + 6 pcs 1x1', paper: '4R', rows: [['2x2', 2], ['1x1', 6]] }, { label: 'Passport pack: 6 pcs Passport', paper: '4R', rows: [['passport', 6]] }];
+const HIST = ['preset', 'zoom', 'rot', 'bg', 'customHex', 'bright', 'contrast', 'warmth', 'edge', 'hair', 'customW', 'customH'];
+const trim = (v, d) => String(+v.toFixed(d));
+
+class Component extends DCLogic {
+  state = { step: 0, maxStep: 0, phase: 'empty', prog: 0, preset: '2x2', customW: 40, customH: 50, unit: 'mm', zoom: 100, rot: 0, levelEyes: true, facePicked: false, bg: 'white', customHex: '#D9E4DD', edge: 0, hair: 60, bright: 0, contrast: 0, warmth: 0, adjOpen: false, tagOpen: false, tagOn: false, tagText: 'Juan Dela Cruz', split: 50, viewZoom: 1, compareHeld: false, paper: '4R', mode: 'fill', qty: 4, rows: [['2x2', 2], ['1x1', 4]], cutMarks: true, orient: 'auto', savedVal: '', toast: null, printing: false, settingsOpen: false, tab: 'defaults', hd: 'none', hdProg: 0, quality: 'standard', past: [], future: [], vw: 1600, vh: 900 };
+  cropRef = React.createRef(); cmpRef = React.createRef();
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ vw: window.innerWidth, vh: window.innerHeight });
+    this.onResize(); window.addEventListener('resize', this.onResize);
+    this.onMove = (e) => this.handleDrag(e); this.onUp = () => { this.drag = null; };
+    window.addEventListener('mousemove', this.onMove); window.addEventListener('mouseup', this.onUp);
+    this.onKey = (e) => this.handleKey(e, true); this.onKeyUp = (e) => this.handleKey(e, false);
+    window.addEventListener('keydown', this.onKey); window.addEventListener('keyup', this.onKeyUp);
+    this.timer = setInterval(() => this.tick(), 60);
+    this.applyScenario();
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.onResize); window.removeEventListener('mousemove', this.onMove); window.removeEventListener('mouseup', this.onUp);
+    window.removeEventListener('keydown', this.onKey); window.removeEventListener('keyup', this.onKeyUp); clearInterval(this.timer);
+  }
+  componentDidUpdate(prev) { if (prev.scenario !== this.props.scenario) this.applyScenario(); }
+
+  applyScenario() {
+    const sc = this.props.scenario || 'None';
+    if (sc === 'Unsupported file') this.setState({ step: 0, maxStep: 0, phase: 'unsupported', settingsOpen: false });
+    else if (['No face found', 'Multiple faces', 'Low resolution'].includes(sc)) this.setState(s => ({ step: 1, maxStep: Math.max(1, s.maxStep), phase: 'done', facePicked: false, settingsOpen: false }));
+    else if (sc === 'Download failed') this.setState({ settingsOpen: true, tab: 'models', hd: 'failed', hdProg: 0.42 });
+    else if (sc === 'Checksum mismatch') this.setState({ settingsOpen: true, tab: 'models', hd: 'mismatch', hdProg: 1 });
+    else if (sc === "Doesn't fit on paper") this.setState({ step: 3, maxStep: 4, phase: 'done', mode: 'package', paper: '4R', rows: [['2x2', 4], ['1x1', 6]], settingsOpen: false });
+    else if (sc === 'Export failure') this.setState({ step: 4, maxStep: 4, phase: 'done', settingsOpen: false });
+  }
+
+  tick() {
+    const s = this.state;
+    if (s.phase === 'processing') {
+      const p = s.prog + 0.016;
+      if (p >= 1) this.setState(st => ({ phase: 'done', prog: 1, step: 1, maxStep: Math.max(1, st.maxStep), viewZoom: 1 }));
+      else this.setState({ prog: p });
+    }
+    if (s.hd === 'downloading') {
+      const p = s.hdProg + 0.006;
+      this.setState(p >= 1 ? { hd: 'installed', hdProg: 1 } : { hdProg: p });
+    }
+  }
+
+  handleKey(e, down) {
+    const t = e.target, typing = t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
+    if (e.key === '\\' && !typing) { if (this.state.compareHeld !== down) this.setState({ compareHeld: down }); return; }
+    if (!down) return;
+    const c = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+    if (e.key === 'Escape' && this.state.settingsOpen) return this.setState({ settingsOpen: false });
+    if (c && k === 'z') { e.preventDefault(); return this.undo(); }
+    if (c && k === 'y') { e.preventDefault(); return this.redo(); }
+    if (c && k === 'n') { e.preventDefault(); return this.newPhoto(); }
+    if (c && (k === 'o' || k === 'v') && this.state.step === 0) { e.preventDefault(); return this.startImport(); }
+    if (c && k === 'p' && this.state.step === 4) { e.preventDefault(); return this.doPrint(); }
+    if (c && e.key === 'ArrowLeft') { e.preventDefault(); return this.back(); }
+    if ((c && e.key === 'ArrowRight') || (e.key === 'Enter' && !typing && t.tagName !== 'BUTTON')) { e.preventDefault(); return this.next(); }
+  }
+
+  handleDrag(e) {
+    if (!this.drag) return;
+    if (this.drag === 'split') {
+      const el = this.cmpRef.current; if (!el) return; const r = el.getBoundingClientRect();
+      return this.setState({ split: Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100)) });
+    }
+    const el = this.cropRef.current; if (!el) return; const r = el.getBoundingClientRect();
+    const y = (e.clientY - r.top) / r.height, g = this.geom();
+    const z = this.drag === 'chin' ? (y - g.eye) / (g.cmid - g.eye) : (g.eye - y) / (g.eye - g.crown);
+    this.set({ zoom: Math.round(Math.max(60, Math.min(150, z * 100))) }, 'drag');
+  }
+
+  set(patch, key) {
+    const now = Date.now();
+    this.setState(s => {
+      const coalesce = key && key === this.lastKey && now - this.lastT < 900;
+      const snap = {}; HIST.forEach(k => { snap[k] = s[k]; });
+      return { ...patch, past: coalesce ? s.past : [...s.past.slice(-49), snap], future: [] };
+    });
+    this.lastKey = key; this.lastT = now;
+  }
+  undo() { this.setState(s => { if (!s.past.length) return null; const snap = {}; HIST.forEach(k => { snap[k] = s[k]; }); return { ...s.past[s.past.length - 1], past: s.past.slice(0, -1), future: [...s.future, snap] }; }); this.lastKey = null; }
+  redo() { this.setState(s => { if (!s.future.length) return null; const snap = {}; HIST.forEach(k => { snap[k] = s[k]; }); return { ...s.future[s.future.length - 1], future: s.future.slice(0, -1), past: [...s.past, snap] }; }); this.lastKey = null; }
+
+  geom(key) {
+    const k = key || this.state.preset;
+    const b = k === 'custom' ? { ...SIZES['2x2'], label: 'Custom', w: this.state.customW, h: this.state.customH } : SIZES[k];
+    const cmid = (b.cmin + b.cmax) / 2;
+    return { ...b, cmid, eye: b.crown + 0.47 * (cmid - b.crown), aspect: b.w / b.h };
+  }
+  headAt(g, z) { return { crown: g.eye - (g.eye - g.crown) * z, chin: g.eye + (g.cmid - g.eye) * z }; }
+
+  startImport() { this.setState({ phase: 'processing', prog: 0, step: 0 }); }
+  go(i) { this.setState({ step: i, viewZoom: 1, toast: null }); }
+  next() { const s = this.state; if (s.step === 0) { if (s.phase === 'done') this.go(1); return; } if (s.step === 4) return this.newPhoto(); this.setState(st => ({ step: st.step + 1, maxStep: Math.max(st.maxStep, st.step + 1), viewZoom: 1, toast: null })); }
+  back() { if (this.state.step > 0) this.go(this.state.step - 1); }
+  newPhoto() { this.setState({ step: 0, maxStep: 0, phase: 'empty', prog: 0, zoom: 100, rot: 0, facePicked: false, toast: null, viewZoom: 1, split: 50, past: [], future: [], tagOn: false }); }
+  doPrint() {
+    if (this.state.printing) return;
+    this.setState({ printing: true, toast: null });
+    setTimeout(() => {
+      const fail = this.props.scenario === 'Export failure';
+      this.setState({ printing: false, toast: fail ? { kind: 'err', title: 'Couldn’t save the sheet', body: 'The folder D:\\Exports isn’t writable. Choose another export folder, then try again.' } : { kind: 'ok', title: 'Sheet opened in PDF viewer', body: 'Saved to Documents\\ID Photos\\2026-09-24_' + this.geom().label.toLowerCase() + '_001.pdf' } });
+    }, 900);
+  }
+
+  items() {
+    const s = this.state; const mk = (k) => { const g = this.geom(k); return { k, w: g.w, h: g.h }; };
+    if (s.mode === 'fill') return { list: Array.from({ length: 400 }, () => mk(s.preset)), stop: true };
+    if (s.mode === 'exact') return { list: Array.from({ length: s.qty }, () => mk(s.preset)), stop: false };
+    const list = []; s.rows.forEach(([k, q]) => { for (let i = 0; i < q; i++) list.push(mk(k)); });
+    list.sort((a, b) => b.h - a.h); return { list, stop: false };
+  }
+  pack(items, pw, ph, stop) {
+    const m = 5, gp = 2, e = 1e-6; let x = m, y = m, rh = 0, miss = 0; const out = [];
+    for (const it of items) {
+      if (x > m && x + it.w > pw - m + e) { x = m; y += rh + gp; rh = 0; }
+      if (x + it.w > pw - m + e || y + it.h > ph - m + e) { miss++; if (stop) break; continue; }
+      out.push({ ...it, x, y }); x += it.w + gp; rh = Math.max(rh, it.h);
+    }
+    if (out.length) { const maxX = Math.max(...out.map(o => o.x + o.w)); const dx = (pw - m - maxX) / 2; out.forEach(o => { o.x += dx; }); }
+    return { out, miss, pw, ph };
+  }
+  layout(paperKey) {
+    const s = this.state, p = PAPERS[paperKey], { list, stop } = this.items();
+    const a = { ...this.pack(list, p.w, p.h, stop), land: false }, b = { ...this.pack(list, p.h, p.w, stop), land: true };
+    if (s.orient === 'portrait') return a; if (s.orient === 'landscape') return b;
+    if (s.mode === 'fill') return b.out.length > a.out.length ? b : a;
+    return b.miss < a.miss ? b : a;
+  }
+
+  renderVals() {
+    const P = this.props, S = this.state;
+    const [W, H] = String(P.frame || '').includes('1366') ? [1366, 768] : [1920, 1080];
+    const sc = P.scenario || 'None';
+    const step = S.step, hasPanel = step > 0;
+    const cW = W - (hasPanel ? 360 : 0), cH = H - 64 - 76;
+    const g = this.geom(), z = S.zoom / 100, hd = this.headAt(g, z);
+    const noFace = sc === 'No face found' && step === 1, multi = sc === 'Multiple faces', lowRes = sc === 'Low resolution' && step === 1;
+    const bgObj = BGS.find(b => b.k === S.bg), bgHex = bgObj ? bgObj.hex : S.customHex;
+    const bgLabel = bgObj ? bgObj.label : 'Custom ' + S.customHex.toUpperCase();
+    const status = noFace ? 'manual' : hd.chin < g.cmin ? 'small' : (hd.chin > g.cmax || hd.crown < 0.02) ? 'large' : 'ok';
+    const gc = status === 'ok' ? 'var(--ok-line)' : status === 'manual' ? 'var(--color-accent)' : 'var(--warn-line)';
+    const sizeText = `${trim(g.w, 1)} × ${trim(g.h, 1)} mm · ${trim(g.w / 25.4, 2)} × ${trim(g.h / 25.4, 2)} in`;
+    const isPassport = S.preset === 'passport';
+    const tagShown = S.tagOn && !isPassport ? S.tagText.toUpperCase() : '';
+    const wm = S.warmth;
+    const photoFilter = `brightness(${1 + S.bright / 100}) contrast(${1 + S.contrast / 100})${wm > 0 ? ` sepia(${wm / 180})` : wm < 0 ? ` hue-rotate(${wm * 0.4}deg) saturate(${1 + wm / 200})` : ''}`;
+    const scale = Math.min(S.vw / W, S.vh / H);
+
+    // Adjust geometry
+    const cropH = Math.round(cH * 0.66), cropW = Math.round(cropH * g.aspect);
+    const cropL = (cW - cropW) / 2, cropT = (cH - cropH) / 2 + 12;
+    const pw = cropH * 1.25 * z, ph = cropH * 1.5 * z;
+    const eyeX = cropL + cropW / 2, eyeY = cropT + g.eye * cropH;
+    const pL = eyeX - pw / 2, pT = eyeY - 0.36 * ph;
+    const pcrown = 0.36 * ph - (g.eye - g.crown) * cropH * z, pchin = 0.36 * ph + (g.cmid - g.eye) * cropH * z;
+    const line = (y, dashed) => ({ position: 'absolute', left: 0, right: 0, top: y * cropH, height: 0, borderTop: `${dashed ? 1 : 2}px ${dashed ? 'dashed' : 'solid'} ${gc}` });
+    const lbl = (y) => ({ position: 'absolute', left: cropW + 14, top: y * cropH - 11, height: 22, display: 'flex', alignItems: 'center', padding: '0 8px', background: 'var(--color-bg)', color: 'var(--color-text)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap', borderLeft: `3px solid ${gc}` });
+    const handle = (y) => ({ position: 'absolute', left: cropW - 9, top: y * cropH - 9, width: 18, height: 18, background: '#fff', border: `3px solid ${gc}`, cursor: 'ns-resize', boxShadow: 'var(--shadow-sm)' });
+    const hh = pchin - pcrown;
+    const faceBox = (cx, cr, Hh, i) => ({ label: `Face ${i}`, style: { position: 'absolute', left: pL + cx - Hh * 0.5, top: pT + cr - Hh * 0.05, width: Hh, height: Hh * 1.2, border: '2px solid var(--color-accent)', background: 'transparent', cursor: 'pointer', padding: 0 } });
+    const adj = {
+      pw, ph, pcrown, pchin,
+      photoBox: { position: 'absolute', left: pL, top: pT, width: pw, height: ph, boxShadow: 'var(--shadow-lg)' },
+      crop: { position: 'absolute', left: cropL, top: cropT, width: cropW, height: cropH, boxShadow: '0 0 0 4000px var(--dim)', outline: '2px solid #fff' },
+      center: { position: 'absolute', top: 0, bottom: 0, left: cropW / 2, width: 0, borderLeft: `1px dashed ${gc}` },
+      crownLine: line(g.crown, true), eyeLine: line(g.eye, true),
+      chinBand: { position: 'absolute', left: 0, right: 0, top: g.cmin * cropH, height: (g.cmax - g.cmin) * cropH, background: `color-mix(in srgb, ${gc} 16%, transparent)`, borderTop: `2px solid ${gc}`, borderBottom: `2px solid ${gc}` },
+      crownHandle: handle(hd.crown), chinHandle: handle(hd.chin),
+      crownLabel: lbl(g.crown), eyeLabel: lbl(g.eye), chinLabel: lbl((g.cmin + g.cmax) / 2),
+      faces: [faceBox(pw * 0.13, pcrown + hh * 0.16, hh * 0.8, 1), faceBox(pw / 2, pcrown, hh, 2), faceBox(pw * 0.87, pcrown + hh * 0.1, hh * 0.84, 3)],
+    };
+    const origin = step === 2 ? `50% ${((cH - Math.round(cH * 0.78)) / 2 + hd.crown * Math.round(cH * 0.78)) / cH * 100}%` : '50% 45%';
+    const viewWrap = { position: 'absolute', inset: 0, transform: `scale(${S.viewZoom})`, transformOrigin: origin, transition: 'transform .18s ease-out' };
+
+    // Background compare
+    const bh = Math.round(cH * 0.78), bw = Math.round(bh * g.aspect), split = S.compareHeld ? 100 : S.split;
+    const cmp = {
+      w: bw, h: bh, crown: hd.crown * bh, chin: hd.chin * bh,
+      box: { position: 'absolute', left: (cW - bw) / 2, top: (cH - bh) / 2, width: bw, height: bh, cursor: 'ew-resize', boxShadow: 'var(--shadow-lg)', userSelect: 'none', overflow: 'hidden' },
+      beforeClip: { position: 'absolute', inset: 0, clipPath: `inset(0 ${100 - split}% 0 0)` },
+      handle: { position: 'absolute', top: 0, bottom: 0, left: `${split}%`, width: 2, marginLeft: -1, background: '#fff', boxShadow: '0 0 0 1px rgba(0,0,0,.15)' },
+    };
+
+    // Sheet
+    const lay = this.layout(S.paper);
+    const s2 = Math.min((cW - 160) / lay.pw, (cH - 120) / lay.ph);
+    const paperW = lay.pw * s2, paperH = lay.ph * s2, paperL = (cW - paperW) / 2, paperT = (cH - paperH) / 2 - 14;
+    const tiles = lay.out.map(o => { const tg = this.geom(o.k); const th = this.headAt(tg, z); const tw = o.w * s2, tH = o.h * s2; return { style: { position: 'absolute', left: o.x * s2, top: o.y * s2, width: tw, height: tH, overflow: 'hidden' }, w: tw, h: tH, crown: th.crown * tH, chin: th.chin * tH, tag: o.k === 'passport' ? '' : tagShown }; });
+    const ticks = [];
+    if (S.cutMarks) {
+      const mk = 5 * s2 * 0.7; const xs = new Set(), ys = new Set();
+      lay.out.forEach(o => { xs.add(+(o.x).toFixed(2)); xs.add(+(o.x + o.w).toFixed(2)); ys.add(+(o.y).toFixed(2)); ys.add(+(o.y + o.h).toFixed(2)); });
+      const c = '#201e1d';
+      xs.forEach(x => { ticks.push({ s: { position: 'absolute', left: x * s2, top: 0, width: 1, height: mk, background: c } }); ticks.push({ s: { position: 'absolute', left: x * s2, top: paperH - mk, width: 1, height: mk, background: c } }); });
+      ys.forEach(y => { ticks.push({ s: { position: 'absolute', top: y * s2, left: 0, height: 1, width: mk, background: c } }); ticks.push({ s: { position: 'absolute', top: y * s2, left: paperW - mk, height: 1, width: mk, background: c } }); });
+    }
+    const count = lay.out.length;
+    const sh = {
+      paper: { position: 'absolute', left: paperL, top: paperT, width: paperW, height: paperH, background: '#ffffff', boxShadow: 'var(--shadow-lg)' },
+      margin: { position: 'absolute', inset: 5 * s2, border: '1px dashed #bab6b6', pointerEvents: 'none' },
+      tiles, ticks,
+      captionPos: { position: 'absolute', left: paperL, top: paperT + paperH + 14, display: 'flex', gap: 8, fontSize: 14, color: 'var(--color-text)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' },
+      orientText: lay.land ? 'Landscape' : 'Portrait', countText: `${count} photo${count === 1 ? '' : 's'}`,
+    };
+    let fit = { ok: false, bad: false, hasFix: false };
+    if (S.mode !== 'fill') {
+      if (lay.miss === 0) fit = { ok: true, bad: false, count };
+      else {
+        const alt = PORDER.find(k => k !== S.paper && this.layout(k).miss === 0);
+        fit = { ok: false, bad: true, text: alt ? `Doesn’t fit on ${PAPERS[S.paper].label}, try ${PAPERS[alt].label}` : `${lay.miss} photos don’t fit on any paper`, hasFix: !!alt, fixLabel: alt ? `Switch to ${PAPERS[alt].label}` : '', fix: () => this.setState({ paper: alt }) };
+      }
+    }
+    const callout = S.mode === 'fill' && S.paper === '4R' && S.preset === '2x2';
+
+    const slider = (label, key, min, max, stepv, def, fmt) => ({ label, min, max, step: stepv, value: S[key], text: fmt(S[key]), onChange: (e) => this.set({ [key]: +e.target.value }, key), reset: () => this.set({ [key]: def }, key + 'r') });
+    const signed = (v) => (v > 0 ? '+' : '') + v;
+    const opts = (list, cur, pick) => list.map(([v, label]) => ({ label, on: cur === v, off: cur !== v, pick: () => pick(v) }));
+
+    const thumbW = 96, thumbH = Math.round(96 / g.aspect);
+    const th = this.headAt(g, z);
+    const canNextBase = step === 0 ? S.phase === 'done' : true;
+
+    return {
+      theme: P.theme === 'Dark' ? 'dark' : 'light',
+      frameStyle: { position: 'absolute', left: '50%', top: '50%', width: W, height: H, transform: `translate(-50%,-50%) scale(${scale})`, display: 'flex', flexDirection: 'column', background: 'var(--color-bg)', boxShadow: 'var(--shadow-lg)', overflow: 'hidden' },
+      steps: STEPS.map((label, i) => ({ label, n: i + 1, notFirst: i > 0, current: i === step, done: i !== step && i <= S.maxStep, todo: i !== step && i > S.maxStep, go: () => this.go(i) })),
+      undo: () => this.undo(), redo: () => this.redo(), noUndo: !S.past.length, noRedo: !S.future.length,
+      openSettings: () => this.setState({ settingsOpen: true, toast: null }), closeSettings: () => this.setState({ settingsOpen: false }),
+      // import
+      isImportIdle: step === 0 && (S.phase === 'empty' || S.phase === 'unsupported' || S.phase === 'done'),
+      unsupported: step === 0 && S.phase === 'unsupported',
+      dismissUnsupported: () => this.setState({ phase: 'empty' }),
+      startImport: () => this.startImport(), cancelImport: () => this.setState({ phase: 'empty', prog: 0 }),
+      recent: [['2x2 · Blue', '10:42 AM', '#1E5BC6', .12, .69], ['1x1 · White', '10:31 AM', '#FFFFFF', .10, .75], ['Passport · White', '10:05 AM', '#FFFFFF', .08, .82], ['2x2 · Red', '9:48 AM', '#C62828', .12, .69]].map(([size, time, bg, cr, ch]) => ({ size, time, bg, crown: cr * 48, chin: ch * 48 })),
+      isProcessing: step === 0 && S.phase === 'processing',
+      shimmer: React.createElement('div', { key: 'shim', style: { position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' } },
+        React.createElement('div', { style: { position: 'absolute', left: 0, right: 0, top: 0, height: '100%', background: 'linear-gradient(to bottom, transparent 0%, rgba(236,48,19,0) 60%, rgba(236,48,19,.28) 97%, #ec3013 100%)', animation: 'scan 1.8s cubic-bezier(.4,0,.2,1) infinite' } })),
+      procSteps: [{ label: 'Removing background…', doneLabel: 'Background removed', t: 0.55 }, { label: 'Finding face…', doneLabel: 'Face found', t: 1 }].map((p, i, a) => { const start = i ? a[i - 1].t : 0; return { ...p, done: S.prog >= p.t, active: S.prog >= start && S.prog < p.t, waiting: S.prog < start }; }),
+      procBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.round(S.prog * 100)}%`, background: 'var(--color-accent)' },
+      procPct: `${Math.round(S.prog * 100)}%`,
+      // adjust
+      isAdjust: step === 1, adj, cropRef: this.cropRef, bgHex, rot: S.rot, multi, compareHeld: S.compareHeld, photoFilter,
+      dragCrown: (e) => { e.preventDefault(); this.drag = 'crown'; }, dragChin: (e) => { e.preventDefault(); this.drag = 'chin'; },
+      showPicker: multi && !S.facePicked && step === 1, pickFace: () => this.setState({ facePicked: true }),
+      st: { ok: status === 'ok', warn: status === 'small' || status === 'large', text: status === 'small' ? 'Head too small, zoom in' : 'Head too large, zoom out' },
+      noFace, lowRes,
+      autoAlign: () => this.set({ zoom: 100, rot: 0 }, 'align'), resetTransform: () => this.set({ zoom: 100, rot: 0 }, 'reset'),
+      levelEyes: S.levelEyes, levelOff: !S.levelEyes, toggleLevel: () => this.setState({ levelEyes: !S.levelEyes }),
+      adjSliders: [slider('Zoom', 'zoom', 60, 150, 1, 100, v => v + '%'), slider('Rotate', 'rot', -15, 15, 0.5, 0, v => signed(v.toFixed(1)) + '°')],
+      viewWrap,
+      // preset
+      showPreset: step >= 1 && step <= 3,
+      presetOpts: opts([['1x1', '1x1'], ['2x2', '2x2'], ['passport', 'Passport'], ['custom', 'Custom']], S.preset, v => this.set({ preset: v }, 'preset' + v)),
+      isCustom: S.preset === 'custom',
+      unitOpts: opts([['mm', 'mm'], ['in', 'in']], S.unit, v => this.setState({ unit: v })),
+      customWVal: S.unit === 'mm' ? trim(S.customW, 1) : trim(S.customW / 25.4, 2), customHVal: S.unit === 'mm' ? trim(S.customH, 1) : trim(S.customH / 25.4, 2),
+      setCustomW: (e) => { const v = parseFloat(e.target.value); if (v > 0) this.set({ customW: S.unit === 'mm' ? v : v * 25.4 }, 'cw'); },
+      setCustomH: (e) => { const v = parseFloat(e.target.value); if (v > 0) this.set({ customH: S.unit === 'mm' ? v : v * 25.4 }, 'ch'); },
+      sizeText, presetLabel: g.label, isPassport,
+      // background
+      isBg: step === 2, cmp, cmpRef: this.cmpRef, tagShown,
+      startSplit: (e) => { this.drag = 'split'; this.handleDrag(e); },
+      inspecting: step === 2 && S.viewZoom > 2,
+      swatches: [...BGS, { k: 'custom', label: 'Custom', hex: S.customHex }].map(b => ({ label: b.label, on: S.bg === b.k, off: S.bg !== b.k, pick: () => this.set({ bg: b.k }, 'bg' + b.k), chip: { display: 'block', height: 40, background: b.k === 'custom' && S.bg !== 'custom' ? 'conic-gradient(from 90deg, #C62828, #E9C46A, #1f9d5c, #1E5BC6, #8e44ad, #C62828)' : b.hex, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.14)' } })),
+      bgCustom: S.bg === 'custom', customHex: S.customHex, setCustomHex: (e) => { const v = e.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(v)) this.set({ customHex: v }, 'hex'); },
+      passportNotWhite: isPassport && S.bg !== 'white', pickWhite: (e) => { e.preventDefault(); this.set({ bg: 'white' }, 'bgw'); },
+      edgeSliders: [slider('Edge softness', 'edge', -2, 2, 1, 0, signed), slider('Hair detail', 'hair', 0, 100, 1, 60, v => v)],
+      adjOpen: S.adjOpen, toggleAdjOpen: () => this.setState({ adjOpen: !S.adjOpen }), adjChevron: { transform: S.adjOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' },
+      photoSliders: [slider('Brightness', 'bright', -50, 50, 1, 0, signed), slider('Contrast', 'contrast', -50, 50, 1, 0, signed), slider('Warmth', 'warmth', -50, 50, 1, 0, signed)],
+      tagOpen: S.tagOpen, toggleTagOpen: () => this.setState({ tagOpen: !S.tagOpen }), tagChevron: { transform: S.tagOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' },
+      tagAllowed: !isPassport, tagOn: S.tagOn && !isPassport, tagOff: !S.tagOn, toggleTag: () => this.setState({ tagOn: !S.tagOn }),
+      tagText: S.tagText, setTagText: (e) => this.setState({ tagText: e.target.value }),
+      tagPrev: { crown: th.crown * 96, chin: th.chin * 96 },
+      // sheet
+      isSheet: step === 3, isSheetView: step === 3 || step === 4, sh,
+      paperLabel: PAPERS[S.paper].label, paperDim: PAPERS[S.paper].dim,
+      paperOpts: PORDER.map(k => ({ label: PAPERS[k].label, dim: PAPERS[k].dim, on: S.paper === k, off: S.paper !== k, pick: () => this.setState({ paper: k }) })),
+      modeOpts: [['fill', 'Fill sheet', S.mode === 'fill' ? `${count} photos` : ''], ['exact', 'Exact quantity', ''], ['package', 'Package', 'mixed sizes']].map(([v, label, note]) => ({ label, note, on: S.mode === v, off: S.mode !== v, pick: () => this.setState({ mode: v }) })),
+      isExact: S.mode === 'exact', isPackage: S.mode === 'package', qty: S.qty,
+      qtyDec: () => this.setState({ qty: Math.max(1, S.qty - 1) }), qtyInc: () => this.setState({ qty: S.qty + 1 }),
+      savedOpts: SAVED.map((p, i) => ({ value: String(i), label: p.label })), savedVal: S.savedVal,
+      pickSaved: (e) => { const i = e.target.value; if (i === '') return this.setState({ savedVal: '' }); const p = SAVED[+i]; this.setState({ savedVal: i, rows: p.rows.map(r => [...r]), paper: p.paper }); },
+      pkgRows: S.rows.map(([k, q], i) => ({
+        qty: q,
+        sizes: opts([['1x1', '1x1'], ['2x2', '2x2'], ['passport', 'Passport']], k, v => this.setState(st => ({ rows: st.rows.map((r, j) => j === i ? [v, r[1]] : r), savedVal: '' }))),
+        dec: () => this.setState(st => ({ rows: st.rows.map((r, j) => j === i ? [r[0], Math.max(1, r[1] - 1)] : r), savedVal: '' })),
+        inc: () => this.setState(st => ({ rows: st.rows.map((r, j) => j === i ? [r[0], r[1] + 1] : r), savedVal: '' })),
+        remove: () => this.setState(st => ({ rows: st.rows.filter((_, j) => j !== i), savedVal: '' })),
+      })),
+      addRow: () => this.setState(st => ({ rows: [...st.rows, ['1x1', 2]], savedVal: '' })),
+      fit, callout,
+      useCombo: () => this.setState({ mode: 'package', rows: SAVED[0].rows.map(r => [...r]), savedVal: '0' }), toA4: () => this.setState({ paper: 'A4' }),
+      cutMarks: S.cutMarks, cutOff: !S.cutMarks, toggleCut: () => this.setState({ cutMarks: !S.cutMarks }),
+      orientOpts: opts([['auto', 'Auto'], ['portrait', 'Portrait'], ['landscape', 'Landscape']], S.orient, v => this.setState({ orient: v })),
+      // export
+      isExport: step === 4,
+      thumb: { w: thumbW, h: thumbH, crown: th.crown * thumbH, chin: th.chin * thumbH },
+      thumbBox: { width: thumbW, height: thumbH, flex: 'none', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' },
+      summary: [
+        { k: 'Background', v: bgLabel, hasSw: true, sw: { width: 16, height: 16, background: bgHex, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.2)' } },
+        { k: 'Paper', v: `${PAPERS[S.paper].label} · ${PAPERS[S.paper].dim}` },
+        { k: 'Photos on sheet', v: String(count) },
+        { k: 'Resolution', v: '300 DPI' },
+      ],
+      printLabel: S.printing ? 'Preparing PDF…' : 'Print',
+      doPrint: () => this.doPrint(),
+      saveOpts: [['Save sheet as PDF', 'Ctrl+S'], ['Save sheet as JPG / PNG', ''], ['Save single photo', 'JPG / PNG']].map(([label, hint]) => ({ label, hint, go: () => this.doPrint() })),
+      // footer
+      showViewTools: step >= 1, showCompare: step === 1 || step === 2,
+      viewZoomText: Math.round(S.viewZoom * 100) + '%',
+      zoomIn: () => this.setState({ viewZoom: Math.min(4, +(S.viewZoom * 1.25).toFixed(3)) }), zoomOut: () => this.setState({ viewZoom: Math.max(0.5, +(S.viewZoom / 1.25).toFixed(3)) }),
+      fitView: () => this.setState({ viewZoom: 1 }), inspect100: () => this.setState({ viewZoom: 2.6 }),
+      holdOn: () => this.setState({ compareHeld: true }), holdOff: () => { if (this.state.compareHeld) this.setState({ compareHeld: false }); },
+      hasPanel, canBack: step > 0, back: () => this.back(),
+      canNext: canNextBase, nextDisabled: !canNextBase, next: () => this.next(), nextLabel: NEXT[step],
+      nextHint: step === 4 ? '' : step === 0 ? 'Ctrl+O to open' : 'Enter',
+      // toast
+      toast: !!S.toast, toastOk: S.toast && S.toast.kind === 'ok', toastErr: S.toast && S.toast.kind === 'err',
+      toastTitle: S.toast ? S.toast.title : '', toastBody: S.toast ? S.toast.body : '',
+      closeToast: () => this.setState({ toast: null }), newPhoto: () => this.newPhoto(),
+      // settings
+      settingsOpen: S.settingsOpen,
+      tabs: [['defaults', 'Defaults'], ['models', 'Models'], ['about', 'About']].map(([v, label]) => ({ label, on: S.tab === v, off: S.tab !== v, pick: () => this.setState({ tab: v }) })),
+      tabDefaults: S.tab === 'defaults', tabModels: S.tab === 'models', tabAbout: S.tab === 'about',
+      qualityOpts: [['standard', 'Standard'], ['hd', 'HD']].map(([v, label]) => { const dis = v === 'hd' && S.hd !== 'installed'; return { label, on: !dis && S.quality === v, off: !dis && S.quality !== v, disabled: dis, pick: () => this.setState({ quality: v }) }; }),
+      getHd: (e) => { e.preventDefault(); this.setState({ hd: 'downloading', hdProg: 0 }); },
+      hdInstalled: S.hd === 'installed', hdNotInstalled: S.hd !== 'installed', hdIdle: S.hd === 'none',
+      hdBusy: S.hd === 'downloading' || S.hd === 'paused', hdDownloading: S.hd === 'downloading', hdPaused: S.hd === 'paused',
+      hdBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: `${S.hdProg * 100}%`, background: 'var(--color-accent)' },
+      hdText: `${S.hd === 'paused' ? 'Paused · ' : ''}${Math.round(S.hdProg * 973)} of 973 MB · ${Math.round(S.hdProg * 100)}%`,
+      hdDownload: () => this.setState({ hd: 'downloading', hdProg: 0 }), hdPause: () => this.setState({ hd: 'paused' }), hdResume: () => this.setState({ hd: 'downloading' }),
+      hdRemove: () => this.setState({ hd: 'none', hdProg: 0, quality: 'standard' }),
+      hdError: S.hd === 'failed' || S.hd === 'mismatch',
+      hdErrTitle: S.hd === 'mismatch' ? 'Checksum mismatch' : 'Download failed',
+      hdErrBody: S.hd === 'mismatch' ? 'The downloaded file doesn’t match the expected checksum and may be damaged. It was not installed.' : 'The connection dropped at 412 of 973 MB. Your progress is kept — retry to resume.',
+    };
+  }
+}
+</script>
+
+
+</body></html>

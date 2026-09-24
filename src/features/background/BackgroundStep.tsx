@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Banner, Panel, Slider, Swatch } from '../../app/components/ui'
+import { Notice, Section, Slider, Swatch } from '../../app/components/ui'
 import { drawBitmap } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
 import { BACKGROUND_SWATCHES, PHOTO_PRESETS } from '../../lib/presets'
@@ -58,7 +58,7 @@ export function BackgroundCanvas() {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6">
       <div
-        className={`relative overflow-auto rounded-md shadow-lg ${
+        className={`relative overflow-auto shadow-lg ${
           zoomed ? 'max-h-full max-w-full' : ''
         }`}
       >
@@ -68,26 +68,26 @@ export function BackgroundCanvas() {
           style={zoomed ? { imageRendering: 'pixelated' } : undefined}
         />
         {comparing && (
-          <span className="absolute left-2 top-2 rounded-sm bg-black/70 px-2 py-0.5 text-xs text-white">
+          <span className="absolute left-2 top-2 px-2 py-1 text-xs font-bold" style={{ background: "var(--color-accent)", color: "var(--on-accent)" }}>
             Original
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-white/80">
+      <div className="flex items-center gap-3 text-xs" style={{ color: "#fff" }}>
         <button
           type="button"
           onMouseDown={() => setComparing(true)}
           onMouseUp={() => setComparing(false)}
           onMouseLeave={() => setComparing(false)}
-          className="rounded-sm bg-white/10 px-2.5 py-1 hover:bg-white/20"
+          className="bg-[var(--hover)] px-2.5 py-1 hover:bg-[var(--hover)]"
         >
           Hold to compare (\)
         </button>
         <button
           type="button"
           onClick={() => setZoomed((z) => !z)}
-          className="rounded-sm bg-white/10 px-2.5 py-1 hover:bg-white/20"
+          className="bg-[var(--hover)] px-2.5 py-1 hover:bg-[var(--hover)]"
         >
           {zoomed ? 'Fit' : 'Zoom to 100%'}
         </button>
@@ -119,7 +119,7 @@ export function BackgroundPanel() {
 
   return (
     <>
-      <Panel title="Background">
+      <Section title="Background">
         <div className="grid grid-cols-5 gap-2">
           {BACKGROUND_SWATCHES.map((swatch) => (
             <Swatch
@@ -134,13 +134,13 @@ export function BackgroundPanel() {
         </div>
 
         <label className="mt-3 flex items-center gap-2 text-sm">
-          <span className="text-text-muted">Custom</span>
+          <span className="text-muted">Custom</span>
           <input
             type="color"
             value={background}
             disabled={locked}
             onChange={(e) => onCustom(e.target.value)}
-            className="h-8 w-10 cursor-pointer rounded-sm border border-border-strong bg-surface disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-8 w-10 cursor-pointer border border-divider bg-surface disabled:cursor-not-allowed disabled:opacity-40"
           />
           <input
             type="text"
@@ -150,23 +150,23 @@ export function BackgroundPanel() {
               const v = e.target.value
               if (/^#[0-9a-f]{6}$/i.test(v)) onCustom(v)
             }}
-            className="tabular w-24 rounded-sm border border-border bg-surface px-2 py-1 text-sm disabled:opacity-40"
+            className="tabular w-24 border border-divider bg-surface px-2 py-1 text-sm disabled:opacity-40"
           />
         </label>
 
         {locked && (
-          <p className="mt-2 text-xs text-text-subtle">
+          <p className="mt-2 text-xs text-muted">
             Passport photos are locked to white. {preset.note}
           </p>
         )}
         {!locked && presetId === 'passport' && notWhite && (
           <div className="mt-2">
-            <Banner tone="warning">Passports usually require a white background.</Banner>
+            <Notice tone="warn">Passports usually require a white background.</Notice>
           </div>
         )}
-      </Panel>
+      </Section>
 
-      <Panel title="Edges">
+      <Section title="Edges">
         <div className="space-y-3">
           <Slider
             label="Edge softness"
@@ -189,10 +189,10 @@ export function BackgroundPanel() {
             onChange={setHairDetail}
           />
         </div>
-        <p className="mt-2 text-xs text-text-subtle">
+        <p className="mt-2 text-xs text-muted">
           Raise hair detail to keep flyaway strands; lower it if the edge looks noisy.
         </p>
-      </Panel>
+      </Section>
     </>
   )
 }

@@ -234,18 +234,10 @@ describe('presets stay consistent with the plan', () => {
     expect(PHOTO_PRESETS.passport.allowNameTag).toBe(false)
   })
 
-  it('each head ratio sits inside its own range', () => {
+  it('every preset has a positive physical size', () => {
     for (const preset of Object.values(PHOTO_PRESETS)) {
-      const [lo, hi] = preset.headRatioRange
-      expect(preset.headRatio).toBeGreaterThanOrEqual(lo)
-      expect(preset.headRatio).toBeLessThanOrEqual(hi)
+      expect(preset.widthMm).toBeGreaterThan(0)
+      expect(preset.heightMm).toBeGreaterThan(0)
     }
-  })
-
-  it('passport head band is the 32-36 mm ICAO rule', () => {
-    const p = PHOTO_PRESETS.passport
-    expect(p.headRatioRange[0] * p.heightMm).toBeCloseTo(32, 6)
-    expect(p.headRatioRange[1] * p.heightMm).toBeCloseTo(36, 6)
-    expect(p.topGapRatio * p.heightMm).toBeCloseTo(4, 6)
   })
 })

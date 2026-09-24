@@ -63,7 +63,7 @@ export function usePhotoPipeline() {
         store.getState().setFaces(faces)
         store.getState().setPreview(preview, previewMask)
         store.getState().setProgress(null)
-        store.getState().setStep('background')
+        store.getState().setStep('adjust')
       } catch (error) {
         store.getState().setError(error)
       }

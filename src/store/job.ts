@@ -22,8 +22,9 @@ import {
 
 export type Step = 'import' | 'adjust' | 'background' | 'sheet' | 'export'
 
-/** Steps reachable in M1. Adjust and Sheet arrive with M2 and M3. */
-export const M1_STEPS: Step[] = ['import', 'background', 'export']
+/** Steps wired so far. Print sheet arrives with M3. */
+export const ACTIVE_STEPS: Step[] = ['import', 'adjust', 'background', 'export']
+export const ALL_STEPS: Step[] = ['import', 'adjust', 'background', 'sheet', 'export']
 
 export const STEP_LABELS: Record<Step, string> = {
   import: 'Import',
@@ -48,6 +49,17 @@ export interface JobState {
   faces: Face[]
 
   presetId: PhotoPresetId
+
+  // Adjust (crop and align)
+  zoom: number
+  rotation: number
+  offsetX: number
+  offsetY: number
+  levelEyes: boolean
+  /** Set once the operator drags a handle; overrides the zoom-derived head. */
+  crownOverride: number | null
+  chinOverride: number | null
+
   background: string
   edgeSoftness: number
   hairDetail: number
@@ -61,6 +73,13 @@ export interface JobState {
   setPreview: (preview: Bitmap, mask: Bitmap) => void
   setFaces: (faces: Face[]) => void
   setPreset: (presetId: PhotoPresetId) => void
+  setZoom: (zoom: number) => void
+  setRotation: (rotation: number) => void
+  setPan: (x: number, y: number) => void
+  setLevelEyes: (on: boolean) => void
+  setCrownChin: (which: 'crown' | 'chin', value: number) => void
+  resetAdjust: () => void
+  runAutoAlign: () => void
   setBackground: (hex: string) => void
   setEdgeSoftness: (value: number) => void
   setHairDetail: (value: number) => void
@@ -84,6 +103,13 @@ export const useJob = create<JobState>((set) => ({
   ...PHOTO_FIELDS,
 
   presetId: '2x2',
+  zoom: 100,
+  rotation: 0,
+  offsetX: 0,
+  offsetY: 0,
+  levelEyes: true,
+  crownOverride: null,
+  chinOverride: null,
   background: PHOTO_PRESETS['2x2'].defaultBackground,
   edgeSoftness: 0,
   hairDetail: 0,
@@ -91,7 +117,8 @@ export const useJob = create<JobState>((set) => ({
 
   setStep: (step) => set({ step }),
   setStatus: (status) => set({ status }),
-  setError: (error) => set({ error: asAppError(error), status: 'error' }),
+  setError: (error) =>
+    set(error === null ? { error: null } : { error: asAppError(error), status: 'error' }),
   setProgress: (progress) => set({ progress }),
   setLoaded: (info) => set({ info, status: 'segmenting', error: null }),
   setPreview: (preview, previewMask) => set({ preview, previewMask, status: 'ready' }),
@@ -107,12 +134,55 @@ export const useJob = create<JobState>((set) => ({
         : { presetId, background: state.background }
     }),
 
+  setZoom: (zoom) => set({ zoom }),
+  setRotation: (rotation) => set({ rotation }),
+  setPan: (offsetX, offsetY) => set({ offsetX, offsetY }),
+  setLevelEyes: (levelEyes) => set({ levelEyes }),
+
+  setCrownChin: (which, value) =>
+    set(which === 'crown' ? { crownOverride: value } : { chinOverride: value }),
+
+  /** Back to the preset's own alignment, discarding any hand adjustment. */
+  resetAdjust: () =>
+    set({
+      zoom: 100,
+      rotation: 0,
+      offsetX: 0,
+      offsetY: 0,
+      crownOverride: null,
+      chinOverride: null,
+    }),
+
+  /**
+   * Re-run automatic alignment. Dropping the manual overrides is the point:
+   * the operator presses this precisely when their own adjustment went wrong.
+   */
+  runAutoAlign: () =>
+    set((state) => ({
+      zoom: 100,
+      offsetX: 0,
+      offsetY: 0,
+      crownOverride: null,
+      chinOverride: null,
+      rotation: state.levelEyes ? state.rotation : 0,
+    })),
+
   setBackground: (background) => set({ background }),
   setEdgeSoftness: (edgeSoftness) => set({ edgeSoftness }),
   setHairDetail: (hairDetail) => set({ hairDetail }),
   setQuality: (quality) => set({ quality }),
 
-  reset: () => set({ step: 'import', ...PHOTO_FIELDS }),
+  reset: () =>
+    set({
+      step: 'import',
+      ...PHOTO_FIELDS,
+      zoom: 100,
+      rotation: 0,
+      offsetX: 0,
+      offsetY: 0,
+      crownOverride: null,
+      chinOverride: null,
+    }),
 }))
 
 /** Is this step reachable given what has been loaded? */

@@ -5,6 +5,12 @@
 @tailwind utilities;
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   html,
   body,
   #root {
@@ -13,34 +19,91 @@
 
   body {
     margin: 0;
+    overflow: hidden;
     background: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-sans);
-    font-size: var(--text-base);
-    line-height: 1.5;
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
-    /* A desktop tool, not a web page: text selection and the rubber-band
-       overscroll both read as bugs here. */
+    /* A desktop tool: text selection and rubber-band scroll read as bugs. */
     user-select: none;
     overscroll-behavior: none;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    margin: 0;
+  }
+  h1 { font-size: 42px; }
+  h2 { font-size: 32px; }
+  h3 { font-size: 25px; }
+  h4 { font-size: 20px; }
+  h5 { font-size: 16px; }
+  h6 {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    color: inherit;
+  }
+
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
+  input[type='range'] {
+    accent-color: var(--color-accent);
   }
 
   /* Sizes, counts and timings line up in columns. */
   .tabular {
     font-variant-numeric: tabular-nums;
   }
-
-  :focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
 }
 
 @layer utilities {
-  /* Processing sweep: a slow pass over the photo, not a spinner, so the wait
-     reads as the app working on this photo (DESIGN_BRIEF §3.1). */
-  @keyframes shimmer {
-    0% { transform: translateY(-100%); }
-    100% { transform: translateY(100%); }
+  /* Processing sweep: a slow pass over the photo rather than a spinner, so the
+     wait reads as this photo being worked on (DESIGN_BRIEF §3.1). */
+  @keyframes scan {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes toastIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 }

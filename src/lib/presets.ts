@@ -21,12 +21,21 @@ export interface PhotoPreset {
   sublabel: string
   widthMm: number
   heightMm: number
-  /** Crown-to-chin height as a fraction of the photo height. */
-  headRatio: number
-  /** Acceptable head-height band; the guides turn amber outside it. */
-  headRatioRange: [number, number]
-  /** Gap above the crown, as a fraction of the photo height. */
-  topGapRatio: number
+  /**
+   * Crown line: top of the photo to the top of the head, as a fraction of
+   * photo height.
+   */
+  crownRatio: number
+  /**
+   * Chin band: where the chin may sit, as a fraction of photo height. The
+   * guides read green inside this band and amber outside it.
+   *
+   * Stored as an absolute band rather than a head height because that is what
+   * the overlay draws and what the operator drags a handle against; head
+   * height is the derived quantity (see `headRatioRange`).
+   */
+  chinMin: number
+  chinMax: number
   defaultBackground: string
   /** Passport rules are set by the agency, not by us. */
   lockBackgroundToWhite?: boolean
@@ -49,9 +58,9 @@ export const PHOTO_PRESETS: Record<Exclude<PhotoPresetId, 'custom'>, PhotoPreset
     sublabel: '25.4 x 25.4 mm - 1 x 1 in',
     widthMm: 25.4,
     heightMm: 25.4,
-    headRatio: 0.62,
-    headRatioRange: [0.55, 0.69],
-    topGapRatio: 0.1,
+    crownRatio: 0.1,
+    chinMin: 0.7,
+    chinMax: 0.8,
     defaultBackground: '#FFFFFF',
     allowNameTag: true,
   },
@@ -61,9 +70,9 @@ export const PHOTO_PRESETS: Record<Exclude<PhotoPresetId, 'custom'>, PhotoPreset
     sublabel: '50.8 x 50.8 mm - 2 x 2 in',
     widthMm: 50.8,
     heightMm: 50.8,
-    headRatio: 0.6,
-    headRatioRange: [0.5, 0.69],
-    topGapRatio: 0.1,
+    crownRatio: 0.12,
+    chinMin: 0.64,
+    chinMax: 0.74,
     defaultBackground: '#FFFFFF',
     allowNameTag: true,
   },
@@ -73,9 +82,9 @@ export const PHOTO_PRESETS: Record<Exclude<PhotoPresetId, 'custom'>, PhotoPreset
     sublabel: '35 x 45 mm - ICAO / PH DFA',
     widthMm: 35,
     heightMm: 45,
-    headRatio: 34 / 45,
-    headRatioRange: [32 / 45, 36 / 45],
-    topGapRatio: 4 / 45,
+    crownRatio: 4 / 45,
+    chinMin: (4 + 32) / 45,
+    chinMax: (4 + 36) / 45,
     defaultBackground: '#FFFFFF',
     lockBackgroundToWhite: true,
     allowNameTag: false,
@@ -87,9 +96,9 @@ export const PHOTO_PRESETS: Record<Exclude<PhotoPresetId, 'custom'>, PhotoPreset
     sublabel: 'Your own size',
     widthMm: 35,
     heightMm: 45,
-    headRatio: 0.62,
-    headRatioRange: [0.55, 0.69],
-    topGapRatio: 0.1,
+    crownRatio: 0.1,
+    chinMin: 0.7,
+    chinMax: 0.8,
     defaultBackground: '#FFFFFF',
     allowNameTag: true,
   },

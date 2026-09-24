@@ -4,36 +4,40 @@ export default {
   darkMode: ['class', '[data-theme="dark"]'],
   theme: {
     extend: {
-      // Every value maps to a token in src/styles/tokens.css so the design
-      // system stays in one place and can be replaced wholesale.
+      // Every value maps to a token in src/styles/tokens.css, which is taken
+      // from the design system in design/. Nothing here invents a colour.
       colors: {
         bg: 'var(--color-bg)',
         surface: 'var(--color-surface)',
-        'surface-raised': 'var(--color-surface-raised)',
-        canvas: 'var(--color-canvas)',
-        border: 'var(--color-border)',
-        'border-strong': 'var(--color-border-strong)',
+        panel: 'var(--panel)',
+        canvas: 'var(--canvas)',
+        divider: 'var(--color-divider)',
         text: 'var(--color-text)',
-        'text-muted': 'var(--color-text-muted)',
-        'text-subtle': 'var(--color-text-subtle)',
+        muted: 'var(--muted)',
         accent: 'var(--color-accent)',
-        'accent-hover': 'var(--color-accent-hover)',
-        'accent-soft': 'var(--color-accent-soft)',
-        'on-accent': 'var(--color-on-accent)',
-        success: 'var(--color-success)',
-        'success-soft': 'var(--color-success-soft)',
-        warning: 'var(--color-warning)',
-        'warning-soft': 'var(--color-warning-soft)',
-        danger: 'var(--color-danger)',
-        'danger-soft': 'var(--color-danger-soft)',
-        guide: 'var(--color-guide)',
+        'accent-2': 'var(--color-accent-2)',
+        'accent-100': 'var(--color-accent-100)',
+        'accent-600': 'var(--color-accent-600)',
+        'accent-700': 'var(--color-accent-700)',
+        'on-accent': 'var(--on-accent)',
+        ok: 'var(--ok)',
+        'ok-bg': 'var(--ok-bg)',
+        'ok-line': 'var(--ok-line)',
+        warn: 'var(--warn)',
+        'warn-bg': 'var(--warn-bg)',
+        'warn-line': 'var(--warn-line)',
+        danger: 'var(--danger)',
+        'danger-bg': 'var(--danger-bg)',
+        'neutral-300': 'var(--color-neutral-300)',
       },
+      // The system is square. Radius tokens exist only so a future retune has
+      // one place to change.
       borderRadius: {
+        none: '0px',
         sm: 'var(--radius-sm)',
         DEFAULT: 'var(--radius-md)',
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
-        xl: 'var(--radius-xl)',
       },
       boxShadow: {
         sm: 'var(--shadow-sm)',
@@ -42,8 +46,16 @@ export default {
         lg: 'var(--shadow-lg)',
       },
       fontFamily: {
-        sans: 'var(--font-sans)',
-        mono: 'var(--font-mono)',
+        sans: 'var(--font-body)',
+        heading: 'var(--font-heading)',
+      },
+      spacing: {
+        1: 'var(--space-1)',
+        2: 'var(--space-2)',
+        3: 'var(--space-3)',
+        4: 'var(--space-4)',
+        6: 'var(--space-6)',
+        8: 'var(--space-8)',
       },
     },
   },
