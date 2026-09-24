@@ -35,3 +35,12 @@
     outline-offset: 2px;
   }
 }
+
+@layer utilities {
+  /* Processing sweep: a slow pass over the photo, not a spinner, so the wait
+     reads as the app working on this photo (DESIGN_BRIEF §3.1). */
+  @keyframes shimmer {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+}
