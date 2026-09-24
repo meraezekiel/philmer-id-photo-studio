@@ -13,12 +13,13 @@
     "windows": [
       {
         "title": "Philmer ID Photo Studio",
-        "width": 1440,
-        "height": 900,
-        "minWidth": 1366,
-        "minHeight": 720,
+        "width": 1280,
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 620,
         "resizable": true,
         "center": true,
+        "maximized": true,
         "dragDropEnabled": true
       }
     ],

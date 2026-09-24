@@ -120,10 +120,20 @@
   --danger-bg: #fff2ef;
   --dim: rgba(24, 22, 21, 0.58);
 
-  /* Frame metrics the design lays out against. */
-  --topbar-height: 64px;
-  --actionbar-height: 76px;
-  --panel-width: 360px;
+  /*
+   * Frame metrics. The design was drawn at 1600x900. The target laptop is
+   * 1920x1080 at 150% Windows scaling, which gives the webview a 1280x658 CSS
+   * viewport — so height is the binding constraint, not width. These scale
+   * with the viewport rather than being fixed; each upper bound is the
+   * design's own value, so nothing changes on a roomier screen.
+   */
+  --topbar-height: clamp(52px, 7vh, 64px);
+  --actionbar-height: clamp(60px, 8.5vh, 76px);
+  --panel-width: clamp(280px, 24vw, 360px);
+  /* Display heading on the import screen. */
+  --display-size: clamp(24px, 2.2vw, 40px);
+  --section-pad-x: clamp(16px, 1.6vw, 24px);
+  --section-pad-y: clamp(14px, 1.6vh, 20px);
 
   --duration-fast: 120ms;
   --duration-step: 180ms;

@@ -97,7 +97,8 @@ export function Section({
 }) {
   return (
     <section
-      className={`flex flex-col gap-3 px-6 py-5 ${last ? '' : 'border-b-2 border-divider'}`}
+      className={`flex flex-col gap-3 ${last ? '' : 'border-b-2 border-divider'}`}
+      style={{ padding: 'var(--section-pad-y) var(--section-pad-x)' }}
     >
       {title && (
         <header className="flex items-center justify-between gap-2">

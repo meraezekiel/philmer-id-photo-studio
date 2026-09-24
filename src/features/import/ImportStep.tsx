@@ -82,7 +82,7 @@ export function ImportStep() {
 
   return (
     <div
-      className="absolute inset-0 flex flex-col items-center justify-center gap-8 p-10"
+      className="absolute inset-0 flex flex-col items-center justify-center gap-4 overflow-auto p-6"
       style={{ background: 'var(--color-bg)' }}
     >
       <div className="flex w-full max-w-[1040px] flex-col gap-4">
@@ -114,19 +114,24 @@ export function ImportStep() {
           }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className="flex h-[460px] w-full cursor-pointer flex-col items-start justify-end gap-4 border-2 border-dashed p-12 text-left transition-colors duration-[var(--duration-fast)]"
+          className="flex w-full cursor-pointer flex-col items-start justify-end gap-3 border-2 border-dashed text-left transition-colors duration-[var(--duration-fast)]"
           style={{
+            height: 'clamp(240px, 52vh, 460px)',
+            padding: 'clamp(20px, 3vw, 48px)',
             borderColor: dragging ? 'var(--color-accent)' : 'var(--color-divider)',
             background: dragging
               ? 'color-mix(in srgb, var(--color-accent) 5%, var(--color-surface))'
               : 'var(--color-surface)',
           }}
         >
-          <Icon path={ICONS.upload} size={56} strokeWidth={1.6} />
-          <span className="font-heading text-[40px] font-extrabold leading-[1.1] tracking-[-0.015em]">
+          <Icon path={ICONS.upload} size={40} strokeWidth={1.6} />
+          <span
+            className="font-heading font-extrabold leading-[1.1] tracking-[-0.015em]"
+            style={{ fontSize: 'var(--display-size)' }}
+          >
             Drop a photo here, or click to browse
           </span>
-          <span className="text-[17px] text-muted">You can also paste an image with Ctrl+V</span>
+          <span className="text-muted" style={{ fontSize: 'clamp(13px, 1.2vw, 17px)' }}>You can also paste an image with Ctrl+V</span>
           <span className="mt-2 flex gap-2">
             {FORMAT_TAGS.map((tag) => (
               <span key={tag} className="border border-divider px-2.5 py-1 text-[13px] font-semibold">

@@ -124,37 +124,37 @@ function Header({ runtime }: { runtime: RuntimeInfo | null }) {
 
   return (
     <header
-      className="flex h-[var(--topbar-height)] flex-none items-center gap-5 border-b-2 border-divider pl-5 pr-4"
+      className="flex h-[var(--topbar-height)] flex-none items-center gap-3 border-b-2 border-divider pl-4 pr-3 2xl:gap-5 2xl:pl-5 2xl:pr-4"
       style={{ background: 'var(--color-bg)' }}
     >
-      <div className="flex flex-none items-center gap-3">
-        <AppMark />
+      <div className="flex min-w-0 flex-none items-center gap-2.5">
+        <AppMark size={28} />
         <div className="flex flex-col leading-[1.1]">
-          <span className="font-heading text-base font-extrabold">{APP_NAME}</span>
+          <span className="truncate font-heading text-[15px] font-extrabold">{APP_NAME}</span>
           <span className="text-xs text-muted">{VENDOR}</span>
         </div>
       </div>
 
       <div className="h-8 w-0.5 flex-none bg-divider" />
 
-      <nav className="flex min-w-0 items-center gap-3" aria-label="Steps">
+      <nav className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto 2xl:gap-3" aria-label="Steps">
         {ALL_STEPS.map((candidate, i) => {
           const isCurrent = candidate === step
           const isDone = i < currentIndex && status === 'ready'
           const reachable = ACTIVE_STEPS.includes(candidate) && status === 'ready'
 
           return (
-            <div key={candidate} className="flex items-center gap-3">
-              {i > 0 && <div className="h-0.5 w-7 flex-none bg-divider" />}
+            <div key={candidate} className="flex flex-none items-center gap-1.5 2xl:gap-3">
+              {i > 0 && <div className="h-0.5 w-3 flex-none bg-divider 2xl:w-7" />}
               {isCurrent ? (
-                <div className="flex h-10 flex-none items-center gap-2.5">
+                <div className="flex h-9 flex-none items-center gap-2 2xl:h-10 2xl:gap-2.5">
                   <span
-                    className="tabular grid h-7 w-7 place-items-center text-sm font-extrabold"
+                    className="tabular grid h-6 w-6 place-items-center 2xl:h-7 2xl:w-7 text-sm font-extrabold"
                     style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
                   >
                     {i + 1}
                   </span>
-                  <span className="whitespace-nowrap text-[15px] font-extrabold">
+                  <span className="whitespace-nowrap text-[13px] 2xl:text-[15px] font-extrabold">
                     {STEP_LABELS[candidate]}
                   </span>
                 </div>
@@ -163,24 +163,24 @@ function Header({ runtime }: { runtime: RuntimeInfo | null }) {
                   type="button"
                   onClick={() => setStep(candidate)}
                   title="Go back to this step"
-                  className="flex h-10 flex-none items-center gap-2.5 pr-2 hover:text-accent-700"
+                  className="flex h-9 flex-none items-center gap-2 2xl:h-10 2xl:gap-2.5 pr-2 hover:text-accent-700"
                 >
-                  <span className="grid h-7 w-7 place-items-center border-2 border-current">
+                  <span className="grid h-6 w-6 place-items-center 2xl:h-7 2xl:w-7 border-2 border-current">
                     <Icon path={ICONS.check} size={14} strokeWidth={3} />
                   </span>
-                  <span className="whitespace-nowrap text-[15px] font-semibold">
+                  <span className="whitespace-nowrap text-[13px] 2xl:text-[15px] font-semibold">
                     {STEP_LABELS[candidate]}
                   </span>
                 </button>
               ) : (
                 <div
-                  className="flex h-10 flex-none items-center gap-2.5 text-muted"
+                  className="flex h-9 flex-none items-center gap-2 2xl:h-10 2xl:gap-2.5 text-muted"
                   title={reachable ? undefined : 'Not available yet'}
                 >
-                  <span className="tabular grid h-7 w-7 place-items-center border border-divider text-sm">
+                  <span className="tabular grid h-6 w-6 place-items-center 2xl:h-7 2xl:w-7 border border-divider text-sm">
                     {i + 1}
                   </span>
-                  <span className="whitespace-nowrap text-[15px]">{STEP_LABELS[candidate]}</span>
+                  <span className="whitespace-nowrap text-[13px] 2xl:text-[15px]">{STEP_LABELS[candidate]}</span>
                 </div>
               )}
             </div>
@@ -189,13 +189,13 @@ function Header({ runtime }: { runtime: RuntimeInfo | null }) {
       </nav>
 
       <div className="ml-auto flex flex-none items-center gap-3">
-        <span className="flex items-center gap-2 text-[13px] text-muted">
+        <span className="flex flex-none items-center gap-2 text-[13px] text-muted">
           <span
             className="h-2 w-2"
             style={{ background: runtime?.ortLoaded ? 'var(--ok-line)' : 'var(--danger)' }}
             aria-hidden
           />
-          {runtime?.ortLoaded ? 'Offline & ready' : 'Runtime unavailable'}
+          <span className="hidden 2xl:inline">{runtime?.ortLoaded ? 'Offline & ready' : 'Runtime unavailable'}</span>
         </span>
         <IconButton title="Settings">
           <Icon path={ICONS.settings} size={18} />
