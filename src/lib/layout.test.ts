@@ -7,6 +7,9 @@ import {
   packPackage,
   packageItemsToRequests,
   photoSizeMm,
+  fillSheetAuto,
+  packPackageAuto,
+  requestedCount,
 } from './layout'
 import {
   DEFAULT_GAP_MM,
@@ -239,5 +242,65 @@ describe('presets stay consistent with the plan', () => {
       expect(preset.widthMm).toBeGreaterThan(0)
       expect(preset.heightMm).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('paper orientation', () => {
+  it('a uniform grid fits the same count either way round', () => {
+    // cols * rows is symmetric when the paper's sides swap.
+    for (const paper of Object.keys(EXPECTED) as PaperId[]) {
+      for (const size of SIZES) {
+        const portrait = fillSheet(paper, photoSizeMm(size), { paperLandscape: false })
+        const landscape = fillSheet(paper, photoSizeMm(size), { paperLandscape: true })
+        expect(landscape.capacity).toBe(portrait.capacity)
+      }
+    }
+  })
+
+  it('reports the paper size actually used', () => {
+    const landscape = fillSheet('4r', photoSizeMm('1x1'), { paperLandscape: true })
+    expect(landscape.paperWidthMm).toBeCloseTo(PAPERS['4r'].heightMm, 6)
+    expect(landscape.paperHeightMm).toBeCloseTo(PAPERS['4r'].widthMm, 6)
+    expect(landscape.paperLandscape).toBe(true)
+  })
+
+  it('still matches the §7 table through the auto chooser', () => {
+    for (const paper of Object.keys(EXPECTED) as PaperId[]) {
+      for (const size of SIZES) {
+        expect(fillSheetAuto(paper, photoSizeMm(size), 'auto').capacity).toBe(
+          EXPECTED[paper][size],
+        )
+      }
+    }
+  })
+
+  it('honours an explicit paper orientation', () => {
+    expect(fillSheetAuto('a4', photoSizeMm('1x1'), 'landscape').paperLandscape).toBe(true)
+    expect(fillSheetAuto('a4', photoSizeMm('1x1'), 'portrait').paperLandscape).toBe(false)
+  })
+
+  it('turns the paper sideways to rescue a package that would not fit', () => {
+    // Shelf packing is not symmetric, so orientation can decide the outcome.
+    const items = [
+      { presetId: 'passport' as const, qty: 3 },
+      { presetId: '2x2' as const, qty: 1 },
+    ]
+    const auto = packPackageAuto('4r', items, 'auto')
+    // Whatever it picks, auto must never do worse than a fixed orientation.
+    const portrait = packPackage('4r', items, { paperLandscape: false })
+    const landscape = packPackage('4r', items, { paperLandscape: true })
+    const best = Math.max(portrait.placements.length, landscape.placements.length)
+    expect(auto.placements.length).toBe(best)
+  })
+
+  it('prefers an orientation that fits over one that does not', () => {
+    const items = [{ presetId: '1x1' as const, qty: 4 }]
+    const auto = packPackageAuto('4r', items, 'auto')
+    expect(auto.fits).toBe(true)
+  })
+
+  it('counts what a package asked for', () => {
+    expect(requestedCount([{ presetId: '1x1', qty: 4 }, { presetId: '2x2', qty: 2 }])).toBe(6)
+    expect(requestedCount([])).toBe(0)
   })
 })

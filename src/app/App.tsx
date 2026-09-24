@@ -15,6 +15,7 @@ import { AdjustPanel } from '../features/adjust/AdjustStep'
 import { BackgroundCanvas, BackgroundPanel } from '../features/background/BackgroundStep'
 import { ExportCanvas, ExportPanel } from '../features/export/ExportStep'
 import { ImportStep } from '../features/import/ImportStep'
+import { SheetCanvas, SheetPanel } from '../features/sheet/SheetStep'
 import { useSegmentProgressListener } from '../features/import/usePhotoPipeline'
 import { APP_NAME, PHOTO_PRESETS, PHOTO_PRESET_ORDER, VENDOR } from '../lib/presets'
 import { runtimeInfo, type RuntimeInfo } from '../lib/tauri'
@@ -86,6 +87,7 @@ export function App() {
           {step === 'import' && <ImportStep />}
           {step === 'adjust' && <AdjustCanvas />}
           {step === 'background' && <BackgroundCanvas />}
+          {step === 'sheet' && <SheetCanvas />}
           {step === 'export' && <ExportCanvas />}
         </div>
 
@@ -94,9 +96,10 @@ export function App() {
             className="flex w-[var(--panel-width)] flex-none flex-col overflow-y-auto border-l-2 border-divider"
             style={{ background: 'var(--panel)' }}
           >
-            <SizeSection />
+            {step !== 'sheet' && <SizeSection />}
             {step === 'adjust' && <AdjustPanel />}
             {step === 'background' && <BackgroundPanel />}
+            {step === 'sheet' && <SheetPanel />}
             {step === 'export' && <ExportPanel />}
           </aside>
         )}

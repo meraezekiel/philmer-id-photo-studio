@@ -35,6 +35,20 @@ export interface LayoutOptions {
   orientation?: 'auto' | 'portrait' | 'landscape'
   /** Cap the count; `undefined` means "fill the sheet". */
   quantity?: number
+  /**
+   * Turn the *paper* sideways. For a uniform grid this cannot change the count
+   * (`cols * rows` is symmetric under swapping the paper's sides), but for a
+   * mixed-size package it very much can, because shelf packing is not.
+   */
+  paperLandscape?: boolean
+}
+
+/** Paper dimensions, honouring `paperLandscape`. */
+function paperSize(paperId: PaperId, landscape: boolean): { widthMm: number; heightMm: number } {
+  const paper = PAPERS[paperId]
+  return landscape
+    ? { widthMm: paper.heightMm, heightMm: paper.widthMm }
+    : { widthMm: paper.widthMm, heightMm: paper.heightMm }
 }
 
 export interface Placement {
@@ -57,7 +71,13 @@ export interface SheetLayout {
   capacity: number
   cols: number
   rows: number
+  /** True when the *photo* is turned sideways in its cell. */
   rotated: boolean
+  /** True when the *paper* is turned sideways. */
+  paperLandscape: boolean
+  /** The paper size actually used, after any orientation swap. */
+  paperWidthMm: number
+  paperHeightMm: number
 }
 
 function floorFit(available: number, step: number): number {
@@ -102,10 +122,11 @@ export function fillSheet(
   photo: SizeMm,
   options: LayoutOptions = {},
 ): SheetLayout {
-  const paper = PAPERS[paperId]
-  const marginMm = options.marginMm ?? paper.defaultMarginMm
+  const marginMm = options.marginMm ?? PAPERS[paperId].defaultMarginMm
   const gapMm = options.gapMm ?? DEFAULT_GAP_MM
   const orientation = options.orientation ?? 'auto'
+  const paperLandscape = options.paperLandscape ?? false
+  const paper = paperSize(paperId, paperLandscape)
 
   const printableW = paper.widthMm - marginMm * 2
   const printableH = paper.heightMm - marginMm * 2
@@ -155,6 +176,9 @@ export function fillSheet(
     cols: chosen.cols,
     rows: chosen.rows,
     rotated,
+    paperLandscape,
+    paperWidthMm: paper.widthMm,
+    paperHeightMm: paper.heightMm,
   }
 }
 
@@ -174,7 +198,8 @@ export interface PackageRequest {
   custom?: SizeMm
 }
 
-export interface PackageResult extends Omit<SheetLayout, 'capacity' | 'cols' | 'rows' | 'rotated'> {
+export interface PackageResult
+  extends Omit<SheetLayout, 'capacity' | 'cols' | 'rows' | 'rotated'> {
   fits: boolean
   /** Items that could not be placed, so the UI can say what is missing. */
   unplaced: { presetId: PhotoPresetId; qty: number }[]
@@ -195,9 +220,10 @@ export function packPackage(
   items: PackageRequest[],
   options: LayoutOptions = {},
 ): PackageResult {
-  const paper = PAPERS[paperId]
-  const marginMm = options.marginMm ?? paper.defaultMarginMm
+  const marginMm = options.marginMm ?? PAPERS[paperId].defaultMarginMm
   const gapMm = options.gapMm ?? DEFAULT_GAP_MM
+  const paperLandscape = options.paperLandscape ?? false
+  const paper = paperSize(paperId, paperLandscape)
 
   const printableW = paper.widthMm - marginMm * 2
   const printableH = paper.heightMm - marginMm * 2
@@ -268,6 +294,9 @@ export function packPackage(
     marginMm,
     gapMm,
     placements,
+    paperLandscape,
+    paperWidthMm: paper.widthMm,
+    paperHeightMm: paper.heightMm,
     fits: unplacedCounts.size === 0,
     unplaced: [...unplacedCounts].map(([presetId, qty]) => ({ presetId, qty })),
   }
@@ -317,4 +346,54 @@ export function cutMarks(layout: Pick<SheetLayout, 'placements' | 'gapMm'>): Cut
     }
   }
   return marks
+}
+
+export type PaperOrientation = 'auto' | 'portrait' | 'landscape'
+
+/**
+ * Pick the paper orientation, then lay out.
+ *
+ * `auto` prefers whichever way round fits more photos — for a package, whichever
+ * leaves fewest unplaced. The design does the same, and it matters: a uniform
+ * grid is symmetric under swapping the paper's sides, but shelf packing is not,
+ * so a package that overflows a portrait sheet can fit the same sheet sideways.
+ */
+export function fillSheetAuto(
+  paperId: PaperId,
+  photo: SizeMm,
+  orientation: PaperOrientation,
+  options: LayoutOptions = {},
+): SheetLayout {
+  if (orientation !== 'auto') {
+    return fillSheet(paperId, photo, { ...options, paperLandscape: orientation === 'landscape' })
+  }
+  const portrait = fillSheet(paperId, photo, { ...options, paperLandscape: false })
+  const landscape = fillSheet(paperId, photo, { ...options, paperLandscape: true })
+  return landscape.capacity > portrait.capacity ? landscape : portrait
+}
+
+export function packPackageAuto(
+  paperId: PaperId,
+  items: PackageRequest[],
+  orientation: PaperOrientation,
+  options: LayoutOptions = {},
+): PackageResult {
+  if (orientation !== 'auto') {
+    return packPackage(paperId, items, {
+      ...options,
+      paperLandscape: orientation === 'landscape',
+    })
+  }
+  const portrait = packPackage(paperId, items, { ...options, paperLandscape: false })
+  if (portrait.fits) return portrait
+  const landscape = packPackage(paperId, items, { ...options, paperLandscape: true })
+  if (landscape.fits) return landscape
+  // Neither fits: keep the one that placed more, so the warning names the
+  // smallest possible shortfall.
+  return landscape.placements.length > portrait.placements.length ? landscape : portrait
+}
+
+/** Total photos a package asks for, for the "3 of 8 don't fit" message. */
+export function requestedCount(items: PackageRequest[]): number {
+  return items.reduce((n, i) => n + Math.max(0, i.qty), 0)
 }

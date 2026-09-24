@@ -10,8 +10,9 @@
 import { create } from 'zustand'
 
 import type { CropRect } from '../lib/autoCrop'
+import type { PaperOrientation } from '../lib/layout'
 import type { Bitmap } from '../lib/composite'
-import { PHOTO_PRESETS, type PhotoPresetId } from '../lib/presets'
+import { PHOTO_PRESETS, type PaperId, type PhotoPresetId } from '../lib/presets'
 import {
   asAppError,
   releaseImage,
@@ -24,8 +25,8 @@ import {
 
 export type Step = 'import' | 'adjust' | 'background' | 'sheet' | 'export'
 
-/** Steps wired so far. Print sheet arrives with M3. */
-export const ACTIVE_STEPS: Step[] = ['import', 'adjust', 'background', 'export']
+/** Every step, all wired. */
+export const ACTIVE_STEPS: Step[] = ['import', 'adjust', 'background', 'sheet', 'export']
 export const ALL_STEPS: Step[] = ['import', 'adjust', 'background', 'sheet', 'export']
 
 export const STEP_LABELS: Record<Step, string> = {
@@ -34,6 +35,13 @@ export const STEP_LABELS: Record<Step, string> = {
   background: 'Background',
   sheet: 'Print sheet',
   export: 'Export',
+}
+
+export type SheetMode = 'fill' | 'exact' | 'package'
+
+export interface PackageRow {
+  presetId: Exclude<PhotoPresetId, 'custom'>
+  qty: number
 }
 
 export type JobStatus = 'empty' | 'loading' | 'segmenting' | 'ready' | 'error'
@@ -68,6 +76,14 @@ export interface JobState {
    */
   cropRect: CropRect | null
 
+  // Print sheet
+  paper: PaperId
+  sheetMode: SheetMode
+  quantity: number
+  packageRows: PackageRow[]
+  cutMarks: boolean
+  paperOrientation: PaperOrientation
+
   background: string
   edgeSoftness: number
   hairDetail: number
@@ -89,6 +105,12 @@ export interface JobState {
   setCropRect: (rect: CropRect | null) => void
   resetAdjust: () => void
   runAutoAlign: () => void
+  setPaper: (paper: PaperId) => void
+  setSheetMode: (mode: SheetMode) => void
+  setQuantity: (qty: number) => void
+  setPackageRows: (rows: PackageRow[]) => void
+  setCutMarks: (on: boolean) => void
+  setPaperOrientation: (o: PaperOrientation) => void
   setBackground: (hex: string) => void
   setEdgeSoftness: (value: number) => void
   setHairDetail: (value: number) => void
@@ -120,6 +142,15 @@ export const useJob = create<JobState>((set) => ({
   crownOverride: null,
   chinOverride: null,
   cropRect: null,
+  paper: '4r',
+  sheetMode: 'fill',
+  quantity: 4,
+  packageRows: [
+    { presetId: '2x2', qty: 2 },
+    { presetId: '1x1', qty: 4 },
+  ],
+  cutMarks: true,
+  paperOrientation: 'auto',
   background: PHOTO_PRESETS['2x2'].defaultBackground,
   edgeSoftness: 0,
   hairDetail: 0,
@@ -180,6 +211,12 @@ export const useJob = create<JobState>((set) => ({
       rotation: state.levelEyes ? state.rotation : 0,
     })),
 
+  setPaper: (paper) => set({ paper }),
+  setSheetMode: (sheetMode) => set({ sheetMode }),
+  setQuantity: (quantity) => set({ quantity: Math.max(1, Math.round(quantity)) }),
+  setPackageRows: (packageRows) => set({ packageRows }),
+  setCutMarks: (cutMarks) => set({ cutMarks }),
+  setPaperOrientation: (paperOrientation) => set({ paperOrientation }),
   setBackground: (background) => set({ background }),
   setEdgeSoftness: (edgeSoftness) => set({ edgeSoftness }),
   setHairDetail: (hairDetail) => set({ hairDetail }),
