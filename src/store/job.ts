@@ -9,6 +9,7 @@
 
 import { create } from 'zustand'
 
+import type { CropRect } from '../lib/autoCrop'
 import type { Bitmap } from '../lib/composite'
 import { PHOTO_PRESETS, type PhotoPresetId } from '../lib/presets'
 import {
@@ -60,6 +61,12 @@ export interface JobState {
   /** Set once the operator drags a handle; overrides the zoom-derived head. */
   crownOverride: number | null
   chinOverride: number | null
+  /**
+   * The region of the ORIGINAL photo the crop window is showing, in original
+   * pixels. Export composites from this, so what the operator framed is what
+   * gets printed.
+   */
+  cropRect: CropRect | null
 
   background: string
   edgeSoftness: number
@@ -79,6 +86,7 @@ export interface JobState {
   setPan: (x: number, y: number) => void
   setLevelEyes: (on: boolean) => void
   setCrownChin: (which: 'crown' | 'chin', value: number) => void
+  setCropRect: (rect: CropRect | null) => void
   resetAdjust: () => void
   runAutoAlign: () => void
   setBackground: (hex: string) => void
@@ -111,6 +119,7 @@ export const useJob = create<JobState>((set) => ({
   levelEyes: true,
   crownOverride: null,
   chinOverride: null,
+  cropRect: null,
   background: PHOTO_PRESETS['2x2'].defaultBackground,
   edgeSoftness: 0,
   hairDetail: 0,
@@ -143,6 +152,8 @@ export const useJob = create<JobState>((set) => ({
   setCrownChin: (which, value) =>
     set(which === 'crown' ? { crownOverride: value } : { chinOverride: value }),
 
+  setCropRect: (cropRect) => set({ cropRect }),
+
   /** Back to the preset's own alignment, discarding any hand adjustment. */
   resetAdjust: () =>
     set({
@@ -152,6 +163,7 @@ export const useJob = create<JobState>((set) => ({
       offsetY: 0,
       crownOverride: null,
       chinOverride: null,
+      cropRect: null,
     }),
 
   /**
@@ -188,6 +200,7 @@ export const useJob = create<JobState>((set) => ({
       offsetY: 0,
       crownOverride: null,
       chinOverride: null,
+      cropRect: null,
     })
   },
 }))

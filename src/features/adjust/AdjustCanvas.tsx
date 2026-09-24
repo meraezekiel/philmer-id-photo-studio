@@ -68,6 +68,7 @@ export function AdjustCanvas() {
   const crownOverride = useJob((s) => s.crownOverride)
   const chinOverride = useJob((s) => s.chinOverride)
   const setCrownChin = useJob((s) => s.setCrownChin)
+  const setCropRect = useJob((s) => s.setCropRect)
 
   const areaRef = useRef<HTMLDivElement>(null)
   const cropRef = useRef<HTMLDivElement>(null)
@@ -136,6 +137,29 @@ export function AdjustCanvas() {
   useEffect(() => {
     if (result && canvasRef.current) drawBitmap(canvasRef.current, result)
   }, [result, placement])
+
+  /**
+   * Publish the framed region in *original* photo pixels, so the export
+   * composites exactly what the operator sees here rather than the whole photo.
+   *
+   * The placement is expressed in preview pixels scaled by `placement.scale`;
+   * undoing both scales gets back to the original.
+   */
+  useEffect(() => {
+    if (!placement || !preview || !info || cropSize.height <= 0) {
+      setCropRect(null)
+      return
+    }
+    const previewScale = preview.width / info.width
+    const toOriginal = 1 / (placement.scale * previewScale)
+    setCropRect({
+      x: -placement.left * toOriginal,
+      y: -placement.top * toOriginal,
+      width: cropSize.width * toOriginal,
+      height: cropSize.height * toOriginal,
+      rotationDeg: placement.rotation,
+    })
+  }, [placement, preview, info, cropSize, setCropRect])
 
   const head = {
     crown: crownOverride ?? placement?.crown ?? g.crown,

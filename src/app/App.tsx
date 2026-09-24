@@ -141,8 +141,12 @@ function Header({ runtime }: { runtime: RuntimeInfo | null }) {
       <nav className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto 2xl:gap-3" aria-label="Steps">
         {ALL_STEPS.map((candidate, i) => {
           const isCurrent = candidate === step
-          const isDone = i < currentIndex && status === 'ready'
-          const reachable = ACTIVE_STEPS.includes(candidate) && status === 'ready'
+          const isActive = ACTIVE_STEPS.includes(candidate)
+          // Only a step that exists and was actually passed through counts as
+          // done. Print sheet is not built yet, so it must not claim a tick
+          // just because Export comes after it.
+          const isDone = isActive && i < currentIndex && status === 'ready'
+          const reachable = isActive && status === 'ready'
 
           return (
             <div key={candidate} className="flex flex-none items-center gap-1.5 2xl:gap-3">

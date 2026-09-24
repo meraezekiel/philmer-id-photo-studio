@@ -93,6 +93,44 @@ export async function resampleBitmap(
   return outCtx.getImageData(0, 0, width, height)
 }
 
+/**
+ * Cut `rect` out of `bmp`, rotating about the rectangle's centre.
+ *
+ * Rotation and cropping happen in one draw so the subject is never resampled
+ * twice. Anything outside the source is left transparent — the crop is allowed
+ * to run past the photo's edge (BUILD_PLAN §5), and for the image that gap is
+ * filled by the new background anyway, while for the mask transparent is
+ * exactly right: nothing there is foreground.
+ */
+export function cropRotate(
+  bmp: Bitmap,
+  rect: { x: number; y: number; width: number; height: number },
+  rotationDeg = 0,
+): ImageData {
+  const width = Math.max(1, Math.round(rect.width))
+  const height = Math.max(1, Math.round(rect.height))
+
+  const source = new OffscreenCanvas(bmp.width, bmp.height)
+  const sourceCtx = source.getContext('2d')
+  if (!sourceCtx) throw new Error('could not get a 2D context')
+  sourceCtx.putImageData(new ImageData(bmp.data, bmp.width, bmp.height), 0, 0)
+
+  const out = new OffscreenCanvas(width, height)
+  const ctx = out.getContext('2d', { willReadFrequently: true })
+  if (!ctx) throw new Error('could not get a 2D context')
+
+  ctx.save()
+  // Work from the centre of the crop so the rotation pivots where the operator
+  // sees it pivot, rather than around a corner.
+  ctx.translate(width / 2, height / 2)
+  ctx.rotate((rotationDeg * Math.PI) / 180)
+  ctx.translate(-(rect.x + rect.width / 2), -(rect.y + rect.height / 2))
+  ctx.drawImage(source, 0, 0)
+  ctx.restore()
+
+  return ctx.getImageData(0, 0, width, height)
+}
+
 /** Clipboard image, for the Ctrl+V import path (DESIGN_BRIEF §3.1). */
 export function imageFromClipboard(event: ClipboardEvent): File | null {
   const items = event.clipboardData?.items

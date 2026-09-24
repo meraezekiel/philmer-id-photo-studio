@@ -1,18 +1,19 @@
 /**
  * Step 5 — Export (DESIGN_BRIEF §3.5).
  *
- * M1 scope: a single photo, JPG or PNG, composited from the **full-resolution**
- * original and mask rather than from the canvas preview, with 300 DPI written
- * into the file. Sheet and print arrive with M3.
+ * A single photo, JPG or PNG, cut to the framed crop and resampled to the
+ * preset's exact pixel size, composited from the **full-resolution** original
+ * and mask rather than from the canvas preview, with 300 DPI written into the
+ * file. Sheet and print arrive with M3.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { save } from '@tauri-apps/plugin-dialog'
 
 import { Button, Field, FieldList, Notice, Section } from '../../app/components/ui'
-import { decodeToBitmap, drawBitmap, encodeBitmap } from '../../lib/bitmap'
+import { cropRotate, decodeToBitmap, drawBitmap, encodeBitmap, resampleBitmap } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
-import { defaultFileName, setJpegDpi, setPngDpi } from '../../lib/dpi'
+import { defaultFileName, outputSizePx, setJpegDpi, setPngDpi } from '../../lib/dpi'
 import { PHOTO_PRESETS, PRINT_DPI } from '../../lib/presets'
 import { getImageBytes, saveFile, segment } from '../../lib/tauri'
 import { useJob } from '../../store/job'
@@ -26,26 +27,59 @@ type ExportState =
 export function ExportCanvas() {
   const preview = useJob((s) => s.preview)
   const previewMask = useJob((s) => s.previewMask)
+  const info = useJob((s) => s.info)
+  const cropRect = useJob((s) => s.cropRect)
+  const presetId = useJob((s) => s.presetId)
   const background = useJob((s) => s.background)
   const edgeSoftness = useJob((s) => s.edgeSoftness)
   const hairDetail = useJob((s) => s.hairDetail)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  const preset = PHOTO_PRESETS[presetId]
+
+  /**
+   * Preview the *cropped* result, so this screen shows the photo that will
+   * actually be written rather than the whole frame.
+   */
   const result = useMemo(() => {
     if (!preview || !previewMask) return null
-    return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail })
-  }, [preview, previewMask, background, edgeSoftness, hairDetail])
+    if (!cropRect || !info) {
+      return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail })
+    }
+    // The crop is in original pixels; scale it into the preview's space.
+    const s = preview.width / info.width
+    const rect = {
+      x: cropRect.x * s,
+      y: cropRect.y * s,
+      width: cropRect.width * s,
+      height: cropRect.height * s,
+    }
+    return composite({
+      image: cropRotate(preview, rect, cropRect.rotationDeg),
+      mask: cropRotate(previewMask, rect, cropRect.rotationDeg),
+      background,
+      edgeSoftness,
+      hairDetail,
+    })
+  }, [preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail])
 
   useEffect(() => {
     if (result && canvasRef.current) drawBitmap(canvasRef.current, result)
   }, [result])
 
   return (
-    <div className="flex h-full items-center justify-center p-6">
+    <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
       <canvas
         ref={canvasRef}
-        className="max-h-[70vh] w-auto rounded-md object-contain shadow-lg"
+        className="w-auto object-contain shadow-lg"
+        style={{ maxHeight: '70%', aspectRatio: `${preset.widthMm / preset.heightMm}` }}
       />
+      <div
+        className="tabular flex h-9 items-center px-3 text-sm shadow-sm"
+        style={{ background: 'var(--color-bg)' }}
+      >
+        {preset.sublabel}
+      </div>
     </div>
   )
 }
@@ -57,10 +91,12 @@ export function ExportPanel() {
   const edgeSoftness = useJob((s) => s.edgeSoftness)
   const hairDetail = useJob((s) => s.hairDetail)
   const quality = useJob((s) => s.quality)
+  const cropRect = useJob((s) => s.cropRect)
   const reset = useJob((s) => s.reset)
 
   const [state, setState] = useState<ExportState>({ phase: 'idle' })
   const preset = PHOTO_PRESETS[presetId]
+  const outputPx = outputSizePx(preset.widthMm, preset.heightMm)
 
   const exportSingle = useCallback(
     async (format: 'jpeg' | 'png') => {
@@ -83,9 +119,27 @@ export function ExportPanel() {
         ])
 
         setState({ phase: 'working', message: 'Decoding…' })
-        const [image, mask] = await Promise.all([
+        const [fullImage, fullMask] = await Promise.all([
           decodeToBitmap(imageBytes, 'image/png'),
           decodeToBitmap(maskBytes, 'image/png'),
+        ])
+
+        // Cut out exactly what the Adjust step framed. Without a crop (no face
+        // found and nothing adjusted) fall back to the whole photo.
+        setState({ phase: 'working', message: 'Cropping…' })
+        const croppedImage = cropRect
+          ? cropRotate(fullImage, cropRect, cropRect.rotationDeg)
+          : fullImage
+        const croppedMask = cropRect
+          ? cropRotate(fullMask, cropRect, cropRect.rotationDeg)
+          : fullMask
+
+        // Resample to the preset's exact pixel size *before* compositing, so
+        // decontamination runs at output scale and the two planes stay aligned.
+        setState({ phase: 'working', message: 'Resampling to 300 DPI…' })
+        const [image, mask] = await Promise.all([
+          resampleBitmap(croppedImage, outputPx.width, outputPx.height),
+          resampleBitmap(croppedMask, outputPx.width, outputPx.height),
         ])
 
         setState({ phase: 'working', message: 'Replacing the background…' })
@@ -112,7 +166,7 @@ export function ExportPanel() {
         })
       }
     },
-    [info, preset.label, background, edgeSoftness, hairDetail, quality],
+    [info, preset.label, outputPx.width, outputPx.height, cropRect, background, edgeSoftness, hairDetail, quality],
   )
 
   const busy = state.phase === 'working'
@@ -121,15 +175,18 @@ export function ExportPanel() {
     <>
       <Section title="This photo">
         <FieldList>
-          <Field label="Size">
+          <Field label="Output">
             <span className="tabular">
-              {info ? `${info.width} x ${info.height}` : '—'}
+              {outputPx.width} x {outputPx.height} px
             </span>
+          </Field>
+          <Field label="Print size">
+            <span className="tabular">{preset.sublabel}</span>
           </Field>
           <Field label="Background">
             <span className="inline-flex items-center gap-1.5">
               <span
-                className="inline-block h-3 w-3 rounded-sm border border-border-strong"
+                className="inline-block h-3 w-3 border border-divider"
                 style={{ backgroundColor: background }}
               />
               <span className="tabular">{background.toUpperCase()}</span>
@@ -139,9 +196,10 @@ export function ExportPanel() {
             <span className="tabular">{PRINT_DPI} DPI</span>
           </Field>
         </FieldList>
-        <p className="mt-2 text-xs text-text-subtle">
-          Exported at the photo's own resolution — no downscale. Cropping to{' '}
-          {preset.label} arrives with the Adjust step.
+        <p className="text-xs text-muted">
+          {cropRect
+            ? 'Cut from the full-resolution original, exactly as framed in Adjust.'
+            : 'No crop set — the whole photo will be used. Go back to Adjust to frame it.'}
         </p>
       </Section>
 
@@ -156,15 +214,15 @@ export function ExportPanel() {
         </div>
 
         {state.phase === 'working' && (
-          <p className="mt-3 text-sm text-text-muted">{state.message}</p>
+          <p className="text-sm text-muted">{state.message}</p>
         )}
         {state.phase === 'done' && (
-          <div className="mt-3">
+          <div>
             <Notice tone="ok">Saved to {state.path}</Notice>
           </div>
         )}
         {state.phase === 'failed' && (
-          <div className="mt-3">
+          <div>
             <Notice tone="danger">{state.message}</Notice>
           </div>
         )}
@@ -174,9 +232,7 @@ export function ExportPanel() {
         <Button onClick={reset} disabled={busy}>
           New photo
         </Button>
-        <p className="mt-2 text-xs text-text-subtle">
-          Keeps the size, background and quality settings.
-        </p>
+        <p className="text-xs text-muted">Keeps the size, background and quality settings.</p>
       </Section>
     </>
   )
