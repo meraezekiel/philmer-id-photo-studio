@@ -194,9 +194,23 @@ fn directml_versus_cpu() {
     // This machine has two adapters (Iris Xe and an MX350 with 2 GB), so try
     // each, with and without graph fusion. Nothing here panics: "DirectML does
     // not work on this hardware" is a legitimate, reportable answer.
+    //
+    // A failed DirectML run can leave the adapter suspended (887A0005), which
+    // then poisons every later config in the same process. PHOTO_STUDIO_DML_ONLY
+    // ("<device>:<on|off>") runs a single config in a clean process so one
+    // result can be trusted on its own.
+    let only = std::env::var("PHOTO_STUDIO_DML_ONLY").ok();
+    let configs: Vec<(i32, bool)> = match only.as_deref() {
+        Some(spec) => {
+            let (dev, fusion) = spec.split_once(':').expect("use <device>:<on|off>");
+            vec![(dev.parse().expect("device id"), fusion == "off")]
+        }
+        None => vec![(0, false), (0, true), (1, false), (1, true)],
+    };
+
     let mut results: Vec<(String, f64, f64)> = Vec::new();
-    for device_id in [0, 1] {
-        for disable_fusion in [false, true] {
+    {
+        for (device_id, disable_fusion) in configs {
             let label = format!(
                 "device {device_id}, fusion {}",
                 if disable_fusion { "off" } else { "on" }
