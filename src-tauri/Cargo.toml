@@ -26,14 +26,20 @@ serde_json = "1"
 thiserror = "2"
 
 # ort 2.0.0-rc.13 targets ONNX Runtime 1.28 and ndarray 0.17.
+#
 # load-dynamic: we ship onnxruntime.dll as a resource and load it at startup,
-# so nothing is linked at build time. api-27 (not api-28) keeps us compatible
-# with a 1.27 runtime too, should the bundled dll ever be swapped.
+# so nothing is linked at build time.
+#
+# api-24 rather than the default api-27: Microsoft's *DirectML* build of ONNX
+# Runtime stops at 1.24.4 (the 1.28 release ships CPU and CUDA only), so asking
+# for API 24 is what lets one binary load either runtime. A newer runtime still
+# serves an older API, so this costs nothing.
 ort = { version = "=2.0.0-rc.13", default-features = false, features = [
   "std",
   "ndarray",
   "load-dynamic",
-  "api-27",
+  "api-24",
+  "directml",
 ] }
 ndarray = "0.17"
 
