@@ -59,11 +59,12 @@ pub fn segment(
 
 /// As [`segment`], but at an explicit model input size.
 ///
-/// BiRefNet's ONNX export takes a dynamic input, so this is a real performance
-/// lever — inference cost falls roughly with the square of `input_size`. It is
-/// separate from [`segment`] because lowering it is a *quality* decision about
-/// hair edges, not a free win, and `tests/bench.rs` is where that tradeoff is
-/// measured.
+/// Note that the bundled BiRefNet exports have a **fixed** 1024x1024 input
+/// shape: anything else is rejected by ORT with "Got invalid dimensions for
+/// input". Lowering the resolution to buy speed is therefore not available
+/// without re-exporting the model with dynamic axes. This entry point exists
+/// so `tests/bench.rs` can measure that, and so a future model with dynamic
+/// axes needs no change here.
 pub fn segment_at(
     session: &mut Session,
     rgb: &RgbImage,
