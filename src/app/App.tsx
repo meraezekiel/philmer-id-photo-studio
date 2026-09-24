@@ -212,7 +212,7 @@ function SizeSection() {
   const preset = PHOTO_PRESETS[presetId]
 
   return (
-    <Section title="Size">
+    <Section title="Size preset">
       <Segmented
         options={PHOTO_PRESET_ORDER.map((id) => ({
           value: id,

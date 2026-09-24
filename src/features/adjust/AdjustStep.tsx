@@ -46,19 +46,14 @@ export function AdjustPanel() {
       )}
 
       <Section title="Alignment">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={runAutoAlign}
-            disabled={faces.length === 0}
-            className="flex-1 border border-divider px-3 py-2 text-sm font-extrabold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--hover)] disabled:opacity-45"
-          >
-            Auto-align
-          </button>
-          <IconButton title="Reset the crop" onClick={resetAdjust}>
-            <Icon path={ICONS.rotate} size={16} />
-          </IconButton>
-        </div>
+        <button
+          type="button"
+          onClick={runAutoAlign}
+          disabled={faces.length === 0}
+          className="w-full border border-divider px-3 py-2 text-sm font-extrabold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--hover)] disabled:opacity-45"
+        >
+          Auto-align
+        </button>
 
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <input
@@ -71,7 +66,7 @@ export function AdjustPanel() {
         </label>
       </Section>
 
-      <Section title="Head size">
+      <Section title="Transform" action={<ResetButton onClick={resetAdjust} />}>
         <div className="flex items-center gap-2">
           <IconButton title="Zoom out (Ctrl+scroll)" onClick={() => nudge(-5)}>
             <Icon path={ICONS.zoomOut} size={16} />
@@ -104,7 +99,7 @@ export function AdjustPanel() {
           onChange={setRotation}
         />
         <p className="text-xs text-muted">
-          Drag the crown and chin handles on the canvas if the automatic guess is off.
+          Drag the crown and chin handles on the photo to correct by hand.
         </p>
       </Section>
 
@@ -120,5 +115,19 @@ export function AdjustPanel() {
         </Section>
       )}
     </>
+  )
+}
+
+/** The design puts Reset inline in the Transform header, icon plus label. */
+function ResetButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-1.5 text-[13px] font-bold text-muted transition-colors duration-[var(--duration-fast)] hover:text-accent"
+    >
+      <Icon path={ICONS.rotate} size={14} />
+      Reset
+    </button>
   )
 }
