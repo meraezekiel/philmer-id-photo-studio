@@ -18,6 +18,19 @@ use crate::models::{ModelPaths, SegModel};
 
 pub type SharedSession = Arc<Mutex<Session>>;
 
+/// ORT's CPU kernels scale with *physical* cores; counting hyperthreads
+/// generally makes it slower, not faster. `PHOTO_STUDIO_INTRA_THREADS`
+/// overrides it, which is how the thread sweep in `tests/bench.rs` works and
+/// how a support case can be tuned without a rebuild.
+pub fn default_intra_threads() -> usize {
+    std::env::var("PHOTO_STUDIO_INTRA_THREADS")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .filter(|n| *n > 0)
+        .unwrap_or_else(|| num_cpus::get_physical())
+        .max(1)
+}
+
 pub struct Engine {
     paths: ModelPaths,
     runtime_loaded: Mutex<bool>,
@@ -27,9 +40,11 @@ pub struct Engine {
 
 impl Engine {
     pub fn new(paths: ModelPaths) -> Self {
-        // ORT's CPU kernels scale with *physical* cores; counting hyperthreads
-        // makes it slower, not faster.
-        let intra_threads = num_cpus::get_physical().max(1);
+        Self::with_threads(paths, default_intra_threads())
+    }
+
+    pub fn with_threads(paths: ModelPaths, intra_threads: usize) -> Self {
+        let intra_threads = intra_threads.max(1);
         log::info!("inference will use {intra_threads} intra-op threads");
         Self {
             paths,

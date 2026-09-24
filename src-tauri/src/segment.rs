@@ -54,10 +54,26 @@ pub fn segment(
     rgb: &RgbImage,
     on_stage: &mut dyn FnMut(Stage),
 ) -> Result<GrayImage> {
+    segment_at(session, rgb, INPUT_SIZE, on_stage)
+}
+
+/// As [`segment`], but at an explicit model input size.
+///
+/// BiRefNet's ONNX export takes a dynamic input, so this is a real performance
+/// lever — inference cost falls roughly with the square of `input_size`. It is
+/// separate from [`segment`] because lowering it is a *quality* decision about
+/// hair edges, not a free win, and `tests/bench.rs` is where that tradeoff is
+/// measured.
+pub fn segment_at(
+    session: &mut Session,
+    rgb: &RgbImage,
+    input_size: u32,
+    on_stage: &mut dyn FnMut(Stage),
+) -> Result<GrayImage> {
     let (orig_w, orig_h) = rgb.dimensions();
 
     on_stage(Stage::Preparing);
-    let small = resize::rgb_exact(rgb, INPUT_SIZE, INPUT_SIZE)?;
+    let small = resize::rgb_exact(rgb, input_size, input_size)?;
     let input = to_nchw(&small);
 
     on_stage(Stage::Running);
@@ -82,7 +98,7 @@ pub fn segment(
         .as_slice()
         .ok_or_else(|| AppError::Inference("mask tensor was not contiguous".into()))?;
 
-    let expected = (INPUT_SIZE * INPUT_SIZE) as usize;
+    let expected = (input_size * input_size) as usize;
     if logits.len() < expected {
         return Err(AppError::Inference(format!(
             "expected at least {expected} mask values, got {}",
@@ -92,8 +108,8 @@ pub fn segment(
 
     // The ONNX export ends at the logits, so the sigmoid is ours to apply.
     let mask_small = GrayImage::from_raw(
-        INPUT_SIZE,
-        INPUT_SIZE,
+        input_size,
+        input_size,
         logits[..expected]
             .iter()
             .map(|&v| (sigmoid(v) * 255.0).round().clamp(0.0, 255.0) as u8)

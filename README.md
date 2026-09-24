@@ -37,12 +37,18 @@ need it; it is the "best hair detail" option in Settings.
 | `npm run tauri dev` | Run the app |
 | `npm test` | Vitest: `layout.ts`, `dpi.ts` |
 | `npm run typecheck` | `tsc --noEmit` |
-| `cargo test --manifest-path src-tauri/Cargo.toml --release -- --nocapture` | Rust unit + smoke tests |
+| `cargo test --manifest-path src-tauri/Cargo.toml --profile perf -- --nocapture` | Rust unit + smoke tests |
+| `cargo test --manifest-path src-tauri/Cargo.toml --profile perf --test bench -- --ignored --nocapture` | Segmentation benchmark (thread, scheduling and input-size sweeps) |
 | `npm run tauri build` | NSIS installer in `src-tauri/target/release/bundle/nsis/` |
 | `node scripts/make-icon.mjs && npx tauri icon design/app-icon.png` | Regenerate app icons |
 
-Run the Rust smoke tests in `--release`: the debug build of the pre/post
-processing is slow enough to make the timing assertion meaningless.
+Run the Rust tests under `--profile perf`, not `--release`: `perf` is release
+speed without link-time optimisation, so it links in seconds rather than the
+~14 minutes a full LTO relink of the dependency tree costs. A plain debug build
+is far too slow for the timing assertion to mean anything.
+
+`PHOTO_STUDIO_INTRA_THREADS=<n>` overrides the inference thread count (default:
+physical core count) without a rebuild.
 
 ## How it fits together
 
