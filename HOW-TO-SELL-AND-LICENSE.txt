@@ -1,0 +1,188 @@
+PHILMER ID PHOTO STUDIO - HOW TO SELL IT AND GIVE OUT LICENCE KEYS
+Written 25 September 2026. Keep this file; it is the whole routine.
+
+
+===============================================================================
+0. THE ONE THING YOU MUST DO TODAY
+===============================================================================
+
+Back up this file onto a USB stick and keep it somewhere safe:
+
+    C:\Users\PC\Documents\personal\philmer-signing-key.txt
+
+That file is your signing key. It is what makes YOUR keys the only ones that
+work. It is deliberately outside the project folder, so it never goes to
+GitHub.
+
+  - If someone steals it, they can make keys for free and sell them.
+  - If you LOSE it, every key you have ever sold stops being reissuable and
+    you have to generate a new one and send new keys to every customer.
+
+Copy it to a USB stick. Do it now, not later.
+
+
+===============================================================================
+1. WHAT THE CUSTOMER GETS
+===============================================================================
+
+FREE TRIAL - 14 days, no key needed, nothing switched off.
+    They install it and it just works for 14 days. They can print real photos
+    and sell them. This is on purpose: a shop will not pay until it has seen
+    the thing print.
+
+    The trial cannot be restarted by uninstalling, deleting a folder, or
+    setting the clock back. It is tied to their computer.
+
+AFTER 14 DAYS - the app still opens, still loads and edits photos, still
+    shows the sheet. Only SAVING and PRINTING stop. They see a red
+    "Trial ended - licence needed" button at the top right.
+
+PERMANENT KEY - works forever, on ONE computer, with no internet.
+
+
+===============================================================================
+2. SELLING A KEY - THE FOUR STEPS
+===============================================================================
+
+STEP 1. The customer opens the app and clicks the gear icon (top right),
+        then reads you their MACHINE ID. It looks like this:
+
+            FE08-367B-F370-11DE
+
+        There is a Copy button beside it, so they can paste it into
+        Messenger or SMS.
+
+STEP 2. On YOUR computer, open a terminal in the project folder:
+
+            C:\Users\PC\Documents\personal\photo-studio
+
+        and run this, putting in their Machine ID and a customer number you
+        choose (1, 2, 3... just keep counting up):
+
+            cargo run --manifest-path tools/keygen/Cargo.toml -- issue --machine FE08-367B-F370-11DE --customer 1042 --name "Lita's Photo, Bacolod"
+
+        For a licence that expires (for example, rent-to-own or a one-year
+        deal), add --days 365 at the end. Leave it out for permanent.
+
+STEP 3. It prints a long key starting with PHILMER-. Copy the WHOLE thing and
+        send it to them. It is long; that is normal. It does not matter if
+        the chat app breaks it into several lines.
+
+STEP 4. They paste it into the same Licence screen and press ACTIVATE.
+        Done. No internet needed at any point.
+
+Every key you issue is written into licenses-issued.csv in
+C:\Users\PC\Documents\personal\ so you always have a record of who has what.
+
+
+===============================================================================
+3. WHEN A CUSTOMER SAYS "THE KEY DOES NOT WORK"
+===============================================================================
+
+The app tells them exactly what is wrong. Match the message:
+
+  "This key belongs to a different computer."
+      They are trying to use a key issued for another PC. This is the
+      protection working. If they genuinely changed computers, see section 4.
+
+  "This key is not valid. Check it was pasted in full."
+      Part of the key was lost when copying. Send it again and tell them to
+      select the whole thing.
+
+  "That does not look like a licence key. Paste the whole key."
+      They pasted something else entirely, or only a few characters.
+
+  "This licence has expired."
+      Only happens for keys you issued with --days. Issue a new one.
+
+  "The clock on this computer was set back..."
+      They (or someone) moved the Windows date backwards to stretch the
+      trial. The trial is over for good on that PC. They need to buy a key.
+
+To check a key yourself before blaming anything:
+
+    cargo run --manifest-path tools/keygen/Cargo.toml -- check "PHILMER-...." --machine FE08-367B-F370-11DE
+
+
+===============================================================================
+4. REPLACEMENTS - NEW PC, REFORMATTED, OR WINDOWS REINSTALLED
+===============================================================================
+
+The Machine ID comes from Windows itself and the hard drive. It survives new
+hardware, updates and new printers. It does NOT survive reformatting or
+reinstalling Windows.
+
+When that happens the customer gets a NEW Machine ID. Just issue again with
+the SAME customer number:
+
+    cargo run --manifest-path tools/keygen/Cargo.toml -- issue --machine <THEIR NEW ID> --customer 1042 --name "Lita's Photo (replacement)"
+
+Because the customer number is the same, licenses-issued.csv will show two
+lines for customer 1042. That is how you spot the difference between an
+honest reformat and someone quietly installing it in a second shop. Decide
+your own rule - for example, two free replacements, then ask questions.
+
+
+===============================================================================
+5. WHAT THIS PROTECTION DOES AND DOES NOT DO
+===============================================================================
+
+IT DOES:
+  - Stop anyone making their own keys. Only your signing key can make a key
+    the app accepts. There is no way to make a "keygen" from the app.
+  - Stop a customer sharing their key. A key names one computer and is dead
+    on any other.
+  - Stop the trial being restarted by reinstalling or changing the date.
+
+IT DOES NOT:
+  - Make the program impossible to crack. Anyone skilled enough to modify a
+    Windows program can remove any check. No offline software can prevent
+    this - not Photoshop, not anything.
+
+That is the right trade. The people who buy this are printing shops, not
+software crackers. What matters is that a customer cannot hand your key to
+the shop next door, and nobody can print keys for free.
+
+
+===============================================================================
+6. WHERE THINGS ARE KEPT ON THE CUSTOMER'S PC
+===============================================================================
+
+  Their licence key:
+      C:\ProgramData\Philmer ID Photo Studio\license.key
+
+  Their trial record (two copies, both checked):
+      C:\ProgramData\Philmer ID Photo Studio\trial.dat
+      Registry: HKEY_CURRENT_USER\Software\Philmer Digi Art\Philmer ID Photo Studio
+
+Do not tell customers these paths. Deleting them does not restart the trial
+(the app checks both and believes the older one), but it will waste your
+support time answering the question.
+
+
+===============================================================================
+7. IF YOU EVER NEED TO START THE WHOLE LICENCE SYSTEM OVER
+===============================================================================
+
+Only if the signing key is lost or stolen. This invalidates EVERY key you
+have ever sold, and you must send a new key to every customer.
+
+  1. Delete C:\Users\PC\Documents\personal\philmer-signing-key.txt
+  2. Run:  cargo run --manifest-path tools/keygen/Cargo.toml -- init
+  3. It prints a block of numbers. Paste it into
+     crates/license-core/src/lib.rs, replacing PUBLIC_KEY.
+  4. Rebuild the app and give everyone the new version plus a new key.
+
+
+===============================================================================
+8. STILL TO BE BUILT (as of 25 September 2026)
+===============================================================================
+
+  - The Windows installer (.exe) that customers download. Right now the app
+    only runs from the development setup on this machine.
+  - A clean-machine test: install on a PC that has never had it, confirm the
+    trial starts at 14 days and that everything works with no internet.
+  - Photo adjustments: brightness, contrast, warmth.
+
+The technical detail behind all of the above is in docs\licensing.md in the
+project folder.
