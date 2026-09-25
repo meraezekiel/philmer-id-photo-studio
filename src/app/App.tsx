@@ -15,6 +15,7 @@ import { AdjustPanel } from '../features/adjust/AdjustStep'
 import { BackgroundCanvas, BackgroundPanel } from '../features/background/BackgroundStep'
 import { ExportCanvas, ExportPanel } from '../features/export/ExportStep'
 import { ImportStep } from '../features/import/ImportStep'
+import { SheetPrintButton } from '../features/sheet/SheetPrintButton'
 import { SheetCanvas, SheetPanel } from '../features/sheet/SheetStep'
 import { useSegmentProgressListener } from '../features/import/usePhotoPipeline'
 import { APP_NAME, PHOTO_PRESETS, PHOTO_PRESET_ORDER, VENDOR } from '../lib/presets'
@@ -66,11 +67,23 @@ export function App() {
       } else if (event.key.toLowerCase() === 'n') {
         event.preventDefault()
         reset()
+      } else if (event.key.toLowerCase() === 'p') {
+        /*
+         * Ctrl+P must never reach the webview. WebView2 answers it with its
+         * own browser print dialog, which prints *the app's interface* — and
+         * at whatever scale it likes, which is the exact failure BUILD_PLAN §8
+         * calls out. Printing here always means the sheet PDF.
+         */
+        event.preventDefault()
+        event.stopPropagation()
+        if (step !== 'sheet' && step !== 'export' && ACTIVE_STEPS.includes('sheet')) {
+          setStep('sheet')
+        }
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [goNext, goBack, reset])
+  }, [goNext, goBack, reset, step, setStep])
 
   const showChrome = step !== 'import'
 
@@ -113,6 +126,7 @@ export function App() {
           nextLabel={nextStep ? `Next: ${STEP_LABELS[nextStep]}` : 'New photo'}
           onNewPhoto={reset}
           isLast={!nextStep}
+          primaryAction={step === 'sheet' ? <SheetPrintButton /> : undefined}
         />
       )}
     </div>
@@ -242,6 +256,7 @@ function ActionBar({
   nextLabel,
   onNewPhoto,
   isLast,
+  primaryAction,
 }: {
   onBack: () => void
   onNext: () => void
@@ -249,6 +264,8 @@ function ActionBar({
   nextLabel: string
   onNewPhoto: () => void
   isLast: boolean
+  /** Rendered as the step's own primary action, ahead of Next. */
+  primaryAction?: React.ReactNode
 }) {
   return (
     <footer
@@ -273,14 +290,33 @@ function ActionBar({
           <Icon path={ICONS.back} size={16} />
           Back
         </button>
-        <button
-          type="button"
-          onClick={isLast ? onNewPhoto : onNext}
-          className="h-11 px-6 text-[15px] font-extrabold transition-colors duration-[var(--duration-fast)]"
-          style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
-        >
-          {nextLabel}
-        </button>
+        {/*
+          When a step supplies its own primary action, that action takes the
+          accent and Next steps down to an outline. On the sheet step the job
+          is finished by printing; going on to Export is a choice, not the
+          next thing to do.
+        */}
+        {primaryAction ? (
+          <>
+            <button
+              type="button"
+              onClick={isLast ? onNewPhoto : onNext}
+              className="h-11 border border-divider px-4 text-sm font-extrabold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--hover)]"
+            >
+              {nextLabel}
+            </button>
+            {primaryAction}
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={isLast ? onNewPhoto : onNext}
+            className="h-11 px-6 text-[15px] font-extrabold transition-colors duration-[var(--duration-fast)]"
+            style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
+          >
+            {nextLabel}
+          </button>
+        )}
       </div>
     </footer>
   )

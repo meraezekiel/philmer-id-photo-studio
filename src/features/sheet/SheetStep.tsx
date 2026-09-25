@@ -509,6 +509,16 @@ export function SheetPanel() {
           {trim(sheet.paperWidthMm)} × {trim(sheet.paperHeightMm)} mm ·{' '}
           {sheet.marginMm} mm margin
         </p>
+
+        {/*
+          The warning belongs wherever Print is reachable. Getting this wrong
+          is the one mistake that silently ruins a sheet: the photos look
+          right on screen and come out the wrong size on paper.
+        */}
+        <Notice tone="warn" icon={<Icon path={ICONS.warning} size={18} />}>
+          When printing, choose <strong>Actual size</strong> or <strong>100%</strong> — not “Fit
+          to page”.
+        </Notice>
       </Section>
     </>
   )
