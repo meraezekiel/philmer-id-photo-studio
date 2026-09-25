@@ -11,8 +11,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Icon, ICONS, Notice, Section, Slider } from '../../app/components/ui'
-import { drawBitmap } from '../../lib/bitmap'
+import { drawBitmap, nameTagMeasurer } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
+import {
+  DEFAULT_NAME_TAG,
+  NAME_TAG_FONTS,
+  NAME_TAG_SIZE_RANGE,
+  nameTagFont,
+  nameTagLayout,
+} from '../../lib/nameTag'
 import { BACKGROUND_SWATCHES, MM_PER_INCH, PHOTO_PRESETS } from '../../lib/presets'
 import { useJob } from '../../store/job'
 
@@ -271,12 +278,225 @@ export function BackgroundPanel() {
         </p>
       </Section>
 
+      <NameSection />
+
       {preset.note && (
         <div className="px-6 pb-5">
           <Notice tone="info">{preset.note}</Notice>
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * The name printed across the bottom of the photo.
+ *
+ * On by default for Passport, because that is how a passport photo is handed
+ * over at a Philippine counter, and off with one click for anyone who wants
+ * the plain international format. The strip below the field is drawn with the
+ * same font, colours and proportions as the print, so what the operator tunes
+ * here is what comes out of the printer.
+ */
+function NameSection() {
+  const tag = useJob((s) => s.nameTag)
+  const setNameTag = useJob((s) => s.setNameTag)
+  const presetId = useJob((s) => s.presetId)
+  const preset = PHOTO_PRESETS[presetId]
+
+  // The strip is a scale model of the photo's bottom edge, so it has to be
+  // laid out at the width it is actually drawn at — and measured with the
+  // same canvas the printer's copy uses, or a long name would be clipped here
+  // and shrunk there.
+  const boxRef = useRef<HTMLDivElement>(null)
+  const [boxWidth, setBoxWidth] = useState(300)
+  useEffect(() => {
+    const node = boxRef.current
+    if (!node) return
+    const observer = new ResizeObserver(([entry]) => setBoxWidth(entry.contentRect.width))
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  const previewTag = {
+    ...tag,
+    text: tag.text.trim() === '' ? 'SURNAME, FIRST M.' : tag.text,
+    enabled: true,
+  }
+  const layout = nameTagLayout(
+    boxWidth,
+    boxWidth * (preset.heightMm / preset.widthMm),
+    previewTag,
+    nameTagMeasurer(previewTag),
+  )
+
+  return (
+    <Section title="Name on the photo">
+      <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={tag.enabled}
+          disabled={!preset.allowNameTag}
+          onChange={(e) => setNameTag({ enabled: e.target.checked })}
+          className="h-4 w-4 accent-[var(--color-accent)]"
+        />
+        Print the name on the photo
+        {preset.nameTagByDefault && <span className="ml-auto text-xs text-muted">usual here</span>}
+      </label>
+
+      <input
+        type="text"
+        value={tag.text}
+        disabled={!tag.enabled}
+        placeholder="SURNAME, FIRST MIDDLE"
+        onChange={(e) => setNameTag({ text: e.target.value })}
+        className="min-h-9 w-full border border-divider bg-bg px-2 text-sm disabled:opacity-45"
+      />
+
+      {/* The band, at the photo's own proportions. */}
+      <div
+        ref={boxRef}
+        className="flex items-end overflow-hidden border border-divider"
+        style={{
+          height: Math.round((layout?.bandHeight ?? 24) + 16),
+          background: 'var(--color-neutral-200, #e9e9e9)',
+          opacity: tag.enabled ? 1 : 0.45,
+        }}
+      >
+        <div
+          className="flex w-full items-center justify-center overflow-hidden whitespace-nowrap"
+          style={{
+            height: layout?.bandHeight ?? 24,
+            background: tag.background,
+            color: tag.color,
+            font: layout ? nameTagFont(tag, layout.fontPx) : undefined,
+          }}
+        >
+          {layout?.text}
+        </div>
+      </div>
+
+      <Slider
+        label="Font size"
+        value={tag.fontSizeRatio}
+        min={NAME_TAG_SIZE_RANGE.min}
+        max={NAME_TAG_SIZE_RANGE.max}
+        step={0.002}
+        defaultValue={DEFAULT_NAME_TAG.fontSizeRatio}
+        format={(v) => `${Math.round(v * 1000) / 10}%`}
+        disabled={!tag.enabled}
+        onChange={(v) => setNameTag({ fontSizeRatio: v })}
+      />
+
+      <div className="flex items-center gap-2">
+        <select
+          value={tag.fontFamily}
+          disabled={!tag.enabled}
+          onChange={(e) => setNameTag({ fontFamily: e.target.value })}
+          className="min-h-9 flex-1 border border-divider bg-bg px-2 text-sm disabled:opacity-45"
+        >
+          {NAME_TAG_FONTS.map((font) => (
+            <option key={font.id} value={font.id}>
+              {font.label}
+            </option>
+          ))}
+        </select>
+        <StyleToggle
+          label="B"
+          bold
+          on={tag.bold}
+          disabled={!tag.enabled}
+          onClick={() => setNameTag({ bold: !tag.bold })}
+        />
+        <StyleToggle
+          label="I"
+          italic
+          on={tag.italic}
+          disabled={!tag.enabled}
+          onClick={() => setNameTag({ italic: !tag.italic })}
+        />
+        <StyleToggle
+          label="AA"
+          on={tag.uppercase}
+          disabled={!tag.enabled}
+          onClick={() => setNameTag({ uppercase: !tag.uppercase })}
+        />
+      </div>
+
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2 text-[13px]">
+          <span className="text-muted">Text</span>
+          <input
+            type="color"
+            value={tag.color}
+            disabled={!tag.enabled}
+            onChange={(e) => setNameTag({ color: e.target.value.toUpperCase() })}
+            className="h-8 w-10 cursor-pointer border border-divider bg-surface disabled:cursor-not-allowed disabled:opacity-40"
+          />
+        </label>
+        <label className="flex items-center gap-2 text-[13px]">
+          <span className="text-muted">Band</span>
+          <input
+            type="color"
+            value={tag.background}
+            disabled={!tag.enabled}
+            onChange={(e) => setNameTag({ background: e.target.value.toUpperCase() })}
+            className="h-8 w-10 cursor-pointer border border-divider bg-surface disabled:cursor-not-allowed disabled:opacity-40"
+          />
+        </label>
+        {(tag.color !== DEFAULT_NAME_TAG.color ||
+          tag.background !== DEFAULT_NAME_TAG.background) && (
+          <button
+            type="button"
+            onClick={() =>
+              setNameTag({
+                color: DEFAULT_NAME_TAG.color,
+                background: DEFAULT_NAME_TAG.background,
+              })
+            }
+            className="ml-auto whitespace-nowrap text-xs font-bold text-accent hover:underline"
+          >
+            Black on white
+          </button>
+        )}
+      </div>
+
+      <p className="text-xs text-muted">
+        The band sits inside the photo, so the print is still{' '}
+        {trim(preset.widthMm)} × {trim(preset.heightMm)} mm. A long name shrinks to fit.
+      </p>
+    </Section>
+  )
+}
+
+function StyleToggle({
+  label,
+  on,
+  bold,
+  italic,
+  disabled,
+  onClick,
+}: {
+  label: string
+  on: boolean
+  bold?: boolean
+  italic?: boolean
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={on}
+      className={`grid h-9 w-9 flex-none place-items-center border text-sm transition-colors duration-[var(--duration-fast)] disabled:opacity-45 ${
+        on ? 'border-accent text-accent' : 'border-divider hover:bg-[var(--hover)]'
+      }`}
+      style={{ fontWeight: bold ? 800 : 600, fontStyle: italic ? 'italic' : undefined }}
+    >
+      {label}
+    </button>
   )
 }
 

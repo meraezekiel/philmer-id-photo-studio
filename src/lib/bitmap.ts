@@ -6,6 +6,7 @@
  */
 
 import type { Bitmap } from './composite'
+import { nameTagFont, nameTagLayout, type NameTag } from './nameTag'
 
 /** Decode encoded image bytes into raw RGBA pixels. */
 export async function decodeToBitmap(bytes: ArrayBuffer, mime: string): Promise<ImageData> {
@@ -142,4 +143,45 @@ export function imageFromClipboard(event: ClipboardEvent): File | null {
     }
   }
   return null
+}
+
+/**
+ * Burn the name strip into the bottom of a finished photo.
+ *
+ * Inside the photo, never appended to it: the print keeps the preset's exact
+ * millimetres. Returns the bitmap untouched when there is no name to print.
+ */
+export function withNameTag(bmp: Bitmap, tag: NameTag): Bitmap {
+  const canvas = new OffscreenCanvas(bmp.width, bmp.height)
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return bmp
+
+  const layout = nameTagLayout(bmp.width, bmp.height, tag, (text, px) => {
+    ctx.font = nameTagFont(tag, px)
+    return ctx.measureText(text).width
+  })
+  if (!layout) return bmp
+
+  ctx.putImageData(new ImageData(bmp.data, bmp.width, bmp.height), 0, 0)
+  ctx.fillStyle = tag.background
+  ctx.fillRect(0, layout.bandY, bmp.width, layout.bandHeight)
+  ctx.fillStyle = tag.color
+  ctx.font = nameTagFont(tag, layout.fontPx)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(layout.text, bmp.width / 2, layout.centreY, layout.maxTextWidth)
+  return ctx.getImageData(0, 0, bmp.width, bmp.height)
+}
+
+/**
+ * A text measurer for the name strip, so a preview can shrink a long name
+ * exactly as `withNameTag` will when it prints it.
+ */
+export function nameTagMeasurer(tag: NameTag): (text: string, fontPx: number) => number {
+  const ctx = new OffscreenCanvas(1, 1).getContext('2d')
+  return (text, fontPx) => {
+    if (!ctx) return text.length * fontPx * 0.5
+    ctx.font = nameTagFont(tag, fontPx)
+    return ctx.measureText(text).width
+  }
 }

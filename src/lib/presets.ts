@@ -39,8 +39,14 @@ export interface PhotoPreset {
   defaultBackground: string
   /** Passport rules are set by the agency, not by us. */
   lockBackgroundToWhite?: boolean
-  /** A name strip would invalidate a passport photo. */
   allowNameTag: boolean
+  /**
+   * Whether the name strip starts switched on for this size. Philippine
+   * passport photos are handed over with the name printed across the bottom,
+   * so Passport starts on; the operator can switch it off for an agency that
+   * wants the plain international format.
+   */
+  nameTagByDefault?: boolean
   note?: string
 }
 
@@ -87,7 +93,8 @@ export const PHOTO_PRESETS: Record<Exclude<PhotoPresetId, 'custom'>, PhotoPreset
     chinMax: (4 + 36) / 45,
     defaultBackground: '#FFFFFF',
     lockBackgroundToWhite: true,
-    allowNameTag: false,
+    allowNameTag: true,
+    nameTagByDefault: true,
     note: 'Check the latest requirements of the requesting agency.',
   },
   custom: {

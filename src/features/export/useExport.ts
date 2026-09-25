@@ -13,7 +13,7 @@ import { save } from '@tauri-apps/plugin-dialog'
 import { openPath } from '@tauri-apps/plugin-opener'
 import { tempDir, join } from '@tauri-apps/api/path'
 
-import { cropRotate, decodeToBitmap, encodeBitmap, resampleBitmap } from '../../lib/bitmap'
+import { cropRotate, decodeToBitmap, encodeBitmap, resampleBitmap, withNameTag } from '../../lib/bitmap'
 import { composite, type Bitmap } from '../../lib/composite'
 import { defaultFileName, outputSizePx, setJpegDpi, setPngDpi } from '../../lib/dpi'
 import { buildSheetPdf, renderSheetBitmap, type SheetSpec } from '../../lib/sheetPdf'
@@ -36,6 +36,7 @@ export function useExport() {
   const edgeSoftness = useJob((s) => s.edgeSoftness)
   const hairDetail = useJob((s) => s.hairDetail)
   const quality = useJob((s) => s.quality)
+  const nameTag = useJob((s) => s.nameTag)
   const showCutMarks = useJob((s) => s.cutMarks)
   const showBorders = useJob((s) => s.photoBorders)
   const sheet = useSheetLayout()
@@ -72,9 +73,22 @@ export function useExport() {
       ])
 
       report('Replacing the background…')
-      return composite({ image, mask, background, edgeSoftness, hairDetail })
+      const photo = composite({ image, mask, background, edgeSoftness, hairDetail })
+      // The name goes on last, over the finished pixels, so it is never
+      // softened by the resample or tinted by the decontamination.
+      return withNameTag(photo, nameTag)
     },
-    [info, quality, cropRect, outputPx.width, outputPx.height, background, edgeSoftness, hairDetail],
+    [
+      info,
+      quality,
+      cropRect,
+      outputPx.width,
+      outputPx.height,
+      background,
+      edgeSoftness,
+      hairDetail,
+      nameTag,
+    ],
   )
 
   const sheetSpec = useCallback(

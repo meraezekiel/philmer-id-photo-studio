@@ -267,9 +267,21 @@ describe('cutMarks', () => {
 })
 
 describe('presets stay consistent with the plan', () => {
-  it('passport locks to white and forbids a name tag', () => {
+  it('passport locks to white', () => {
     expect(PHOTO_PRESETS.passport.lockBackgroundToWhite).toBe(true)
-    expect(PHOTO_PRESETS.passport.allowNameTag).toBe(false)
+  })
+
+  /**
+   * A deliberate departure from BUILD_PLAN §5.3, which assumes a name strip
+   * would invalidate a passport photo. Philippine passport photos are printed
+   * with the name across the bottom, so it is on by default for Passport and
+   * off by default everywhere else — and switchable either way.
+   */
+  it('passport carries the name by default, as it is printed here', () => {
+    expect(PHOTO_PRESETS.passport.allowNameTag).toBe(true)
+    expect(PHOTO_PRESETS.passport.nameTagByDefault).toBe(true)
+    expect(PHOTO_PRESETS['1x1'].nameTagByDefault).toBeUndefined()
+    expect(PHOTO_PRESETS['2x2'].nameTagByDefault).toBeUndefined()
   })
 
   it('every preset has a positive physical size', () => {

@@ -11,6 +11,7 @@ import { create } from 'zustand'
 
 import type { CropRect } from '../lib/autoCrop'
 import { reduceRequest, type PaperOrientation } from '../lib/layout'
+import { DEFAULT_NAME_TAG, type NameTag } from '../lib/nameTag'
 import type { Bitmap } from '../lib/composite'
 import { PHOTO_PRESETS, type PaperId, type PhotoPresetId } from '../lib/presets'
 import {
@@ -103,6 +104,8 @@ export interface JobState {
   edgeSoftness: number
   hairDetail: number
   quality: SegModel
+  /** The name printed inside the bottom of the photo, and how it looks. */
+  nameTag: NameTag
 
   setStep: (step: Step) => void
   setStatus: (status: JobStatus) => void
@@ -141,6 +144,7 @@ export interface JobState {
   setEdgeSoftness: (value: number) => void
   setHairDetail: (value: number) => void
   setQuality: (quality: SegModel) => void
+  setNameTag: (patch: Partial<NameTag>) => void
   /** New customer: keep the preset, background and quality; drop the photo. */
   reset: () => void
 }
@@ -186,6 +190,10 @@ export const useJob = create<JobState>((set) => ({
   edgeSoftness: 0,
   hairDetail: 0,
   quality: 'lite',
+  nameTag: {
+    ...DEFAULT_NAME_TAG,
+    enabled: PHOTO_PRESETS['2x2'].nameTagByDefault === true,
+  },
 
   setStep: (step) => set({ step }),
   setStatus: (status) => set({ status }),
@@ -199,11 +207,16 @@ export const useJob = create<JobState>((set) => ({
   setPreset: (presetId) =>
     set((state) => {
       const preset = PHOTO_PRESETS[presetId]
+      // The size decides how the photo is normally handed over: Passport
+      // carries the name across the bottom here, a 2x2 for a school ID
+      // usually does not. The typed name is kept either way, so switching
+      // sizes to compare does not make the operator type it again.
+      const nameTag = { ...state.nameTag, enabled: preset.nameTagByDefault === true }
       // Passport is locked to white, so switching to it must not carry a blue
       // background across and quietly produce a rejected photo.
       return preset.lockBackgroundToWhite
-        ? { presetId, background: '#FFFFFF' }
-        : { presetId, background: state.background }
+        ? { presetId, background: '#FFFFFF', nameTag }
+        : { presetId, background: state.background, nameTag }
     }),
 
   setZoom: (zoom) => set({ zoom }),
@@ -303,6 +316,8 @@ export const useJob = create<JobState>((set) => ({
   setEdgeSoftness: (edgeSoftness) => set({ edgeSoftness }),
   setHairDetail: (hairDetail) => set({ hairDetail }),
   setQuality: (quality) => set({ quality }),
+
+  setNameTag: (patch) => set((state) => ({ nameTag: { ...state.nameTag, ...patch } })),
 
   reset: () => {
     // Hand the native side back its buffers. Without this the full-resolution

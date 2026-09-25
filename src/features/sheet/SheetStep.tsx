@@ -21,6 +21,7 @@ import {
   type PaperId,
   type PhotoPresetId,
 } from '../../lib/presets'
+import type { NameTag } from '../../lib/nameTag'
 import type { LoadedImageInfo } from '../../lib/tauri'
 import { useJob, type PackageRow } from '../../store/job'
 import { useSheetLayout } from './useSheetLayout'
@@ -42,6 +43,7 @@ export function SheetCanvas() {
   const selected = useJob((s) => s.selectedPhotos)
   const setSelectedPhotos = useJob((s) => s.setSelectedPhotos)
   const removePhotos = useJob((s) => s.removePhotos)
+  const nameTag = useJob((s) => s.nameTag)
 
   const sheet = useSheetLayout()
   const areaRef = useRef<HTMLDivElement>(null)
@@ -174,6 +176,7 @@ export function SheetCanvas() {
     background,
     edgeSoftness,
     hairDetail,
+    nameTag,
   })
 
   // Fit the paper into the available area, leaving room for the chrome.
@@ -479,8 +482,10 @@ function usePhotoUrl(args: {
   background: string
   edgeSoftness: number
   hairDetail: number
+  nameTag: NameTag
 }): string | null {
-  const { preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail } = args
+  const { preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail, nameTag } =
+    args
   const [url, setUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -492,7 +497,7 @@ function usePhotoUrl(args: {
     let cancelled = false
 
     void (async () => {
-      const { cropRotate, encodeBitmap } = await import('../../lib/bitmap')
+      const { cropRotate, encodeBitmap, withNameTag } = await import('../../lib/bitmap')
       let image = preview
       let mask = previewMask
       if (cropRect && info) {
@@ -506,7 +511,10 @@ function usePhotoUrl(args: {
         image = cropRotate(preview, rect, cropRect.rotationDeg)
         mask = cropRotate(previewMask, rect, cropRect.rotationDeg)
       }
-      const out = composite({ image, mask, background, edgeSoftness, hairDetail })
+      const out = withNameTag(
+        composite({ image, mask, background, edgeSoftness, hairDetail }),
+        nameTag,
+      )
       const bytes = await encodeBitmap(out, 'image/png')
       if (cancelled) return
       const blobUrl = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }))
@@ -518,7 +526,7 @@ function usePhotoUrl(args: {
       cancelled = true
       if (revoked) URL.revokeObjectURL(revoked)
     }
-  }, [preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail])
+  }, [preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail, nameTag])
 
   return url
 }
