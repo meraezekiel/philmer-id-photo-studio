@@ -77,14 +77,78 @@ export function SheetCanvas() {
     return () => observer.disconnect()
   }, [])
 
-  // Esc drops the selection — the way out of a highlight made by accident.
+  /**
+   * Esc drops the selection; the arrow keys nudge it.
+   *
+   * A drag is fine for "somewhere over there", but lining a block up against
+   * the edge of the paper wants exact millimetres — and a millimetre is finer
+   * than the mouse can resolve at the preview's scale. Shift moves in 5 mm
+   * steps, Alt in 0.1 mm for the last hair of an adjustment.
+   */
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelectedPhotos([])
+      // Arrows belong to whatever field has focus, such as the copies stepper.
+      const target = event.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'SELECT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+
+      if (event.key === 'Escape') {
+        setSelectedPhotos([])
+        return
+      }
+      if (selected.length === 0) return
+
+      const step = event.shiftKey ? 5 : event.altKey ? 0.1 : 1
+      let dxMm = 0
+      let dyMm = 0
+      if (event.key === 'ArrowLeft') dxMm = -step
+      else if (event.key === 'ArrowRight') dxMm = step
+      else if (event.key === 'ArrowUp') dyMm = -step
+      else if (event.key === 'ArrowDown') dyMm = step
+      else return
+      event.preventDefault()
+
+      const moving = selected
+        .map((i) => sheet.placements[i])
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      if (moving.length === 0) return
+
+      // Clamped as a group, exactly as a drag is: the block keeps its shape
+      // and no photo is pushed off the paper.
+      const left = Math.min(...moving.map((p) => p.xMm))
+      const top = Math.min(...moving.map((p) => p.yMm))
+      const right = Math.max(...moving.map((p) => p.xMm + p.widthMm))
+      const bottom = Math.max(...moving.map((p) => p.yMm + p.heightMm))
+      const shiftX = clamp(dxMm, -left, sheet.paperWidthMm - right)
+      const shiftY = clamp(dyMm, -top, sheet.paperHeightMm - bottom)
+      if (shiftX === 0 && shiftY === 0) return
+
+      const deltas: Record<number, { xMm: number; yMm: number }> = {}
+      for (const i of selected) {
+        const base = photoOffsets[i] ?? { xMm: 0, yMm: 0 }
+        deltas[i] = { xMm: base.xMm + shiftX, yMm: base.yMm + shiftY }
+      }
+      nudgePhotos(selected, deltas)
     }
+
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [setSelectedPhotos])
+  }, [
+    selected,
+    sheet.placements,
+    sheet.paperWidthMm,
+    sheet.paperHeightMm,
+    photoOffsets,
+    nudgePhotos,
+    setSelectedPhotos,
+  ])
 
   // The finished photo, cropped, as a data URL so each tile is one <img>.
   const photoUrl = usePhotoUrl({
@@ -373,7 +437,7 @@ export function SheetCanvas() {
             className="tabular flex h-9 items-center px-3 text-sm font-extrabold shadow-sm"
             style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
           >
-            {selected.length} selected · drag any of them to move
+            {selected.length} selected · drag, or nudge with the arrow keys
           </div>
         )}
       </div>
@@ -602,7 +666,7 @@ export function SheetPanel() {
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted">
             {selected.length > 0
-              ? `${selected.length} of ${sheet.count} selected`
+              ? `${selected.length} of ${sheet.count} selected · arrow keys move 1 mm, Shift 5 mm, Alt 0.1 mm`
               : 'Drag across the paper to highlight photos, then drag them together.'}
           </span>
           {selected.length > 0 ? (
