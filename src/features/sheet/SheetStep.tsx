@@ -180,13 +180,41 @@ export function SheetCanvas() {
   })
 
   // Fit the paper into the available area, leaving room for the chrome.
-  const scale = useMemo(() => {
+  const fitScale = useMemo(() => {
     if (area.width === 0 || area.height === 0) return 0
     return Math.min(
       (area.width - 120) / sheet.paperWidthMm,
       (area.height - 110) / sheet.paperHeightMm,
     )
   }, [area, sheet.paperWidthMm, sheet.paperHeightMm])
+
+  /**
+   * Zoom, as a multiple of the fitted view.
+   *
+   * One 35 x 45 mm photo on A4 is a postage stamp on screen, and the name
+   * band on it is a grey smudge — the operator cannot check the spelling of
+   * the thing they are about to print 30 of. Everything else is computed
+   * from `scale`, so zooming needs no other change: a drag still converts
+   * pixels to millimetres through it, and the marquee still hits the same
+   * photos.
+   */
+  const [zoom, setZoom] = useState(1)
+  const scale = fitScale * zoom
+  const zoomBy = (factor: number) => setZoom((z) => clamp(z * factor, MIN_ZOOM, MAX_ZOOM))
+
+  // Ctrl+wheel zooms. It has to be a native listener: React's wheel handler
+  // is passive, so it cannot stop the webview zooming the whole app instead.
+  useEffect(() => {
+    const node = areaRef.current
+    if (!node) return
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) return
+      event.preventDefault()
+      setZoom((z) => clamp(z * (event.deltaY < 0 ? 1.15 : 1 / 1.15), MIN_ZOOM, MAX_ZOOM))
+    }
+    node.addEventListener('wheel', onWheel, { passive: false })
+    return () => node.removeEventListener('wheel', onWheel)
+  }, [])
 
   const marks = useMemo(
     () => (showCutMarks ? cutMarks({ placements: sheet.placements, gapMm: sheet.gapMm }) : []),
@@ -292,7 +320,22 @@ export function SheetCanvas() {
   const paperH = sheet.paperHeightMm * scale
 
   return (
-    <div ref={areaRef} className="relative flex h-full w-full items-center justify-center">
+    <div className="relative h-full w-full">
+      {/*
+        The scroller is inside the frame, not the frame itself, so the paper
+        label and the zoom controls stay put while the sheet scrolls under
+        them. The inner box is at least the size of the view, so a small sheet
+        centres and a zoomed one scrolls — `margin: auto` centring would clip
+        the top-left corner once it overflows.
+      */}
+      <div ref={areaRef} className="h-full w-full overflow-auto">
+        <div
+          className="grid place-items-center"
+          style={{
+            width: `max(100%, ${Math.round(paperW + 96)}px)`,
+            height: `max(100%, ${Math.round(paperH + 96)}px)`,
+          }}
+        >
       {scale > 0 && (
         <div
           ref={paperRef}
@@ -446,6 +489,9 @@ export function SheetCanvas() {
         </div>
       )}
 
+        </div>
+      </div>
+
       <div className="pointer-events-none absolute left-6 top-5 flex flex-col items-start gap-2.5">
         <div
           className="tabular flex h-9 items-center px-3 text-sm shadow-sm"
@@ -466,7 +512,44 @@ export function SheetCanvas() {
           </div>
         )}
       </div>
+
+      {/* Zoom, bottom-left, out of the way of the action bar on the right. */}
+      <div className="absolute bottom-5 left-6 flex items-center shadow-sm">
+        <ZoomButton label="−" title="Zoom out" onClick={() => zoomBy(1 / 1.25)} />
+        <button
+          type="button"
+          onClick={() => setZoom(1)}
+          title="Fit the whole sheet"
+          className="tabular h-9 min-w-[76px] border-y border-divider px-2 text-sm font-bold"
+          style={{ background: 'var(--color-bg)' }}
+        >
+          {zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`}
+        </button>
+        <ZoomButton label="+" title="Zoom in" onClick={() => zoomBy(1.25)} />
+      </div>
     </div>
+  )
+}
+
+function ZoomButton({
+  label,
+  title,
+  onClick,
+}: {
+  label: string
+  title: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="grid h-9 w-9 place-items-center border border-divider text-base font-bold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--hover)]"
+      style={{ background: 'var(--color-bg)' }}
+    >
+      {label}
+    </button>
   )
 }
 
@@ -848,6 +931,9 @@ function PackageBuilder({
     </div>
   )
 }
+
+const MIN_ZOOM = 0.4
+const MAX_ZOOM = 8
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
