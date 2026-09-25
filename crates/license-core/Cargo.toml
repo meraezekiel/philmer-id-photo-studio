@@ -1,0 +1,14 @@
+[package]
+name = "license-core"
+version = "0.1.0"
+edition = "2021"
+description = "Key format shared by the app (verify) and the vendor's keygen (sign)."
+
+[dependencies]
+ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
+data-encoding = "2"
+sha2 = "0.10"
+
+[features]
+# Only the vendor's keygen turns this on; the shipped app cannot sign.
+sign = ["ed25519-dalek/rand_core"]

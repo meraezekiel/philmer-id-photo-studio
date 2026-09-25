@@ -9,6 +9,7 @@ pub mod engine;
 pub mod error;
 pub mod face;
 pub mod image_io;
+pub mod license;
 pub mod models;
 pub mod printing;
 pub mod resize;
@@ -49,6 +50,8 @@ pub fn run() {
             commands::print_sheet,
             commands::release_image,
             commands::runtime_info,
+            commands::license_status,
+            commands::activate_license,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Philmer ID Photo Studio");

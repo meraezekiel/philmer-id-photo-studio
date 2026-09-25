@@ -23,3 +23,9 @@ src-tauri/gen/
 
 # Extracted from the design bundle for reference; regenerate from the .dc.html
 design/app-markup.html
+
+# The licence signing key and the issue log are the vendor's, never the repo's.
+philmer-signing-key.txt
+licenses-issued.csv
+crates/*/target/
+tools/*/target/

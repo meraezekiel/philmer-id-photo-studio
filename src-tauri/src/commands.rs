@@ -316,6 +316,9 @@ pub struct SaveFileArgs {
 
 #[tauri::command]
 pub async fn save_file(args: SaveFileArgs) -> Result<String> {
+    // Gated in Rust, not only in the UI: the buttons are the courtesy, this
+    // is the rule.
+    crate::license::require_active()?;
     tauri::async_runtime::spawn_blocking(move || {
         let path = PathBuf::from(&args.path);
         if let Some(dir) = path.parent() {
@@ -411,7 +414,22 @@ pub fn reset_printer_settings(printer: String) {
 
 #[tauri::command]
 pub async fn print_sheet(job: crate::printing::PrintJob) -> Result<()> {
+    crate::license::require_active()?;
     tauri::async_runtime::spawn_blocking(move || crate::printing::print(job))
         .await
         .map_err(|e| AppError::Other(format!("print_sheet task failed: {e}")))?
+}
+
+// ---------------------------------------------------------------------------
+// Licensing (BUILD_PLAN has no section for this; see docs/licensing.md)
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn license_status() -> crate::license::LicenseStatus {
+    crate::license::status()
+}
+
+#[tauri::command]
+pub fn activate_license(key: String) -> Result<crate::license::LicenseStatus> {
+    crate::license::activate(&key)
 }

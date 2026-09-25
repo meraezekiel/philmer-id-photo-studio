@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon, ICONS } from '../../app/components/ui'
 import { useExport } from '../export/useExport'
 import { PrintDialog, type PrintRequest } from './PrintDialog'
+import { useLicense } from '../license/LicenseDialog'
 import { useSheetLayout } from './useSheetLayout'
 import { PAPERS } from '../../lib/presets'
 import { useJob } from '../../store/job'
@@ -18,6 +19,7 @@ import { useJob } from '../../store/job'
 export function SheetPrintButton({ block = false }: { block?: boolean } = {}) {
   const { printDirect } = useExport()
   const sheet = useSheetLayout()
+  const { canProduce, open: openLicence } = useLicense()
   const paper = useJob((s) => s.paper)
 
   const [open, setOpen] = useState(false)
@@ -70,14 +72,20 @@ export function SheetPrintButton({ block = false }: { block?: boolean } = {}) {
     <>
       <button
         type="button"
-        onClick={openDialog}
+        // An expired trial opens the licence screen instead of the printer:
+        // a disabled button with no explanation is the worst of both.
+        onClick={canProduce ? openDialog : openLicence}
         disabled={sheet.count === 0}
-        title="Print this sheet at true size (Ctrl+P)"
+        title={
+          canProduce
+            ? 'Print this sheet at true size (Ctrl+P)'
+            : 'The trial has ended — enter a licence key'
+        }
         className={`flex h-11 items-center justify-center gap-2 px-5 text-[15px] font-extrabold transition-colors duration-[var(--duration-fast)] disabled:opacity-45 ${block ? 'w-full' : ''}`}
         style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
       >
         <Icon path={ICONS.save} size={18} />
-        Print sheet
+        {canProduce ? 'Print sheet' : 'Licence needed'}
       </button>
 
       {open && (

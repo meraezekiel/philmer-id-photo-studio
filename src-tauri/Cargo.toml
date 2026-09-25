@@ -52,6 +52,8 @@ image = { version = "0.25", default-features = false, features = [
 fast_image_resize = { version = "6.1", features = ["image", "rayon"] }
 kamadak-exif = "0.6"
 
+license-core = { path = "../crates/license-core" }
+
 sha2 = "0.10"
 num_cpus = "1"
 
@@ -99,4 +101,8 @@ features = [
   "Win32_Graphics_Gdi",
   "Win32_Graphics_Printing",
   "Win32_Storage_Xps",
+  # The licence check reads the machine's own identifiers and keeps the
+  # trial record where a reinstall cannot reach it.
+  "Win32_System_Registry",
+  "Win32_Storage_FileSystem",
 ]

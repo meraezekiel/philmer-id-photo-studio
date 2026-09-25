@@ -15,6 +15,7 @@ import { AdjustPanel } from '../features/adjust/AdjustStep'
 import { BackgroundCanvas, BackgroundPanel } from '../features/background/BackgroundStep'
 import { ExportCanvas, ExportPanel } from '../features/export/ExportStep'
 import { ImportStep } from '../features/import/ImportStep'
+import { LicenseChip, useLicense } from '../features/license/LicenseDialog'
 import { SheetPrintButton } from '../features/sheet/SheetPrintButton'
 import { SheetCanvas, SheetPanel } from '../features/sheet/SheetStep'
 import { useSegmentProgressListener } from '../features/import/usePhotoPipeline'
@@ -134,6 +135,7 @@ export function App() {
 }
 
 function Header({ runtime }: { runtime: RuntimeInfo | null }) {
+  const { open: openLicense } = useLicense()
   const step = useJob((s) => s.step)
   const status = useJob((s) => s.status)
   const setStep = useJob((s) => s.setStep)
@@ -219,7 +221,8 @@ function Header({ runtime }: { runtime: RuntimeInfo | null }) {
           />
           <span className="hidden 2xl:inline">{runtime?.ortLoaded ? 'Offline & ready' : 'Runtime unavailable'}</span>
         </span>
-        <IconButton title="Settings">
+        <LicenseChip />
+        <IconButton title="Licence and settings" onClick={openLicense}>
           <Icon path={ICONS.settings} size={18} />
         </IconButton>
       </div>

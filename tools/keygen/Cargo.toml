@@ -1,0 +1,11 @@
+[package]
+name = "keygen"
+version = "0.1.0"
+edition = "2021"
+description = "Vendor-only: issues licence keys. Never shipped to customers."
+publish = false
+
+[dependencies]
+license-core = { path = "../../crates/license-core", features = ["sign"] }
+ed25519-dalek = { version = "2", features = ["std", "rand_core"] }
+rand = "0.8"

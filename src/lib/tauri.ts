@@ -191,3 +191,27 @@ export function onSegmentProgress(
 export function bytesToObjectUrl(bytes: ArrayBuffer, mime: string): string {
   return URL.createObjectURL(new Blob([bytes], { type: mime }))
 }
+
+export interface LicenseStatus {
+  /** `licensed`, `trial` or `expired`. */
+  state: 'licensed' | 'trial' | 'expired'
+  /** `A1B2-C3D4-E5F6-7890`, read out to the vendor to get a key. */
+  machineId: string
+  /** Whole days left in a trial; `-1` when licensed. */
+  daysLeft: number
+  trialDays: number
+  customer: number
+  /** Only set for a licence sold with a term rather than permanently. */
+  expiresInDays: number | null
+  /** Why a trial ended, when the reason is not simply time. */
+  note: string | null
+}
+
+export function licenseStatus(): Promise<LicenseStatus> {
+  return invoke('license_status')
+}
+
+/** Check a key and keep it if it is good for this machine. */
+export function activateLicense(key: string): Promise<LicenseStatus> {
+  return invoke('activate_license', { key })
+}

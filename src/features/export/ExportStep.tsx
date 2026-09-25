@@ -13,6 +13,7 @@ import { cropRotate, drawBitmap } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
 import { PAPERS, PHOTO_PRESETS, PRINT_DPI } from '../../lib/presets'
 import { useJob } from '../../store/job'
+import { useLicense } from '../license/LicenseDialog'
 import { SheetPrintButton } from '../sheet/SheetPrintButton'
 import { useExport } from './useExport'
 
@@ -82,10 +83,33 @@ export function ExportPanel() {
   const { state, dismiss, outputPx, sheet, savePhoto, saveSheetPdf, saveSheetImage } =
     useExport()
 
-  const busy = state.phase === 'working'
+  const { canProduce, open: openLicence } = useLicense()
+  // A shop whose trial ran out can still open and frame a photo; it just
+  // cannot hand one over. The buttons say so before they are pressed.
+  const busy = state.phase === 'working' || !canProduce
 
   return (
     <>
+      {!canProduce && (
+        <div className="px-6 pt-5">
+          <Notice
+            tone="danger"
+            icon={<Icon path={ICONS.warning} size={18} />}
+            action={
+              <button
+                type="button"
+                onClick={openLicence}
+                className="whitespace-nowrap text-[13px] font-bold underline"
+              >
+                Enter key
+              </button>
+            }
+          >
+            The trial has ended. Saving and printing need a licence.
+          </Notice>
+        </div>
+      )}
+
       <Section title="Summary">
         <FieldList>
           <Field label="Photo">

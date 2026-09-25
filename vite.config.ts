@@ -10,8 +10,9 @@ export default defineConfig({
     strictPort: true,
     host: false,
     watch: {
-      // src-tauri is watched by cargo, not vite.
-      ignored: ['**/src-tauri/**'],
+      // Rust is watched by cargo, not vite — and a `target` directory is full
+      // of files that appear and vanish mid-build, which crashes the watcher.
+      ignored: ['**/src-tauri/**', '**/crates/**', '**/tools/**', '**/target/**'],
     },
   },
   build: {
