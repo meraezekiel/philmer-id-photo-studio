@@ -6,6 +6,7 @@ import {
   fillSheet,
   packPackage,
   packageItemsToRequests,
+  reduceRequest,
   photoSizeMm,
   fillSheetAuto,
   packPackageAuto,
@@ -336,5 +337,51 @@ describe('paper orientation', () => {
   it('counts what a package asked for', () => {
     expect(requestedCount([{ presetId: '1x1', qty: 4 }, { presetId: '2x2', qty: 2 }])).toBe(6)
     expect(requestedCount([])).toBe(0)
+  })
+})
+
+describe('reduceRequest', () => {
+  const rows = [
+    { presetId: '2x2', qty: 2 },
+    { presetId: '1x1', qty: 14 },
+  ]
+
+  it('takes the deleted photos off the row they came from', () => {
+    expect(reduceRequest(rows, [1, 1, 1])).toEqual([
+      { presetId: '2x2', qty: 2 },
+      { presetId: '1x1', qty: 11 },
+    ])
+  })
+
+  it('drops a row that reaches zero', () => {
+    expect(reduceRequest(rows, [0, 0])).toEqual([{ presetId: '1x1', qty: 14 }])
+  })
+
+  it('handles several rows at once', () => {
+    expect(reduceRequest(rows, [0, 1, 1])).toEqual([
+      { presetId: '2x2', qty: 1 },
+      { presetId: '1x1', qty: 12 },
+    ])
+  })
+
+  it('never goes below zero, however many are deleted', () => {
+    expect(reduceRequest(rows, [0, 0, 0, 0, 0])).toEqual([{ presetId: '1x1', qty: 14 }])
+  })
+
+  it('leaves the rows alone when nothing was deleted', () => {
+    expect(reduceRequest(rows, [])).toEqual(rows)
+  })
+
+  /**
+   * The point of the whole exercise: what the order says and what the sheet
+   * shows must agree, so that raising the quantity adds one photo rather than
+   * resurrecting every photo that was deleted.
+   */
+  it('leaves the order agreeing with the sheet', () => {
+    const after = reduceRequest(rows, [1, 1, 1, 1, 1, 1])
+    const items = after.map((r) => ({ presetId: r.presetId as PhotoPresetId, qty: r.qty }))
+    const packed = packPackage('a4', items)
+    expect(requestedCount(items)).toBe(packed.placements.length)
+    expect(packed.placements.length).toBe(10)
   })
 })

@@ -42,7 +42,6 @@ export function SheetCanvas() {
   const selected = useJob((s) => s.selectedPhotos)
   const setSelectedPhotos = useJob((s) => s.setSelectedPhotos)
   const removePhotos = useJob((s) => s.removePhotos)
-  const removed = useJob((s) => s.removedPhotos)
 
   const sheet = useSheetLayout()
   const areaRef = useRef<HTMLDivElement>(null)
@@ -107,12 +106,15 @@ export function SheetCanvas() {
       }
       if (selected.length === 0) return
 
-      // Delete takes the highlighted photos off the sheet. Nothing is
-      // repacked, so the rest stay exactly where the operator put them, and
-      // Restore in the panel brings them back.
+      // Delete lowers the order by the photos highlighted: three 1x1s
+      // deleted is three fewer 1x1s asked for. The quantity box then agrees
+      // with the paper, which is the whole point — see removePhotos.
       if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault()
-        removePhotos(selected)
+        const items = selected
+          .map((i) => sheet.placements[i]?.itemIndex)
+          .filter((i): i is number => i !== undefined)
+        removePhotos(items, sheet.count - selected.length)
         return
       }
 
@@ -156,6 +158,7 @@ export function SheetCanvas() {
     sheet.placements,
     sheet.paperWidthMm,
     sheet.paperHeightMm,
+    sheet.count,
     photoOffsets,
     nudgePhotos,
     setSelectedPhotos,
@@ -183,10 +186,8 @@ export function SheetCanvas() {
   }, [area, sheet.paperWidthMm, sheet.paperHeightMm])
 
   const marks = useMemo(
-    // From the visible photos: a mark beside a gap where a photo was removed
-    // would send the blade through blank paper.
-    () => (showCutMarks ? cutMarks({ placements: sheet.visible, gapMm: sheet.gapMm }) : []),
-    [showCutMarks, sheet.visible, sheet.gapMm],
+    () => (showCutMarks ? cutMarks({ placements: sheet.placements, gapMm: sheet.gapMm }) : []),
+    [showCutMarks, sheet.placements, sheet.gapMm],
   )
 
   /**
@@ -246,7 +247,6 @@ export function SheetCanvas() {
         const box = marqueeRef.current
         const hit = sheet.placements
           .map((p, i) => ({ p, i }))
-          .filter(({ i }) => !removed.includes(i))
           .filter(({ p }) => {
             const x1 = p.xMm * scale
             const y1 = p.yMm * scale
@@ -281,7 +281,6 @@ export function SheetCanvas() {
     sheet.paperHeightMm,
     nudgePhotos,
     setSelectedPhotos,
-    removed,
   ])
 
   if (!preview) return null
@@ -330,8 +329,7 @@ export function SheetCanvas() {
             }}
           />
 
-          {sheet.placements.map((p, i) =>
-            removed.includes(i) ? null : (
+          {sheet.placements.map((p, i) => (
             <div
               key={i}
               className="absolute cursor-grab overflow-hidden active:cursor-grabbing"
@@ -412,8 +410,7 @@ export function SheetCanvas() {
                 />
               )}
             </div>
-            ),
-          )}
+          ))}
 
           <svg className="pointer-events-none absolute inset-0 h-full w-full">
             {marks.map((m, i) => (
@@ -545,7 +542,6 @@ export function SheetPanel() {
   const resetSheetPositions = useJob((s) => s.resetSheetPositions)
   const selected = useJob((s) => s.selectedPhotos)
   const setSelectedPhotos = useJob((s) => s.setSelectedPhotos)
-  const restorePhotos = useJob((s) => s.restorePhotos)
   const orientation = useJob((s) => s.paperOrientation)
   const setOrientation = useJob((s) => s.setPaperOrientation)
 
@@ -692,7 +688,7 @@ export function SheetPanel() {
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted">
             {selected.length > 0
-              ? `${selected.length} of ${sheet.count} selected · arrows move 1 mm (Shift 5 mm, Alt 0.1 mm), Delete removes`
+              ? `${selected.length} of ${sheet.count} selected · arrows move 1 mm (Shift 5 mm, Alt 0.1 mm), Delete lowers the quantity`
               : 'Drag across the paper to highlight photos, then drag them together.'}
           </span>
           {selected.length > 0 ? (
@@ -707,13 +703,7 @@ export function SheetPanel() {
             sheet.count > 1 && (
               <button
                 type="button"
-                onClick={() =>
-                  setSelectedPhotos(
-                    sheet.placements
-                      .map((_, i) => i)
-                      .filter((i) => !sheet.removed.includes(i)),
-                  )
-                }
+                onClick={() => setSelectedPhotos(sheet.placements.map((_, i) => i))}
                 className="whitespace-nowrap text-xs font-bold text-accent hover:underline"
               >
                 Select all
@@ -721,22 +711,6 @@ export function SheetPanel() {
             )
           )}
         </div>
-
-        {sheet.removed.length > 0 && (
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-muted">
-              {sheet.removed.length} {sheet.removed.length === 1 ? 'photo' : 'photos'} removed from
-              the sheet
-            </span>
-            <button
-              type="button"
-              onClick={restorePhotos}
-              className="whitespace-nowrap text-xs font-bold text-accent hover:underline"
-            >
-              Restore
-            </button>
-          </div>
-        )}
 
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted">

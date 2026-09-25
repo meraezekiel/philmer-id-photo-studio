@@ -83,9 +83,7 @@ export function useExport() {
       paperHeightMm: sheet.paperHeightMm,
       marginMm: sheet.marginMm,
       gapMm: sheet.gapMm,
-      // The visible ones: a photo the operator deleted from the sheet must
-      // not reappear in the PDF, the JPEG or the print.
-      placements: sheet.visible,
+      placements: sheet.placements,
       showCutMarks,
       showBorders,
     }),

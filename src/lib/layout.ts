@@ -412,3 +412,24 @@ export function packPackageAuto(
 export function requestedCount(items: PackageRequest[]): number {
   return items.reduce((n, i) => n + Math.max(0, i.qty), 0)
 }
+
+/**
+ * Deleting photos off the sheet is an edit to the order.
+ *
+ * Every placement carries the package row it came from, so removing photos
+ * means asking for that many fewer of that size. The alternative — hiding
+ * individual slots — leaves the order saying 14 while the sheet shows 8, and
+ * the next touch of the quantity box brings the hidden ones back.
+ *
+ * A row that reaches zero is dropped: an order line for nothing is noise.
+ */
+export function reduceRequest<T extends { qty: number }>(
+  rows: T[],
+  removedItemIndices: number[],
+): T[] {
+  const perRow = new Map<number, number>()
+  for (const i of removedItemIndices) perRow.set(i, (perRow.get(i) ?? 0) + 1)
+  return rows
+    .map((row, i) => ({ ...row, qty: Math.max(0, row.qty - (perRow.get(i) ?? 0)) }))
+    .filter((row) => row.qty > 0)
+}
