@@ -278,7 +278,12 @@ export function SheetCanvas() {
       {scale > 0 && (
         <div
           ref={paperRef}
-          className="relative shadow-lg"
+          // Focusable so that touching the paper takes focus away from the
+          // quantity boxes. Otherwise the arrow keys keep going to whichever
+          // field was last clicked, and they change the count instead of
+          // moving the photos the operator just highlighted.
+          tabIndex={-1}
+          className="relative shadow-lg focus:outline-none"
           style={{
             width: paperW,
             height: paperH,
@@ -288,6 +293,7 @@ export function SheetCanvas() {
           onMouseDown={(e) => {
             if (e.button !== 0) return
             e.preventDefault()
+            paperRef.current?.focus({ preventScroll: true })
             // Blank paper starts a selection box, and clears the old selection
             // so a stray click is an obvious "nothing selected".
             setSelectedPhotos([])
@@ -316,6 +322,7 @@ export function SheetCanvas() {
                 if (e.button !== 0) return
                 e.preventDefault()
                 e.stopPropagation()
+                paperRef.current?.focus({ preventScroll: true })
                 // Dragging a highlighted photo takes the whole selection with
                 // it. Dragging one outside the selection selects just that one,
                 // so a plain single drag behaves as it always did.
