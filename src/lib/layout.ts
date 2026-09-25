@@ -36,6 +36,12 @@ export interface LayoutOptions {
   /** Cap the count; `undefined` means "fill the sheet". */
   quantity?: number
   /**
+   * Nudge the whole block, in millimetres, from its top-left anchor. This is
+   * what the drag on the sheet preview writes.
+   */
+  offsetXMm?: number
+  offsetYMm?: number
+  /**
    * Turn the *paper* sideways. For a uniform grid this cannot change the count
    * (`cols * rows` is symmetric under swapping the paper's sides), but for a
    * mixed-size package it very much can, because shelf packing is not.
@@ -147,11 +153,12 @@ export function fillSheet(
   const wanted =
     options.quantity === undefined ? capacity : Math.max(0, Math.min(options.quantity, capacity))
 
-  // Centre the block of cells rather than hugging the top-left margin.
-  const blockW = chosen.cols * cellW + Math.max(0, chosen.cols - 1) * gapMm
-  const blockH = chosen.rows * cellH + Math.max(0, chosen.rows - 1) * gapMm
-  const originX = (paper.widthMm - blockW) / 2
-  const originY = (paper.heightMm - blockH) / 2
+  // Anchor at the top-left of the printable area. Starting at the top is what
+  // the shop wants: you cut from the top down and whatever paper is left over
+  // stays in one usable piece, instead of being stranded above and below a
+  // centred block.
+  const originX = marginMm + (options.offsetXMm ?? 0)
+  const originY = marginMm + (options.offsetYMm ?? 0)
 
   const placements: Placement[] = []
   for (let i = 0; i < wanted; i++) {
@@ -277,12 +284,11 @@ export function packPackage(
     shelfH = Math.max(shelfH, unit.heightMm)
   }
 
-  // Centre the packed block as a whole, matching fillSheet's look.
-  if (placements.length > 0) {
-    const usedRight = Math.max(...placements.map((p) => p.xMm + p.widthMm))
-    const usedBottom = Math.max(...placements.map((p) => p.yMm + p.heightMm))
-    const dx = (paper.widthMm - (usedRight - marginMm)) / 2 - marginMm
-    const dy = (paper.heightMm - (usedBottom - marginMm)) / 2 - marginMm
+  // Shift the packed block by the operator's drag. The pack itself already
+  // starts at the top-left margin, which is where a cutting job wants it.
+  const dx = options.offsetXMm ?? 0
+  const dy = options.offsetYMm ?? 0
+  if (dx !== 0 || dy !== 0) {
     for (const p of placements) {
       p.xMm += dx
       p.yMm += dy
@@ -319,6 +325,15 @@ export interface CutMark {
 }
 
 export const CUT_MARK_WIDTH_MM = 0.2
+
+/**
+ * Hairline rule drawn on each photo's edge so the blade has a line to follow.
+ *
+ * 0.25 mm is about 3 px at 300 DPI: the thinnest that still reads clearly on
+ * paper under counter lighting. It straddles the cut boundary, so it costs the
+ * photo about an eighth of a millimetre — invisible at ID sizes.
+ */
+export const PHOTO_BORDER_MM = 0.25
 
 export function cutMarks(layout: Pick<SheetLayout, 'placements' | 'gapMm'>): CutMark[] {
   const tick = Math.max(1.5, layout.gapMm)

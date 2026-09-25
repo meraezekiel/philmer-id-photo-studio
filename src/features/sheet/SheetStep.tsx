@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, ICONS, Notice, Section, Segmented } from '../../app/components/ui'
 import type { CropRect } from '../../lib/autoCrop'
 import { composite, type Bitmap } from '../../lib/composite'
-import { cutMarks } from '../../lib/layout'
+import { cutMarks, PHOTO_BORDER_MM } from '../../lib/layout'
 import {
   PACKAGE_PRESETS,
   PAPERS,
@@ -36,9 +36,24 @@ export function SheetCanvas() {
   const showCutMarks = useJob((s) => s.cutMarks)
   const paper = useJob((s) => s.paper)
 
+  const showBorders = useJob((s) => s.photoBorders)
+  const offsetXMm = useJob((s) => s.sheetOffsetXMm)
+  const offsetYMm = useJob((s) => s.sheetOffsetYMm)
+  const setSheetOffset = useJob((s) => s.setSheetOffset)
+  const setPhotoOffset = useJob((s) => s.setPhotoOffset)
+  const photoOffsets = useJob((s) => s.photoOffsets)
+
   const sheet = useSheetLayout()
   const areaRef = useRef<HTMLDivElement>(null)
   const [area, setArea] = useState({ width: 0, height: 0 })
+  const [dragging, setDragging] = useState(false)
+  const dragRef = useRef<{
+    index: number | null
+    startX: number
+    startY: number
+    baseX: number
+    baseY: number
+  } | null>(null)
 
   useEffect(() => {
     const node = areaRef.current
@@ -76,6 +91,67 @@ export function SheetCanvas() {
     [showCutMarks, sheet.placements, sheet.gapMm],
   )
 
+  /**
+   * Drag to reposition.
+   *
+   * Grabbing a photo moves that photo alone; grabbing blank paper moves the
+   * whole block. Movement converts from screen pixels back to millimetres
+   * through the preview scale, and is clamped so whatever is being dragged
+   * stays on the paper — dragging a photo off the page would silently print
+   * fewer than the sheet claims.
+   */
+  useEffect(() => {
+    if (!dragging) return
+
+    const onMove = (event: MouseEvent) => {
+      const drag = dragRef.current
+      if (!drag || scale <= 0) return
+      const dxMm = (event.clientX - drag.startX) / scale
+      const dyMm = (event.clientY - drag.startY) / scale
+
+      if (drag.index === null) {
+        const left = Math.min(...sheet.placements.map((p) => p.xMm), 0)
+        const right = Math.max(...sheet.placements.map((p) => p.xMm + p.widthMm), 0)
+        const top = Math.min(...sheet.placements.map((p) => p.yMm), 0)
+        const bottom = Math.max(...sheet.placements.map((p) => p.yMm + p.heightMm), 0)
+        setSheetOffset(
+          clamp(drag.baseX + dxMm, drag.baseX - left, drag.baseX + (sheet.paperWidthMm - right)),
+          clamp(drag.baseY + dyMm, drag.baseY - top, drag.baseY + (sheet.paperHeightMm - bottom)),
+        )
+        return
+      }
+
+      const p = sheet.placements[drag.index]
+      if (!p) return
+      // The placement already includes this photo's current nudge, so the
+      // travel limits are expressed relative to the nudge being edited.
+      setPhotoOffset(
+        drag.index,
+        clamp(drag.baseX + dxMm, drag.baseX - p.xMm, drag.baseX + (sheet.paperWidthMm - p.xMm - p.widthMm)),
+        clamp(drag.baseY + dyMm, drag.baseY - p.yMm, drag.baseY + (sheet.paperHeightMm - p.yMm - p.heightMm)),
+      )
+    }
+
+    const onUp = () => {
+      dragRef.current = null
+      setDragging(false)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [
+    dragging,
+    scale,
+    sheet.placements,
+    sheet.paperWidthMm,
+    sheet.paperHeightMm,
+    setSheetOffset,
+    setPhotoOffset,
+  ])
+
   if (!preview) return null
 
   const paperW = sheet.paperWidthMm * scale
@@ -86,7 +162,24 @@ export function SheetCanvas() {
       {scale > 0 && (
         <div
           className="relative shadow-lg"
-          style={{ width: paperW, height: paperH, background: '#fff' }}
+          style={{
+            width: paperW,
+            height: paperH,
+            background: '#fff',
+            cursor: dragging ? 'grabbing' : 'grab',
+          }}
+          onMouseDown={(e) => {
+            if (e.button !== 0) return
+            e.preventDefault()
+            dragRef.current = {
+              index: null,
+              startX: e.clientX,
+              startY: e.clientY,
+              baseX: offsetXMm,
+              baseY: offsetYMm,
+            }
+            setDragging(true)
+          }}
         >
           {/* Margins, faint — they explain why the photos stop where they do. */}
           <div
@@ -103,19 +196,38 @@ export function SheetCanvas() {
           {sheet.placements.map((p, i) => (
             <div
               key={i}
-              className="absolute overflow-hidden"
+              className="absolute cursor-grab overflow-hidden active:cursor-grabbing"
+              onMouseDown={(e) => {
+                if (e.button !== 0) return
+                e.preventDefault()
+                e.stopPropagation()
+                const current = photoOffsets[i] ?? { xMm: 0, yMm: 0 }
+                dragRef.current = {
+                  index: i,
+                  startX: e.clientX,
+                  startY: e.clientY,
+                  baseX: current.xMm,
+                  baseY: current.yMm,
+                }
+                setDragging(true)
+              }}
               style={{
                 left: p.xMm * scale,
                 top: p.yMm * scale,
                 width: p.widthMm * scale,
                 height: p.heightMm * scale,
+                // The same hairline the PDF strokes, so the preview shows the
+                // line the blade will follow. Never thinner than 1 px or it
+                // disappears on screen at small preview scales.
+                outline: showBorders ? `${Math.max(1, PHOTO_BORDER_MM * scale)}px solid #000` : undefined,
+                outlineOffset: -Math.max(1, PHOTO_BORDER_MM * scale) / 2,
               }}
             >
               {photoUrl && (
                 <img
                   src={photoUrl}
                   alt=""
-                  className="block"
+                  className="pointer-events-none block"
                   style={
                     p.rotated
                       ? {
@@ -228,10 +340,18 @@ export function SheetPanel() {
   const setRows = useJob((s) => s.setPackageRows)
   const showCutMarks = useJob((s) => s.cutMarks)
   const setCutMarks = useJob((s) => s.setCutMarks)
+  const showBorders = useJob((s) => s.photoBorders)
+  const setPhotoBorders = useJob((s) => s.setPhotoBorders)
+  const offsetXMm = useJob((s) => s.sheetOffsetXMm)
+  const offsetYMm = useJob((s) => s.sheetOffsetYMm)
+  const photoOffsets = useJob((s) => s.photoOffsets)
+  const resetSheetPositions = useJob((s) => s.resetSheetPositions)
   const orientation = useJob((s) => s.paperOrientation)
   const setOrientation = useJob((s) => s.setPaperOrientation)
 
   const sheet = useSheetLayout()
+  const moved =
+    offsetXMm !== 0 || offsetYMm !== 0 || Object.keys(photoOffsets).length > 0
 
   const suggestBigger = (): PaperId | null => {
     const order: PaperId[] = ['4r', 'short', 'a4', 'long']
@@ -336,11 +456,22 @@ export function SheetPanel() {
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <input
             type="checkbox"
+            checked={showBorders}
+            onChange={(e) => setPhotoBorders(e.target.checked)}
+            className="h-4 w-4 accent-[var(--color-accent)]"
+          />
+          Photo borders
+          <span className="ml-auto text-xs text-muted">a line to cut along</span>
+        </label>
+
+        <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <input
+            type="checkbox"
             checked={showCutMarks}
             onChange={(e) => setCutMarks(e.target.checked)}
             className="h-4 w-4 accent-[var(--color-accent)]"
           />
-          Cut marks
+          Corner marks
         </label>
 
         {/* Stacked, not inline: three labels plus a label do not fit 360 px. */}
@@ -356,6 +487,21 @@ export function SheetPanel() {
             onChange={setOrientation}
             columns={3}
           />
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-muted">
+            {moved ? 'Positions adjusted by hand' : 'Drag a photo to move it, or the paper to move all.'}
+          </span>
+          {moved && (
+            <button
+              type="button"
+              onClick={resetSheetPositions}
+              className="whitespace-nowrap text-xs font-bold text-accent hover:underline"
+            >
+              Reset positions
+            </button>
+          )}
         </div>
 
         <p className="tabular text-xs text-muted">
@@ -460,6 +606,10 @@ function PackageBuilder({
       </div>
     </div>
   )
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
 }
 
 function trim(value: number, decimals = 1): string {

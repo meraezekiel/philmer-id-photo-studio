@@ -37,6 +37,7 @@ export function useExport() {
   const hairDetail = useJob((s) => s.hairDetail)
   const quality = useJob((s) => s.quality)
   const showCutMarks = useJob((s) => s.cutMarks)
+  const showBorders = useJob((s) => s.photoBorders)
   const sheet = useSheetLayout()
 
   const [state, setState] = useState<ExportPhase>({ phase: 'idle' })
@@ -84,8 +85,9 @@ export function useExport() {
       gapMm: sheet.gapMm,
       placements: sheet.placements,
       showCutMarks,
+      showBorders,
     }),
-    [sheet, showCutMarks],
+    [sheet, showCutMarks, showBorders],
   )
 
   const run = useCallback(

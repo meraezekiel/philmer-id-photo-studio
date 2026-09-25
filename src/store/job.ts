@@ -82,7 +82,17 @@ export interface JobState {
   quantity: number
   packageRows: PackageRow[]
   cutMarks: boolean
+  /** A thin black rule on each photo so the blade has a line to follow. */
+  photoBorders: boolean
   paperOrientation: PaperOrientation
+  /** Drag offset of the whole block from its top-left anchor, in mm. */
+  sheetOffsetXMm: number
+  sheetOffsetYMm: number
+  /**
+   * Per-photo nudges, keyed by placement index, in mm. Dragging one photo
+   * moves only that photo; the block offset still moves everything.
+   */
+  photoOffsets: Record<number, { xMm: number; yMm: number }>
 
   background: string
   edgeSoftness: number
@@ -110,6 +120,10 @@ export interface JobState {
   setQuantity: (qty: number) => void
   setPackageRows: (rows: PackageRow[]) => void
   setCutMarks: (on: boolean) => void
+  setPhotoBorders: (on: boolean) => void
+  setSheetOffset: (xMm: number, yMm: number) => void
+  setPhotoOffset: (index: number, xMm: number, yMm: number) => void
+  resetSheetPositions: () => void
   setPaperOrientation: (o: PaperOrientation) => void
   setBackground: (hex: string) => void
   setEdgeSoftness: (value: number) => void
@@ -150,7 +164,11 @@ export const useJob = create<JobState>((set) => ({
     { presetId: '1x1', qty: 4 },
   ],
   cutMarks: true,
+  photoBorders: true,
   paperOrientation: 'auto',
+  sheetOffsetXMm: 0,
+  sheetOffsetYMm: 0,
+  photoOffsets: {},
   background: PHOTO_PRESETS['2x2'].defaultBackground,
   edgeSoftness: 0,
   hairDetail: 0,
@@ -195,6 +213,9 @@ export const useJob = create<JobState>((set) => ({
       crownOverride: null,
       chinOverride: null,
       cropRect: null,
+      sheetOffsetXMm: 0,
+      sheetOffsetYMm: 0,
+      photoOffsets: {},
     }),
 
   /**
@@ -211,12 +232,22 @@ export const useJob = create<JobState>((set) => ({
       rotation: state.levelEyes ? state.rotation : 0,
     })),
 
-  setPaper: (paper) => set({ paper }),
-  setSheetMode: (sheetMode) => set({ sheetMode }),
+  // A drag was made against one paper and layout; carrying it to another
+  // would move the block somewhere the operator never put it.
+  setPaper: (paper) => set({ paper, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {} }),
+  setSheetMode: (sheetMode) => set({ sheetMode, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {} }),
   setQuantity: (quantity) => set({ quantity: Math.max(1, Math.round(quantity)) }),
   setPackageRows: (packageRows) => set({ packageRows }),
   setCutMarks: (cutMarks) => set({ cutMarks }),
-  setPaperOrientation: (paperOrientation) => set({ paperOrientation }),
+  setPhotoBorders: (photoBorders) => set({ photoBorders }),
+  setSheetOffset: (sheetOffsetXMm, sheetOffsetYMm) => set({ sheetOffsetXMm, sheetOffsetYMm }),
+
+  setPhotoOffset: (index, xMm, yMm) =>
+    set((state) => ({ photoOffsets: { ...state.photoOffsets, [index]: { xMm, yMm } } })),
+
+  resetSheetPositions: () => set({ sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {} }),
+  setPaperOrientation: (paperOrientation) =>
+    set({ paperOrientation, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {} }),
   setBackground: (background) => set({ background }),
   setEdgeSoftness: (edgeSoftness) => set({ edgeSoftness }),
   setHairDetail: (hairDetail) => set({ hairDetail }),
@@ -238,6 +269,9 @@ export const useJob = create<JobState>((set) => ({
       crownOverride: null,
       chinOverride: null,
       cropRect: null,
+      sheetOffsetXMm: 0,
+      sheetOffsetYMm: 0,
+      photoOffsets: {},
     })
   },
 }))

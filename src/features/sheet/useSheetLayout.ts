@@ -43,18 +43,32 @@ export function useSheetLayout(): SheetResult {
   const quantity = useJob((s) => s.quantity)
   const packageRows = useJob((s) => s.packageRows)
   const orientation = useJob((s) => s.paperOrientation)
+  const offsetXMm = useJob((s) => s.sheetOffsetXMm)
+  const offsetYMm = useJob((s) => s.sheetOffsetYMm)
+  const photoOffsets = useJob((s) => s.photoOffsets)
 
   return useMemo(() => {
     const margin = PAPERS[paper].defaultMarginMm
+
+    /**
+     * Per-photo nudges are applied last, on top of the packed layout, so the
+     * packer stays a pure function of the settings and a hand-placed photo is
+     * simply an offset from where the packer put it.
+     */
+    const nudge = (placements: Placement[]): Placement[] =>
+      placements.map((p, i) => {
+        const o = photoOffsets[i]
+        return o ? { ...p, xMm: p.xMm + o.xMm, yMm: p.yMm + o.yMm } : p
+      })
 
     if (mode === 'package') {
       const items: PackageRequest[] = packageRows
         .filter((r) => r.qty > 0)
         .map((r) => ({ presetId: r.presetId, qty: r.qty }))
-      const result = packPackageAuto(paper, items, orientation)
+      const result = packPackageAuto(paper, items, orientation, { offsetXMm, offsetYMm })
       const asked = requestedCount(items)
       return {
-        placements: result.placements,
+        placements: nudge(result.placements),
         paperWidthMm: result.paperWidthMm,
         paperHeightMm: result.paperHeightMm,
         marginMm: result.marginMm,
@@ -75,14 +89,14 @@ export function useSheetLayout(): SheetResult {
     )
     // Capacity is measured before any quantity cap, so "Fill sheet" can show
     // the true maximum even while Exact quantity is selected.
-    const full = fillSheetAuto(paper, photo, orientation, { marginMm: margin })
+    const full = fillSheetAuto(paper, photo, orientation, { marginMm: margin, offsetXMm, offsetYMm })
     const layout =
       mode === 'exact'
-        ? fillSheetAuto(paper, photo, orientation, { marginMm: margin, quantity })
+        ? fillSheetAuto(paper, photo, orientation, { marginMm: margin, quantity, offsetXMm, offsetYMm })
         : full
 
     return {
-      placements: layout.placements,
+      placements: nudge(layout.placements),
       paperWidthMm: layout.paperWidthMm,
       paperHeightMm: layout.paperHeightMm,
       marginMm: layout.marginMm,
@@ -94,5 +108,5 @@ export function useSheetLayout(): SheetResult {
       fits: mode !== 'exact' || quantity <= full.capacity,
       missing: mode === 'exact' ? Math.max(0, quantity - full.capacity) : 0,
     }
-  }, [paper, presetId, mode, quantity, packageRows, orientation])
+  }, [paper, presetId, mode, quantity, packageRows, orientation, offsetXMm, offsetYMm, photoOffsets])
 }

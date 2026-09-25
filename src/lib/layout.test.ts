@@ -97,11 +97,24 @@ describe('fillSheet geometry', () => {
     }
   })
 
-  it('centres the grid on the paper', () => {
+  it('anchors the grid at the top-left margin, not centred', () => {
+    // A cutting job wants the photos at the top: you cut downwards and the
+    // leftover paper stays in one usable piece.
     const layout = fillSheet('a4', photoSizeMm('2x2'))
     const left = Math.min(...layout.placements.map((p) => p.xMm))
-    const right = Math.max(...layout.placements.map((p) => p.xMm + p.widthMm))
-    expect(left).toBeCloseTo(PAPERS.a4.widthMm - right, 6)
+    const top = Math.min(...layout.placements.map((p) => p.yMm))
+    expect(left).toBeCloseTo(layout.marginMm, 6)
+    expect(top).toBeCloseTo(layout.marginMm, 6)
+  })
+
+  it('shifts the whole block by the drag offset', () => {
+    const base = fillSheet('a4', photoSizeMm('2x2'))
+    const moved = fillSheet('a4', photoSizeMm('2x2'), { offsetXMm: 7, offsetYMm: 11 })
+    expect(moved.placements).toHaveLength(base.placements.length)
+    moved.placements.forEach((p, i) => {
+      expect(p.xMm).toBeCloseTo(base.placements[i].xMm + 7, 6)
+      expect(p.yMm).toBeCloseTo(base.placements[i].yMm + 11, 6)
+    })
   })
 
   it('honours an exact quantity and never exceeds capacity', () => {
@@ -201,6 +214,27 @@ describe('packPackage', () => {
     ])
     expect(result.placements.filter((p) => p.itemIndex === 0)).toHaveLength(2)
     expect(result.placements.filter((p) => p.itemIndex === 1)).toHaveLength(3)
+  })
+
+  it('packs a package from the top-left margin', () => {
+    const result = packPackage('a4', [
+      { presetId: '2x2', qty: 2 },
+      { presetId: '1x1', qty: 4 },
+    ])
+    const left = Math.min(...result.placements.map((p) => p.xMm))
+    const top = Math.min(...result.placements.map((p) => p.yMm))
+    expect(left).toBeCloseTo(result.marginMm, 6)
+    expect(top).toBeCloseTo(result.marginMm, 6)
+  })
+
+  it('shifts a packed block by the drag offset', () => {
+    const items = [{ presetId: '1x1' as const, qty: 3 }]
+    const base = packPackage('a4', items)
+    const moved = packPackage('a4', items, { offsetXMm: -4, offsetYMm: 6 })
+    moved.placements.forEach((p, i) => {
+      expect(p.xMm).toBeCloseTo(base.placements[i].xMm - 4, 6)
+      expect(p.yMm).toBeCloseTo(base.placements[i].yMm + 6, 6)
+    })
   })
 
   it('an empty package is trivially satisfied', () => {

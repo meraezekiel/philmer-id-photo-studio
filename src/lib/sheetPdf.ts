@@ -16,7 +16,7 @@ import { PDFDocument, rgb } from 'pdf-lib'
 
 import type { Bitmap } from './composite'
 import { mmToPoints, mmToPx } from './dpi'
-import { CUT_MARK_WIDTH_MM, cutMarks, type Placement } from './layout'
+import { CUT_MARK_WIDTH_MM, PHOTO_BORDER_MM, cutMarks, type Placement } from './layout'
 import { PRINT_DPI } from './presets'
 
 export interface SheetSpec {
@@ -26,6 +26,8 @@ export interface SheetSpec {
   gapMm: number
   placements: Placement[]
   showCutMarks: boolean
+  /** Hairline black rule on every photo, to cut along. */
+  showBorders: boolean
 }
 
 /** Cut marks are a faint grey so they guide the blade without printing boldly. */
@@ -72,6 +74,24 @@ export async function buildSheetPdf(
       })
     } else {
       page.drawImage(image, { x, y, width: w, height: h })
+    }
+  }
+
+  if (spec.showBorders) {
+    // Stroked after every photo so no tile can paint over its neighbour's rule.
+    const black = rgb(0, 0, 0)
+    const border = mmToPoints(PHOTO_BORDER_MM)
+    for (const placement of spec.placements) {
+      const w = mmToPoints(placement.widthMm)
+      const h = mmToPoints(placement.heightMm)
+      page.drawRectangle({
+        x: mmToPoints(placement.xMm),
+        y: pageHeight - mmToPoints(placement.yMm) - h,
+        width: w,
+        height: h,
+        borderColor: black,
+        borderWidth: border,
+      })
     }
   }
 
@@ -140,6 +160,19 @@ export async function renderSheetBitmap(
       ctx.restore()
     } else {
       ctx.drawImage(source, x, y, w, h)
+    }
+  }
+
+  if (spec.showBorders) {
+    ctx.strokeStyle = '#000000'
+    ctx.lineWidth = Math.max(1, toPx(PHOTO_BORDER_MM))
+    for (const placement of spec.placements) {
+      ctx.strokeRect(
+        toPx(placement.xMm),
+        toPx(placement.yMm),
+        toPx(placement.widthMm),
+        toPx(placement.heightMm),
+      )
     }
   }
 
