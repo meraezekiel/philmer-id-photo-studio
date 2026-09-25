@@ -98,6 +98,12 @@ export interface JobState {
    * them moves the whole selection.
    */
   selectedPhotos: number[]
+  /**
+   * Placement indices taken off the sheet. The packer still produces them —
+   * that is what keeps every other photo's index, and so its nudge, attached
+   * to the same photo — they are simply not drawn and not printed.
+   */
+  removedPhotos: number[]
 
   background: string
   edgeSoftness: number
@@ -130,6 +136,8 @@ export interface JobState {
   setPhotoOffset: (index: number, xMm: number, yMm: number) => void
   nudgePhotos: (indices: number[], deltas: Record<number, { xMm: number; yMm: number }>) => void
   setSelectedPhotos: (indices: number[]) => void
+  removePhotos: (indices: number[]) => void
+  restorePhotos: () => void
   resetSheetPositions: () => void
   setPaperOrientation: (o: PaperOrientation) => void
   setBackground: (hex: string) => void
@@ -177,6 +185,7 @@ export const useJob = create<JobState>((set) => ({
   sheetOffsetYMm: 0,
   photoOffsets: {},
   selectedPhotos: [],
+  removedPhotos: [],
   background: PHOTO_PRESETS['2x2'].defaultBackground,
   edgeSoftness: 0,
   hairDetail: 0,
@@ -225,6 +234,7 @@ export const useJob = create<JobState>((set) => ({
       sheetOffsetYMm: 0,
       photoOffsets: {},
       selectedPhotos: [],
+      removedPhotos: [],
     }),
 
   /**
@@ -243,13 +253,13 @@ export const useJob = create<JobState>((set) => ({
 
   // A drag was made against one paper and layout; carrying it to another
   // would move the block somewhere the operator never put it.
-  setPaper: (paper) => set({ paper, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
-  setSheetMode: (sheetMode) => set({ sheetMode, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
+  setPaper: (paper) => set({ paper, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [], removedPhotos: [] }),
+  setSheetMode: (sheetMode) => set({ sheetMode, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [], removedPhotos: [] }),
   // Changing the count renumbers the tiles, so a kept selection would
   // highlight whichever photos happen to land on those indices.
   setQuantity: (quantity) =>
-    set({ quantity: Math.max(1, Math.round(quantity)), selectedPhotos: [] }),
-  setPackageRows: (packageRows) => set({ packageRows, selectedPhotos: [] }),
+    set({ quantity: Math.max(1, Math.round(quantity)), selectedPhotos: [], removedPhotos: [] }),
+  setPackageRows: (packageRows) => set({ packageRows, selectedPhotos: [], removedPhotos: [] }),
   setCutMarks: (cutMarks) => set({ cutMarks }),
   setPhotoBorders: (photoBorders) => set({ photoBorders }),
   setSheetOffset: (sheetOffsetXMm, sheetOffsetYMm) => set({ sheetOffsetXMm, sheetOffsetYMm }),
@@ -270,9 +280,27 @@ export const useJob = create<JobState>((set) => ({
 
   setSelectedPhotos: (selectedPhotos) => set({ selectedPhotos }),
 
-  resetSheetPositions: () => set({ sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
+  /**
+   * Take photos off the sheet without repacking it.
+   *
+   * Repacking would slide every later photo up into the gap, which is the
+   * opposite of what the operator asked for: they cleared a space on the
+   * paper and expect the rest to stay exactly where they are.
+   */
+  removePhotos: (indices) =>
+    set((state) => ({
+      removedPhotos: [...new Set([...state.removedPhotos, ...indices])],
+      selectedPhotos: [],
+    })),
+
+  restorePhotos: () => set({ removedPhotos: [] }),
+
+  // Positions only: photos taken off the sheet come back through Restore, so
+  // neither button quietly undoes the other's work.
+  resetSheetPositions: () =>
+    set({ sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
   setPaperOrientation: (paperOrientation) =>
-    set({ paperOrientation, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
+    set({ paperOrientation, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [], removedPhotos: [] }),
   setBackground: (background) => set({ background }),
   setEdgeSoftness: (edgeSoftness) => set({ edgeSoftness }),
   setHairDetail: (hairDetail) => set({ hairDetail }),
@@ -298,6 +326,7 @@ export const useJob = create<JobState>((set) => ({
       sheetOffsetYMm: 0,
       photoOffsets: {},
       selectedPhotos: [],
+      removedPhotos: [],
     })
   },
 }))

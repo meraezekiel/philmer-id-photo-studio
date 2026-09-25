@@ -20,7 +20,15 @@ import { PAPERS, PHOTO_PRESETS } from '../../lib/presets'
 import { useJob } from '../../store/job'
 
 export interface SheetResult {
+  /**
+   * Every packed slot, in packer order. Indices are stable, which is what
+   * per-photo nudges, the selection and removals are all keyed by.
+   */
   placements: Placement[]
+  /** The ones that will actually print: `placements` minus the removed. */
+  visible: Placement[]
+  /** Indices of `placements` the operator has taken off the sheet. */
+  removed: number[]
   paperWidthMm: number
   paperHeightMm: number
   marginMm: number
@@ -46,9 +54,13 @@ export function useSheetLayout(): SheetResult {
   const offsetXMm = useJob((s) => s.sheetOffsetXMm)
   const offsetYMm = useJob((s) => s.sheetOffsetYMm)
   const photoOffsets = useJob((s) => s.photoOffsets)
+  const removedPhotos = useJob((s) => s.removedPhotos)
 
   return useMemo(() => {
     const margin = PAPERS[paper].defaultMarginMm
+    const removed = removedPhotos
+    const keep = (placements: Placement[]): Placement[] =>
+      removed.length === 0 ? placements : placements.filter((_, i) => !removed.includes(i))
 
     /**
      * Per-photo nudges are applied last, on top of the packed layout, so the
@@ -67,15 +79,18 @@ export function useSheetLayout(): SheetResult {
         .map((r) => ({ presetId: r.presetId, qty: r.qty }))
       const result = packPackageAuto(paper, items, orientation, { offsetXMm, offsetYMm })
       const asked = requestedCount(items)
+      const placed = nudge(result.placements)
       return {
-        placements: nudge(result.placements),
+        placements: placed,
+        visible: keep(placed),
+        removed,
         paperWidthMm: result.paperWidthMm,
         paperHeightMm: result.paperHeightMm,
         marginMm: result.marginMm,
         gapMm: result.gapMm,
         paperLandscape: result.paperLandscape,
         capacity: result.placements.length,
-        count: result.placements.length,
+        count: keep(placed).length,
         fits: result.fits,
         missing: Math.max(0, asked - result.placements.length),
       }
@@ -95,18 +110,32 @@ export function useSheetLayout(): SheetResult {
         ? fillSheetAuto(paper, photo, orientation, { marginMm: margin, quantity, offsetXMm, offsetYMm })
         : full
 
+    const placed = nudge(layout.placements)
     return {
-      placements: nudge(layout.placements),
+      placements: placed,
+      visible: keep(placed),
+      removed,
       paperWidthMm: layout.paperWidthMm,
       paperHeightMm: layout.paperHeightMm,
       marginMm: layout.marginMm,
       gapMm: layout.gapMm,
       paperLandscape: layout.paperLandscape,
       capacity: full.capacity,
-      count: layout.placements.length,
+      count: keep(placed).length,
       // Asking for more than fits is a real condition the UI must surface.
       fits: mode !== 'exact' || quantity <= full.capacity,
       missing: mode === 'exact' ? Math.max(0, quantity - full.capacity) : 0,
     }
-  }, [paper, presetId, mode, quantity, packageRows, orientation, offsetXMm, offsetYMm, photoOffsets])
+  }, [
+    paper,
+    presetId,
+    mode,
+    quantity,
+    packageRows,
+    orientation,
+    offsetXMm,
+    offsetYMm,
+    photoOffsets,
+    removedPhotos,
+  ])
 }
