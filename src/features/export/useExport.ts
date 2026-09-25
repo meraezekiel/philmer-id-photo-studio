@@ -18,7 +18,7 @@ import { composite, type Bitmap } from '../../lib/composite'
 import { defaultFileName, outputSizePx, setJpegDpi, setPngDpi } from '../../lib/dpi'
 import { buildSheetPdf, renderSheetBitmap, type SheetSpec } from '../../lib/sheetPdf'
 import { PHOTO_PRESETS, PRINT_DPI } from '../../lib/presets'
-import { getImageBytes, saveFile, segment } from '../../lib/tauri'
+import { getImageBytes, printSheet, saveFile, segment } from '../../lib/tauri'
 import { useJob } from '../../store/job'
 import { useSheetLayout } from '../sheet/useSheetLayout'
 
@@ -204,8 +204,34 @@ export function useExport() {
     [run, buildPhoto, sheetSpec, preset.label],
   )
 
+  /**
+   * Print straight to the printer, with no viewer in between.
+   *
+   * The sheet is rasterised at 300 DPI and handed to Rust, which draws it onto
+   * the printer's device context at a size derived from the device's own DPI.
+   * Nothing along that path is free to scale it to fit.
+   */
+  const printDirect = useCallback(
+    async (request: { copies: number; printer?: string }) => {
+      const photo = await buildPhoto(() => {})
+      const spec = sheetSpec()
+      const sheetBitmap = await renderSheetBitmap(spec, photo)
+      const png = await encodeBitmap(sheetBitmap, 'image/png')
+      await printSheet({
+        printer: request.printer,
+        png: png.buffer as ArrayBuffer,
+        widthMm: spec.paperWidthMm,
+        heightMm: spec.paperHeightMm,
+        copies: request.copies,
+        jobName: `ID photos ${preset.label}`,
+      })
+    },
+    [buildPhoto, sheetSpec, preset.label],
+  )
+
   return {
     state,
+    printDirect,
     dismiss: () => setState({ phase: 'idle' }),
     outputPx,
     sheet,

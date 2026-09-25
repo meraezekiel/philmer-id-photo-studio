@@ -367,3 +367,26 @@ pub fn runtime_info(state: State<'_, AppState>) -> RuntimeInfo {
         models: models::model_status(engine.paths()),
     }
 }
+
+#[tauri::command]
+pub async fn list_printers() -> Result<Vec<crate::printing::PrinterInfo>> {
+    tauri::async_runtime::spawn_blocking(crate::printing::list)
+        .await
+        .map_err(|e| AppError::Other(format!("list_printers task failed: {e}")))?
+}
+
+/// Open the driver's own properties sheet, so paper and quality are chosen
+/// where the operator already knows how to choose them.
+#[tauri::command]
+pub async fn printer_properties(printer: String) -> Result<()> {
+    tauri::async_runtime::spawn_blocking(move || crate::printing::show_properties(&printer))
+        .await
+        .map_err(|e| AppError::Other(format!("printer_properties task failed: {e}")))?
+}
+
+#[tauri::command]
+pub async fn print_sheet(job: crate::printing::PrintJob) -> Result<()> {
+    tauri::async_runtime::spawn_blocking(move || crate::printing::print(job))
+        .await
+        .map_err(|e| AppError::Other(format!("print_sheet task failed: {e}")))?
+}

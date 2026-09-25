@@ -133,6 +133,37 @@ export function releaseImage(id?: string): Promise<void> {
   return invoke('release_image', { id: id ?? null })
 }
 
+export interface PrinterInfo {
+  name: string
+  isDefault: boolean
+}
+
+export function listPrinters(): Promise<PrinterInfo[]> {
+  return invoke('list_printers')
+}
+
+/** Opens the driver's own properties sheet: paper size, quality, borderless. */
+export function printerProperties(printer: string): Promise<void> {
+  return invoke('printer_properties', { printer })
+}
+
+/**
+ * Print the sheet directly.
+ *
+ * The physical size is computed from the printer's own reported DPI, so no
+ * viewer gets a say in whether to scale it down to fit.
+ */
+export function printSheet(job: {
+  printer?: string
+  png: ArrayBuffer
+  widthMm: number
+  heightMm: number
+  copies?: number
+  jobName?: string
+}): Promise<void> {
+  return invoke('print_sheet', { job })
+}
+
 export function runtimeInfo(): Promise<RuntimeInfo> {
   return invoke('runtime_info')
 }

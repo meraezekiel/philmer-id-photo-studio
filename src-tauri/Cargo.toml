@@ -54,6 +54,7 @@ kamadak-exif = "0.6"
 
 sha2 = "0.10"
 num_cpus = "1"
+
 parking_lot = "0.12"
 rayon = "1"
 log = "0.4"
@@ -88,3 +89,14 @@ lto = false
 codegen-units = 16
 panic = "unwind"
 strip = false
+
+# Printing goes straight to the printer through GDI so the app owns the
+# scaling; handing a PDF to a viewer let it decide the physical size.
+[target.'cfg(windows)'.dependencies.windows]
+version = "0.62"
+features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_Graphics_Printing",
+  "Win32_Storage_Xps",
+]

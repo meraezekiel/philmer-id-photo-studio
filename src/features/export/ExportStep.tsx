@@ -13,6 +13,7 @@ import { cropRotate, drawBitmap } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
 import { PAPERS, PHOTO_PRESETS, PRINT_DPI } from '../../lib/presets'
 import { useJob } from '../../store/job'
+import { SheetPrintButton } from '../sheet/SheetPrintButton'
 import { useExport } from './useExport'
 
 export function ExportCanvas() {
@@ -78,7 +79,7 @@ export function ExportPanel() {
   const reset = useJob((s) => s.reset)
 
   const preset = PHOTO_PRESETS[presetId]
-  const { state, dismiss, outputPx, sheet, savePhoto, saveSheetPdf, saveSheetImage, print } =
+  const { state, dismiss, outputPx, sheet, savePhoto, saveSheetPdf, saveSheetImage } =
     useExport()
 
   const busy = state.phase === 'working'
@@ -118,20 +119,10 @@ export function ExportPanel() {
       </Section>
 
       <Section title="Print">
-        <button
-          type="button"
-          onClick={print}
-          disabled={busy || sheet.count === 0}
-          className="flex h-12 w-full items-center justify-center gap-2 text-[15px] font-extrabold transition-colors duration-[var(--duration-fast)] disabled:opacity-45"
-          style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
-        >
-          <Icon path={ICONS.save} size={18} />
-          Print sheet
-        </button>
-        <Notice tone="warn" icon={<Icon path={ICONS.warning} size={18} />}>
-          In the print dialog choose <strong>Actual size</strong> or{' '}
-          <strong>100%</strong> — not “Fit to page”, or the photos come out the wrong size.
-        </Notice>
+        <SheetPrintButton block />
+        <p className="text-xs text-muted">
+          Prints straight to the printer at true size — no PDF viewer in between.
+        </p>
       </Section>
 
       <Section title="Save">

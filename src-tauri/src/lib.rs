@@ -10,6 +10,7 @@ pub mod error;
 pub mod face;
 pub mod image_io;
 pub mod models;
+pub mod printing;
 pub mod resize;
 pub mod segment;
 pub mod state;
@@ -41,6 +42,9 @@ pub fn run() {
             commands::model_status,
             commands::import_model,
             commands::save_file,
+            commands::list_printers,
+            commands::printer_properties,
+            commands::print_sheet,
             commands::release_image,
             commands::runtime_info,
         ])
