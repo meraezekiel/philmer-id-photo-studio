@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { open } from '@tauri-apps/plugin-dialog'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
 
 import { Icon, ICONS, Notice } from '../../app/components/ui'
 import { drawBitmap, imageFromClipboard } from '../../lib/bitmap'
@@ -32,6 +33,8 @@ export function ImportStep() {
 
   const [dragging, setDragging] = useState(false)
   const busy = status === 'loading' || status === 'segmenting'
+  const busyRef = useRef(busy)
+  busyRef.current = busy
 
   const pick = useCallback(async () => {
     const selected = await open({
@@ -63,21 +66,55 @@ export function ImportStep() {
     return () => window.removeEventListener('paste', onPaste)
   }, [busy, fromFile])
 
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault()
-      setDragging(false)
-      if (busy) return
-      const file = event.dataTransfer.files?.[0]
-      if (!file) return
-      if (!file.type.startsWith('image/')) {
-        setError({ kind: 'unsupportedFormat', message: `${file.name} — that isn't an image file.` })
-        return
-      }
-      void fromFile(file)
-    },
-    [busy, fromFile, setError],
-  )
+  /**
+   * File drops come from Tauri, not from the DOM.
+   *
+   * `dragDropEnabled` in tauri.conf.json makes the native shell intercept the
+   * drop before the webview sees it, so an HTML `onDrop` never fires. The
+   * native event is the better source anyway: it hands over real file paths,
+   * so the photo is read by Rust instead of being pushed through the webview
+   * as bytes.
+   */
+  useEffect(() => {
+    let unlisten: (() => void) | undefined
+    let cancelled = false
+
+    void getCurrentWebview()
+      .onDragDropEvent((event) => {
+        const payload = event.payload
+        if (payload.type === 'enter' || payload.type === 'over') {
+          if (!busyRef.current) setDragging(true)
+          return
+        }
+        if (payload.type === 'leave') {
+          setDragging(false)
+          return
+        }
+        setDragging(false)
+        if (busyRef.current) return
+
+        const path = payload.paths[0]
+        if (!path) return
+        const extension = path.split('.').pop()?.toLowerCase() ?? ''
+        if (!EXTENSIONS.includes(extension)) {
+          setError({
+            kind: 'unsupportedFormat',
+            message: `${path.split(/[\\/]/).pop()} — only JPG, PNG, WebP and BMP can be opened.`,
+          })
+          return
+        }
+        void run({ path })
+      })
+      .then((fn) => {
+        if (cancelled) fn()
+        else unlisten = fn
+      })
+
+    return () => {
+      cancelled = true
+      unlisten?.()
+    }
+  }, [run, setError])
 
   if (busy) return <Processing />
 
@@ -109,12 +146,6 @@ export function ImportStep() {
         <button
           type="button"
           onClick={pick}
-          onDragOver={(e) => {
-            e.preventDefault()
-            setDragging(true)
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
           className="flex w-full cursor-pointer flex-col items-start justify-end gap-3 border-2 border-dashed text-left transition-colors duration-[var(--duration-fast)]"
           style={{
             height: 'clamp(240px, 52vh, 460px)',
