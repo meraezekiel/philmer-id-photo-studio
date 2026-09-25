@@ -377,11 +377,36 @@ pub async fn list_printers() -> Result<Vec<crate::printing::PrinterInfo>> {
 
 /// Open the driver's own properties sheet, so paper and quality are chosen
 /// where the operator already knows how to choose them.
+///
+/// Returns true when the operator accepted the dialog, in which case the
+/// chosen settings are kept and applied to every subsequent print.
 #[tauri::command]
-pub async fn printer_properties(printer: String) -> Result<()> {
-    tauri::async_runtime::spawn_blocking(move || crate::printing::show_properties(&printer))
+pub async fn printer_properties(window: tauri::Window, printer: String) -> Result<bool> {
+    // The driver's dialog is a native window; giving it our HWND as owner
+    // makes it modal to the app rather than opening behind it.
+    #[cfg(windows)]
+    let owner = window.hwnd().map(|h| h.0 as isize).unwrap_or(0);
+    #[cfg(not(windows))]
+    let owner = {
+        let _ = &window;
+        0isize
+    };
+
+    tauri::async_runtime::spawn_blocking(move || crate::printing::show_properties(&printer, owner))
         .await
         .map_err(|e| AppError::Other(format!("printer_properties task failed: {e}")))?
+}
+
+/// Whether this printer is using settings chosen in the driver's dialog
+/// rather than the driver's defaults.
+#[tauri::command]
+pub fn printer_has_custom_settings(printer: String) -> bool {
+    crate::printing::has_custom_settings(&printer)
+}
+
+#[tauri::command]
+pub fn reset_printer_settings(printer: String) {
+    crate::printing::clear_settings(&printer);
 }
 
 #[tauri::command]

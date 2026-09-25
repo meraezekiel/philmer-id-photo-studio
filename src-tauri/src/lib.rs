@@ -44,6 +44,8 @@ pub fn run() {
             commands::save_file,
             commands::list_printers,
             commands::printer_properties,
+            commands::printer_has_custom_settings,
+            commands::reset_printer_settings,
             commands::print_sheet,
             commands::release_image,
             commands::runtime_info,

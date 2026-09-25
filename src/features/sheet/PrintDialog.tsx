@@ -14,7 +14,13 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Button, Icon, ICONS, Notice } from '../../app/components/ui'
-import { listPrinters, printerProperties, type PrinterInfo } from '../../lib/tauri'
+import {
+  listPrinters,
+  printerHasCustomSettings,
+  printerProperties,
+  resetPrinterSettings,
+  type PrinterInfo,
+} from '../../lib/tauri'
 
 export interface PrintRequest {
   copies: number
@@ -40,6 +46,7 @@ export function PrintDialog({
   const [printer, setPrinter] = useState<string>('')
   const [copies, setCopies] = useState(1)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [customised, setCustomised] = useState(false)
 
   useEffect(() => {
     listPrinters()
@@ -49,6 +56,11 @@ export function PrintDialog({
       })
       .catch((e) => setLoadError(String(e)))
   }, [])
+
+  useEffect(() => {
+    if (!printer) return
+    printerHasCustomSettings(printer).then(setCustomised).catch(() => setCustomised(false))
+  }, [printer])
 
   // Esc closes, unless a job is mid-flight.
   useEffect(() => {
@@ -60,7 +72,19 @@ export function PrintDialog({
   }, [busy, onClose])
 
   const openProperties = useCallback(() => {
-    if (printer) void printerProperties(printer).catch((e) => setLoadError(String(e)))
+    if (!printer) return
+    setLoadError(null)
+    printerProperties(printer)
+      // True means the operator accepted the dialog, so those settings are now
+      // in force. Saying so matters: the previous version showed the dialog and
+      // silently threw the result away.
+      .then((accepted) => accepted && setCustomised(true))
+      .catch((e) => setLoadError(String(e)))
+  }, [printer])
+
+  const resetSettings = useCallback(() => {
+    if (!printer) return
+    void resetPrinterSettings(printer).then(() => setCustomised(false))
   }, [printer])
 
   return (
@@ -119,10 +143,28 @@ export function PrintDialog({
           </Button>
         </div>
 
-        <Notice tone="warn" icon={<Icon path={ICONS.warning} size={18} />}>
-          Set the paper size in <strong>Printer settings</strong> to match {paperLabel}. The app
-          prints at true size and does not scale to fit.
-        </Notice>
+        {customised ? (
+          <Notice
+            tone="ok"
+            action={
+              <button
+                type="button"
+                onClick={resetSettings}
+                disabled={busy}
+                className="whitespace-nowrap text-[13px] font-bold underline"
+              >
+                Use defaults
+              </button>
+            }
+          >
+            Using your printer settings for this printer.
+          </Notice>
+        ) : (
+          <Notice tone="warn" icon={<Icon path={ICONS.warning} size={18} />}>
+            Set the paper size and quality in <strong>Printer settings</strong> to match{' '}
+            {paperLabel}. The app prints at true size and never scales to fit.
+          </Notice>
+        )}
 
         {loadError && <Notice tone="danger">{loadError}</Notice>}
         {status && <Notice tone={status.tone}>{status.message}</Notice>}

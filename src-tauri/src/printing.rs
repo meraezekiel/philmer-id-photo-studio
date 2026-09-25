@@ -44,15 +44,19 @@ fn one() -> u32 {
 mod imp {
     use super::*;
 
+    use std::collections::HashMap;
     use std::ffi::c_void;
     use std::mem::size_of;
+    use std::sync::OnceLock;
+
+    use parking_lot::Mutex;
 
     use windows::core::{PCWSTR, PWSTR};
     use windows::Win32::Foundation::HWND;
     // These sit across three modules in windows-rs: the drawing calls in Gdi,
     // the page/job calls in Printing, and DOCINFOW/StartDocW in Storage::Xps.
     use windows::Win32::Graphics::Gdi::{
-        CreateDCW, DeleteDC, GetDeviceCaps, SetStretchBltMode, StretchDIBits, BITMAPINFO,
+        CreateDCW, DeleteDC, DEVMODEW, GetDeviceCaps, SetStretchBltMode, StretchDIBits, BITMAPINFO,
         BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS, DM_IN_BUFFER, DM_IN_PROMPT, DM_OUT_BUFFER,
         HALFTONE, HORZRES, LOGPIXELSX, LOGPIXELSY, PHYSICALOFFSETX, PHYSICALOFFSETY, SRCCOPY,
         VERTRES,
@@ -137,24 +141,66 @@ mod imp {
         }
     }
 
+    /// Per-printer DEVMODE chosen in the driver's dialog.
+    ///
+    /// The driver does *not* persist what the operator picks here — the dialog
+    /// hands back a DEVMODE and it is the caller's job to keep it and pass it
+    /// to the print DC. Without this the quality setting is silently discarded
+    /// and every job comes out at the driver's default.
+    fn saved_devmodes() -> &'static Mutex<HashMap<String, Vec<u8>>> {
+        static SAVED: OnceLock<Mutex<HashMap<String, Vec<u8>>>> = OnceLock::new();
+        SAVED.get_or_init(|| Mutex::new(HashMap::new()))
+    }
+
+    pub fn has_custom_settings(printer: &str) -> bool {
+        saved_devmodes().lock().contains_key(printer)
+    }
+
+    pub fn clear_settings(printer: &str) {
+        saved_devmodes().lock().remove(printer);
+    }
+
     /// The printer's own properties sheet, so paper size and quality are set
     /// where the operator already knows how to set them.
-    pub fn show_properties(printer: &str) -> Result<()> {
+    ///
+    /// `owner` is the app window, so the dialog is modal to it rather than
+    /// appearing behind the app.
+    pub fn show_properties(printer: &str, owner: isize) -> Result<bool> {
         let name = wide(printer);
         unsafe {
             let mut handle = PRINTER_HANDLE::default();
             OpenPrinterW(PCWSTR(name.as_ptr()), &mut handle as *mut _, None)
                 .map_err(|e| AppError::Other(format!("could not open {printer}: {e}")))?;
 
-            // DM_IN_PROMPT shows the driver's dialog; the driver persists the
-            // result against the printer, so the next print picks it up.
+            // Sizing pass: fMode 0 returns the bytes a DEVMODE needs for this
+            // driver, which is more than DEVMODEW because of dmDriverExtra.
+            let needed = DocumentPropertiesW(None, handle, PCWSTR(name.as_ptr()), None, None, 0);
+            if needed <= 0 {
+                let _ = ClosePrinter(handle);
+                return Err(AppError::Other(format!(
+                    "{printer} did not report its settings size"
+                )));
+            }
+
+            let mut buffer = vec![0u8; needed as usize];
+            let previous = saved_devmodes().lock().get(printer).cloned();
+
+            // Seed the dialog with what was chosen last time, so it opens on
+            // the operator's settings rather than resetting each visit.
+            let mut mode = DM_IN_PROMPT.0 | DM_OUT_BUFFER.0;
+            let input = previous.as_ref().map(|prev| {
+                mode |= DM_IN_BUFFER.0;
+                prev.as_ptr() as *const DEVMODEW
+            });
+
+            let hwnd = HWND(owner as *mut std::ffi::c_void);
             let result = DocumentPropertiesW(
-                Some(HWND::default()),
+                Some(hwnd),
                 handle,
                 PCWSTR(name.as_ptr()),
-                None,
-                None,
-                (DM_IN_PROMPT.0 | DM_IN_BUFFER.0 | DM_OUT_BUFFER.0) as u32,
+                Some(buffer.as_mut_ptr() as *mut DEVMODEW),
+                input,
+                mode,
             );
             let _ = ClosePrinter(handle);
 
@@ -163,8 +209,14 @@ mod imp {
                     "the printer's settings dialog could not be opened".into(),
                 ));
             }
+            // IDOK; IDCANCEL (2) means leave the previous settings alone.
+            if result == 1 {
+                saved_devmodes().lock().insert(printer.to_string(), buffer);
+                log::info!("stored custom printer settings for {printer}");
+                return Ok(true);
+            }
+            Ok(false)
         }
-        Ok(())
     }
 
     pub fn print(job: PrintJob) -> Result<()> {
@@ -185,7 +237,22 @@ mod imp {
         let doc_name = wide(job.job_name.as_deref().unwrap_or("ID photo sheet"));
 
         unsafe {
-            let hdc = CreateDCW(None, PCWSTR(name.as_ptr()), None, None);
+            // Use whatever was chosen in the driver's dialog. Without this the
+            // DC is created from the driver's defaults and the operator's
+            // quality and paper choices are silently dropped.
+            let devmode = saved_devmodes().lock().get(&printer).cloned();
+            let hdc = match devmode.as_ref() {
+                Some(bytes) => {
+                    log::info!("printing with the custom settings saved for {printer}");
+                    CreateDCW(
+                        None,
+                        PCWSTR(name.as_ptr()),
+                        None,
+                        Some(bytes.as_ptr() as *const DEVMODEW),
+                    )
+                }
+                None => CreateDCW(None, PCWSTR(name.as_ptr()), None, None),
+            };
             if hdc.is_invalid() {
                 return Err(AppError::Other(format!("could not open {printer}")));
             }
@@ -314,12 +381,16 @@ mod imp {
     pub fn list() -> Result<Vec<PrinterInfo>> {
         Ok(Vec::new())
     }
-    pub fn show_properties(_printer: &str) -> Result<()> {
+    pub fn show_properties(_printer: &str, _owner: isize) -> Result<bool> {
         Err(AppError::Other("printing is only wired up on Windows".into()))
     }
+    pub fn has_custom_settings(_printer: &str) -> bool {
+        false
+    }
+    pub fn clear_settings(_printer: &str) {}
     pub fn print(_job: PrintJob) -> Result<()> {
         Err(AppError::Other("printing is only wired up on Windows".into()))
     }
 }
 
-pub use imp::{list, print, show_properties};
+pub use imp::{clear_settings, has_custom_settings, list, print, show_properties};

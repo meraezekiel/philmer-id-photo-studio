@@ -142,9 +142,22 @@ export function listPrinters(): Promise<PrinterInfo[]> {
   return invoke('list_printers')
 }
 
-/** Opens the driver's own properties sheet: paper size, quality, borderless. */
-export function printerProperties(printer: string): Promise<void> {
+/**
+ * Opens the driver's own properties sheet: paper size, quality, borderless.
+ *
+ * Resolves true when the operator accepted the dialog, in which case those
+ * settings are kept and applied to every later print.
+ */
+export function printerProperties(printer: string): Promise<boolean> {
   return invoke('printer_properties', { printer })
+}
+
+export function printerHasCustomSettings(printer: string): Promise<boolean> {
+  return invoke('printer_has_custom_settings', { printer })
+}
+
+export function resetPrinterSettings(printer: string): Promise<void> {
+  return invoke('reset_printer_settings', { printer })
 }
 
 /**
