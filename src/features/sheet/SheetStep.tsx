@@ -37,23 +37,34 @@ export function SheetCanvas() {
   const paper = useJob((s) => s.paper)
 
   const showBorders = useJob((s) => s.photoBorders)
-  const offsetXMm = useJob((s) => s.sheetOffsetXMm)
-  const offsetYMm = useJob((s) => s.sheetOffsetYMm)
-  const setSheetOffset = useJob((s) => s.setSheetOffset)
-  const setPhotoOffset = useJob((s) => s.setPhotoOffset)
   const photoOffsets = useJob((s) => s.photoOffsets)
+  const nudgePhotos = useJob((s) => s.nudgePhotos)
+  const selected = useJob((s) => s.selectedPhotos)
+  const setSelectedPhotos = useJob((s) => s.setSelectedPhotos)
 
   const sheet = useSheetLayout()
   const areaRef = useRef<HTMLDivElement>(null)
   const [area, setArea] = useState({ width: 0, height: 0 })
   const [dragging, setDragging] = useState(false)
-  const dragRef = useRef<{
-    index: number | null
-    startX: number
-    startY: number
-    baseX: number
-    baseY: number
-  } | null>(null)
+  type Drag =
+    | { kind: 'marquee'; startX: number; startY: number }
+    | {
+        kind: 'photos'
+        indices: number[]
+        startX: number
+        startY: number
+        bases: Record<number, { xMm: number; yMm: number }>
+        /** The group's bounds in mm when the drag began, for clamping. */
+        bbox: { left: number; top: number; right: number; bottom: number }
+      }
+  const dragRef = useRef<Drag | null>(null)
+  const paperRef = useRef<HTMLDivElement>(null)
+  const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(
+    null,
+  )
+  // The handler closes over state, so the latest box is read from a ref.
+  const marqueeRef = useRef(marquee)
+  marqueeRef.current = marquee
 
   useEffect(() => {
     const node = areaRef.current
@@ -65,6 +76,15 @@ export function SheetCanvas() {
     observer.observe(node)
     return () => observer.disconnect()
   }, [])
+
+  // Esc drops the selection — the way out of a highlight made by accident.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedPhotos([])
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [setSelectedPhotos])
 
   // The finished photo, cropped, as a data URL so each tile is one <img>.
   const photoUrl = usePhotoUrl({
@@ -92,13 +112,16 @@ export function SheetCanvas() {
   )
 
   /**
-   * Drag to reposition.
+   * Drag to select, or drag to move.
    *
-   * Grabbing a photo moves that photo alone; grabbing blank paper moves the
-   * whole block. Movement converts from screen pixels back to millimetres
-   * through the preview scale, and is clamped so whatever is being dragged
-   * stays on the paper — dragging a photo off the page would silently print
-   * fewer than the sheet claims.
+   * On blank paper a drag draws a selection box and everything it touches
+   * becomes selected. On a photo, a drag moves it — and if it is part of a
+   * selection, the whole selection travels with it, which is the point: a
+   * shop wants to shift the four 1x1s together without touching the 2x2s.
+   *
+   * Movement converts screen pixels back to millimetres through the preview
+   * scale. The selection is clamped as a group, so its shape is preserved and
+   * nothing is pushed off the paper and silently lost from the print.
    */
   useEffect(() => {
     if (!dragging) return
@@ -106,36 +129,65 @@ export function SheetCanvas() {
     const onMove = (event: MouseEvent) => {
       const drag = dragRef.current
       if (!drag || scale <= 0) return
-      const dxMm = (event.clientX - drag.startX) / scale
-      const dyMm = (event.clientY - drag.startY) / scale
 
-      if (drag.index === null) {
-        const left = Math.min(...sheet.placements.map((p) => p.xMm), 0)
-        const right = Math.max(...sheet.placements.map((p) => p.xMm + p.widthMm), 0)
-        const top = Math.min(...sheet.placements.map((p) => p.yMm), 0)
-        const bottom = Math.max(...sheet.placements.map((p) => p.yMm + p.heightMm), 0)
-        setSheetOffset(
-          clamp(drag.baseX + dxMm, drag.baseX - left, drag.baseX + (sheet.paperWidthMm - right)),
-          clamp(drag.baseY + dyMm, drag.baseY - top, drag.baseY + (sheet.paperHeightMm - bottom)),
-        )
+      if (drag.kind === 'marquee') {
+        const rect = paperRef.current?.getBoundingClientRect()
+        if (!rect) return
+        setMarquee({
+          x1: drag.startX - rect.left,
+          y1: drag.startY - rect.top,
+          x2: event.clientX - rect.left,
+          y2: event.clientY - rect.top,
+        })
         return
       }
 
-      const p = sheet.placements[drag.index]
-      if (!p) return
-      // The placement already includes this photo's current nudge, so the
-      // travel limits are expressed relative to the nudge being edited.
-      setPhotoOffset(
-        drag.index,
-        clamp(drag.baseX + dxMm, drag.baseX - p.xMm, drag.baseX + (sheet.paperWidthMm - p.xMm - p.widthMm)),
-        clamp(drag.baseY + dyMm, drag.baseY - p.yMm, drag.baseY + (sheet.paperHeightMm - p.yMm - p.heightMm)),
-      )
+      const dxMm = (event.clientX - drag.startX) / scale
+      const dyMm = (event.clientY - drag.startY) / scale
+
+      // Clamp the group as a whole so its arrangement is preserved. The bounds
+      // are the ones captured at mousedown: measuring the live placements would
+      // measure a box that has already moved, and the photos would creep.
+      const { left, top, right, bottom } = drag.bbox
+      const shiftX = clamp(dxMm, -left, sheet.paperWidthMm - right)
+      const shiftY = clamp(dyMm, -top, sheet.paperHeightMm - bottom)
+
+      const deltas: Record<number, { xMm: number; yMm: number }> = {}
+      for (const i of drag.indices) {
+        const base = drag.bases[i] ?? { xMm: 0, yMm: 0 }
+        deltas[i] = { xMm: base.xMm + shiftX, yMm: base.yMm + shiftY }
+      }
+      nudgePhotos(drag.indices, deltas)
     }
 
     const onUp = () => {
+      const drag = dragRef.current
+      if (drag?.kind === 'marquee' && marqueeRef.current) {
+        // Anything the box touches is selected; requiring full containment
+        // makes small photos near the edge frustrating to catch.
+        const box = marqueeRef.current
+        const hit = sheet.placements
+          .map((p, i) => ({ p, i }))
+          .filter(({ p }) => {
+            const x1 = p.xMm * scale
+            const y1 = p.yMm * scale
+            const x2 = x1 + p.widthMm * scale
+            const y2 = y1 + p.heightMm * scale
+            return (
+              x1 < Math.max(box.x1, box.x2) &&
+              x2 > Math.min(box.x1, box.x2) &&
+              y1 < Math.max(box.y1, box.y2) &&
+              y2 > Math.min(box.y1, box.y2)
+            )
+          })
+          .map(({ i }) => i)
+        setSelectedPhotos(hit)
+      }
       dragRef.current = null
+      setMarquee(null)
       setDragging(false)
     }
+
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
     return () => {
@@ -148,8 +200,8 @@ export function SheetCanvas() {
     sheet.placements,
     sheet.paperWidthMm,
     sheet.paperHeightMm,
-    setSheetOffset,
-    setPhotoOffset,
+    nudgePhotos,
+    setSelectedPhotos,
   ])
 
   if (!preview) return null
@@ -161,23 +213,22 @@ export function SheetCanvas() {
     <div ref={areaRef} className="relative flex h-full w-full items-center justify-center">
       {scale > 0 && (
         <div
+          ref={paperRef}
           className="relative shadow-lg"
           style={{
             width: paperW,
             height: paperH,
             background: '#fff',
-            cursor: dragging ? 'grabbing' : 'grab',
+            cursor: 'crosshair',
           }}
           onMouseDown={(e) => {
             if (e.button !== 0) return
             e.preventDefault()
-            dragRef.current = {
-              index: null,
-              startX: e.clientX,
-              startY: e.clientY,
-              baseX: offsetXMm,
-              baseY: offsetYMm,
-            }
+            // Blank paper starts a selection box, and clears the old selection
+            // so a stray click is an obvious "nothing selected".
+            setSelectedPhotos([])
+            dragRef.current = { kind: 'marquee', startX: e.clientX, startY: e.clientY }
+            setMarquee(null)
             setDragging(true)
           }}
         >
@@ -201,13 +252,29 @@ export function SheetCanvas() {
                 if (e.button !== 0) return
                 e.preventDefault()
                 e.stopPropagation()
-                const current = photoOffsets[i] ?? { xMm: 0, yMm: 0 }
+                // Dragging a highlighted photo takes the whole selection with
+                // it. Dragging one outside the selection selects just that one,
+                // so a plain single drag behaves as it always did.
+                const inSelection = selected.includes(i)
+                const indices = inSelection ? selected : [i]
+                if (!inSelection) setSelectedPhotos([i])
+                const bases: Record<number, { xMm: number; yMm: number }> = {}
+                for (const j of indices) bases[j] = photoOffsets[j] ?? { xMm: 0, yMm: 0 }
+                const moving = indices
+                  .map((j) => sheet.placements[j])
+                  .filter((p): p is NonNullable<typeof p> => Boolean(p))
                 dragRef.current = {
-                  index: i,
+                  kind: 'photos',
+                  indices,
                   startX: e.clientX,
                   startY: e.clientY,
-                  baseX: current.xMm,
-                  baseY: current.yMm,
+                  bases,
+                  bbox: {
+                    left: Math.min(...moving.map((p) => p.xMm)),
+                    top: Math.min(...moving.map((p) => p.yMm)),
+                    right: Math.max(...moving.map((p) => p.xMm + p.widthMm)),
+                    bottom: Math.max(...moving.map((p) => p.yMm + p.heightMm)),
+                  },
                 }
                 setDragging(true)
               }}
@@ -240,6 +307,22 @@ export function SheetCanvas() {
                   }
                 />
               )}
+
+              {/*
+                A sibling overlay rather than a box-shadow on the tile: an inset
+                shadow paints behind the tile's own children, so the <img> would
+                cover it and nothing would look highlighted.
+              */}
+              {selected.includes(i) && (
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    outline: '2px solid var(--color-accent)',
+                    outlineOffset: -2,
+                    background: 'color-mix(in srgb, var(--color-accent) 16%, transparent)',
+                  }}
+                />
+              )}
             </div>
           ))}
 
@@ -256,6 +339,21 @@ export function SheetCanvas() {
               />
             ))}
           </svg>
+
+          {/* The highlighter itself. */}
+          {marquee && (
+            <div
+              className="pointer-events-none absolute"
+              style={{
+                left: Math.min(marquee.x1, marquee.x2),
+                top: Math.min(marquee.y1, marquee.y2),
+                width: Math.abs(marquee.x2 - marquee.x1),
+                height: Math.abs(marquee.y2 - marquee.y1),
+                border: '1px solid var(--color-accent)',
+                background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)',
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -268,6 +366,16 @@ export function SheetCanvas() {
           {trim(sheet.paperWidthMm)} × {trim(sheet.paperHeightMm)} mm ·{' '}
           {sheet.count} {sheet.count === 1 ? 'photo' : 'photos'}
         </div>
+
+        {/* How many are highlighted, where the eyes already are. */}
+        {selected.length > 0 && (
+          <div
+            className="tabular flex h-9 items-center px-3 text-sm font-extrabold shadow-sm"
+            style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
+          >
+            {selected.length} selected · drag any of them to move
+          </div>
+        )}
       </div>
     </div>
   )
@@ -346,6 +454,8 @@ export function SheetPanel() {
   const offsetYMm = useJob((s) => s.sheetOffsetYMm)
   const photoOffsets = useJob((s) => s.photoOffsets)
   const resetSheetPositions = useJob((s) => s.resetSheetPositions)
+  const selected = useJob((s) => s.selectedPhotos)
+  const setSelectedPhotos = useJob((s) => s.setSelectedPhotos)
   const orientation = useJob((s) => s.paperOrientation)
   const setOrientation = useJob((s) => s.setPaperOrientation)
 
@@ -491,7 +601,34 @@ export function SheetPanel() {
 
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted">
-            {moved ? 'Positions adjusted by hand' : 'Drag a photo to move it, or the paper to move all.'}
+            {selected.length > 0
+              ? `${selected.length} of ${sheet.count} selected`
+              : 'Drag across the paper to highlight photos, then drag them together.'}
+          </span>
+          {selected.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setSelectedPhotos([])}
+              className="whitespace-nowrap text-xs font-bold text-accent hover:underline"
+            >
+              Clear
+            </button>
+          ) : (
+            sheet.count > 1 && (
+              <button
+                type="button"
+                onClick={() => setSelectedPhotos(sheet.placements.map((_, i) => i))}
+                className="whitespace-nowrap text-xs font-bold text-accent hover:underline"
+              >
+                Select all
+              </button>
+            )
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-muted">
+            {moved ? 'Positions adjusted by hand' : 'Photos start at the top-left of the paper.'}
           </span>
           {moved && (
             <button

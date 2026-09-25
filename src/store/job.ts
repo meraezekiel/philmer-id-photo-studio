@@ -93,6 +93,11 @@ export interface JobState {
    * moves only that photo; the block offset still moves everything.
    */
   photoOffsets: Record<number, { xMm: number; yMm: number }>
+  /**
+   * Placement indices currently selected on the sheet. Dragging any one of
+   * them moves the whole selection.
+   */
+  selectedPhotos: number[]
 
   background: string
   edgeSoftness: number
@@ -123,6 +128,8 @@ export interface JobState {
   setPhotoBorders: (on: boolean) => void
   setSheetOffset: (xMm: number, yMm: number) => void
   setPhotoOffset: (index: number, xMm: number, yMm: number) => void
+  nudgePhotos: (indices: number[], deltas: Record<number, { xMm: number; yMm: number }>) => void
+  setSelectedPhotos: (indices: number[]) => void
   resetSheetPositions: () => void
   setPaperOrientation: (o: PaperOrientation) => void
   setBackground: (hex: string) => void
@@ -169,6 +176,7 @@ export const useJob = create<JobState>((set) => ({
   sheetOffsetXMm: 0,
   sheetOffsetYMm: 0,
   photoOffsets: {},
+  selectedPhotos: [],
   background: PHOTO_PRESETS['2x2'].defaultBackground,
   edgeSoftness: 0,
   hairDetail: 0,
@@ -216,6 +224,7 @@ export const useJob = create<JobState>((set) => ({
       sheetOffsetXMm: 0,
       sheetOffsetYMm: 0,
       photoOffsets: {},
+      selectedPhotos: [],
     }),
 
   /**
@@ -234,10 +243,13 @@ export const useJob = create<JobState>((set) => ({
 
   // A drag was made against one paper and layout; carrying it to another
   // would move the block somewhere the operator never put it.
-  setPaper: (paper) => set({ paper, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {} }),
-  setSheetMode: (sheetMode) => set({ sheetMode, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {} }),
-  setQuantity: (quantity) => set({ quantity: Math.max(1, Math.round(quantity)) }),
-  setPackageRows: (packageRows) => set({ packageRows }),
+  setPaper: (paper) => set({ paper, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
+  setSheetMode: (sheetMode) => set({ sheetMode, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
+  // Changing the count renumbers the tiles, so a kept selection would
+  // highlight whichever photos happen to land on those indices.
+  setQuantity: (quantity) =>
+    set({ quantity: Math.max(1, Math.round(quantity)), selectedPhotos: [] }),
+  setPackageRows: (packageRows) => set({ packageRows, selectedPhotos: [] }),
   setCutMarks: (cutMarks) => set({ cutMarks }),
   setPhotoBorders: (photoBorders) => set({ photoBorders }),
   setSheetOffset: (sheetOffsetXMm, sheetOffsetYMm) => set({ sheetOffsetXMm, sheetOffsetYMm }),
@@ -245,9 +257,22 @@ export const useJob = create<JobState>((set) => ({
   setPhotoOffset: (index, xMm, yMm) =>
     set((state) => ({ photoOffsets: { ...state.photoOffsets, [index]: { xMm, yMm } } })),
 
-  resetSheetPositions: () => set({ sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {} }),
+  /** Move several photos in one update, so a multi-drag is a single render. */
+  nudgePhotos: (indices, deltas) =>
+    set((state) => {
+      const photoOffsets = { ...state.photoOffsets }
+      for (const i of indices) {
+        const d = deltas[i]
+        if (d) photoOffsets[i] = d
+      }
+      return { photoOffsets }
+    }),
+
+  setSelectedPhotos: (selectedPhotos) => set({ selectedPhotos }),
+
+  resetSheetPositions: () => set({ sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
   setPaperOrientation: (paperOrientation) =>
-    set({ paperOrientation, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {} }),
+    set({ paperOrientation, sheetOffsetXMm: 0, sheetOffsetYMm: 0, photoOffsets: {}, selectedPhotos: [] }),
   setBackground: (background) => set({ background }),
   setEdgeSoftness: (edgeSoftness) => set({ edgeSoftness }),
   setHairDetail: (hairDetail) => set({ hairDetail }),
@@ -272,6 +297,7 @@ export const useJob = create<JobState>((set) => ({
       sheetOffsetXMm: 0,
       sheetOffsetYMm: 0,
       photoOffsets: {},
+      selectedPhotos: [],
     })
   },
 }))
