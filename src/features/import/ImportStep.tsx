@@ -146,6 +146,7 @@ export function ImportStep() {
         <button
           type="button"
           onClick={pick}
+          data-tour="dropzone"
           className="flex w-full cursor-pointer flex-col items-start justify-end gap-3 border-2 border-dashed text-left transition-colors duration-[var(--duration-fast)]"
           style={{
             height: 'clamp(240px, 52vh, 460px)',

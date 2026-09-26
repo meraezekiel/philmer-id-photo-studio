@@ -41,6 +41,21 @@ PERMANENT KEY - works forever, on ONE computer, with no internet.
 
 
 ===============================================================================
+1b. THE BUILT-IN TUTORIAL
+===============================================================================
+
+The first time the app is opened on a new computer it offers a walkthrough.
+It points at each button as the operator uses it on a real photo: drop a
+photo, pick the size, choose the background, lay out the sheet, print.
+
+They can skip it, and it never asks twice. The question mark button at the
+top right runs it again any time, which is the answer to most support calls:
+"press the question mark and follow it".
+
+Nothing is blocked while it runs. They can ignore the tips and work normally.
+
+
+===============================================================================
 2. SELLING A KEY - THE FOUR STEPS
 ===============================================================================
 

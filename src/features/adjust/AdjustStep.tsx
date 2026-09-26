@@ -48,6 +48,7 @@ export function AdjustPanel() {
       <Section title="Alignment">
         <button
           type="button"
+          data-tour="auto-align"
           onClick={runAutoAlign}
           disabled={faces.length === 0}
           className="w-full border border-divider px-3 py-2 text-sm font-extrabold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--hover)] disabled:opacity-45"

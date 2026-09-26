@@ -149,7 +149,7 @@ export function ExportPanel() {
         </p>
       </Section>
 
-      <Section title="Save">
+      <Section title="Save" tour="export-save">
         <div className="flex flex-col gap-2">
           <Button onClick={saveSheetPdf} disabled={busy} block>
             Sheet as PDF

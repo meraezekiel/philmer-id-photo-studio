@@ -202,7 +202,7 @@ export function BackgroundPanel() {
 
   return (
     <>
-      <Section title="Background">
+      <Section title="Background" tour="background-swatches">
         <div className="grid grid-cols-2 gap-2">
           {BACKGROUND_SWATCHES.map((swatch) => {
             const selected = background.toUpperCase() === swatch.hex.toUpperCase()
@@ -331,7 +331,7 @@ function NameSection() {
   )
 
   return (
-    <Section title="Name on the photo">
+    <Section title="Name on the photo" tour="name-section">
       <label className="flex cursor-pointer items-center gap-2 text-sm">
         <input
           type="checkbox"

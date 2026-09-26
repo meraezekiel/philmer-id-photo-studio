@@ -23,5 +23,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // The walkthrough's anchor test reads the source tree from disk.
+    root: process.cwd(),
   },
 })

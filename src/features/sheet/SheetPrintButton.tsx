@@ -72,6 +72,7 @@ export function SheetPrintButton({ block = false }: { block?: boolean } = {}) {
     <>
       <button
         type="button"
+        data-tour="print-button"
         // An expired trial opens the licence screen instead of the printer:
         // a disabled button with no explanation is the worst of both.
         onClick={canProduce ? openDialog : openLicence}

@@ -514,7 +514,7 @@ export function SheetCanvas() {
       </div>
 
       {/* Zoom, bottom-left, out of the way of the action bar on the right. */}
-      <div className="absolute bottom-5 left-6 flex items-center shadow-sm">
+      <div data-tour="sheet-zoom" className="absolute bottom-5 left-6 flex items-center shadow-sm">
         <ZoomButton label="−" title="Zoom out" onClick={() => zoomBy(1 / 1.25)} />
         <button
           type="button"
@@ -648,7 +648,7 @@ export function SheetPanel() {
 
   return (
     <>
-      <Section title="Paper">
+      <Section title="Paper" tour="paper-picker">
         <div className="grid grid-cols-2 gap-2">
           {PAPER_ORDER.map((id) => {
             const selected = id === paper
@@ -670,7 +670,7 @@ export function SheetPanel() {
         </div>
       </Section>
 
-      <Section title="Layout">
+      <Section title="Layout" tour="layout-picker">
         <div className="flex flex-col gap-1.5">
           {(
             [
