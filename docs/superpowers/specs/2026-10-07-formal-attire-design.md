@@ -169,7 +169,7 @@ resetAttireFit: () => void   // re-run autoFit for the current template
 
 `reset()` (New customer) sets `attireId` back to None. Changing the preset
 or re-cropping in Adjust re-runs auto-fit only if the operator has not
-moved the attire; otherwise the fit is kept, because it is stored relative
+moved the attire (`attireTouched` is false); otherwise the fit is kept, because it is stored relative
 to the photo.
 
 A small `src/store/attire.ts` holds the library: the shipped defaults plus
