@@ -31,11 +31,27 @@ app, on the whole photo, without disturbing the ID flow.
 
 ### Mode choice
 
-The Import screen gets a two-way segmented control at the top: **ID Photo** |
-**Edit Photo**. It defaults to the last mode used, remembered in
+*Revised 2026-10-08 with the owner: two drop cards instead of a toggle.*
+
+The Import screen's single drop zone becomes **two cards side by side**, and
+each card is its own drop zone and browse button:
+
+- **ID Photo**: "1x1 · 2x2 · Passport". Background, attire, a sheet of copies.
+- **Photo Print**: "3R · 4R · 5R · 8R · A4". Keeps the background, fits the
+  photo to the paper, prints.
+
+Dropping onto a card (or clicking it to browse) chooses the mode and loads
+the photo in one action. The operator never drops a photo before saying what
+the job is, so the ID flow's face detection and background removal never run
+on a print job. The last-used card is highlighted, remembered in
 `localStorage` the same way the tutorial remembers it has been seen
-(`TutorialProvider.tsx`), falling back to ID Photo. Opening a photo enters that mode's flow. New customer
-(Ctrl+N) returns to Import in the same mode.
+(`TutorialProvider.tsx`), falling back to ID Photo. **Ctrl+V** pastes into the
+highlighted card. While a file is dragged over the window, the card under the
+pointer lights up. New customer (Ctrl+N) returns to Import with the same card
+highlighted.
+
+Operator-facing text calls this mode **Photo Print**; code keeps the name
+`edit` (`mode: 'id' | 'edit'`, `src/features/edit/`).
 
 A new `src/store/mode.ts` (tiny zustand store: `mode: 'id' | 'edit'`) decides
 which flow `App.tsx` renders. `App.tsx` chooses the step list, canvas and
@@ -81,15 +97,15 @@ Changed:
 | File | Change |
 |---|---|
 | `src/lib/composite.ts` | Background can be a colour, **transparent**, or an **image**; tone moves out to `enhance.ts` and is imported back |
-| `src/lib/presets.ts` | Add papers `5r` (127 × 177.8 mm, 5 × 7 in) and `8r` (203.2 × 254 mm, 8 × 10 in) |
+| `src/lib/presets.ts` | Add papers `3r` (88.9 × 127 mm, 3.5 × 5 in), `5r` (127 × 177.8 mm, 5 × 7 in) and `8r` (203.2 × 254 mm, 8 × 10 in) |
 | `src/app/App.tsx` | Render by mode |
-| `src/features/import/ImportStep.tsx` | Mode control |
+| `src/features/import/ImportStep.tsx` | Two drop cards (ID Photo, Photo Print) |
 | `src/features/import/usePhotoPipeline.ts` | Extract shared load helper |
 | `src/features/background/BackgroundStep.tsx` | Add Auto enhance button to the tone section (ID flow) |
 
-5R and 8R are added to `PAPERS` but **not** to the ID sheet's `PAPER_ORDER`,
+3R, 5R and 8R are added to `PAPERS` but **not** to the ID sheet's `PAPER_ORDER`,
 so the ID print sheet is unchanged. Edit mode has its own paper list
-`EDIT_PAPER_ORDER = ['4r', '5r', '8r', 'a4']`.
+`EDIT_PAPER_ORDER = ['3r', '4r', '5r', '8r', 'a4']`.
 
 ## The Edit step
 
@@ -188,7 +204,7 @@ The chosen paper drawn to scale with the photo on it, as it will print.
   downscaled. DPI metadata is stamped at 300 using the existing `setJpegDpi` /
   `setPngDpi`. Default file name: `<original name>-edited.<ext>`.
 - **Print**:
-  - Paper: 4R, 5R, 8R, A4.
+  - Paper: 3R, 4R, 5R, 8R, A4.
   - **Fit** (whole photo visible, white border on the short side) |
     **Fill** (paper covered edge to edge, overflow cropped from the centre).
     Default Fit.
