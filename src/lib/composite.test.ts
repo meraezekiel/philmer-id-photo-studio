@@ -302,3 +302,45 @@ describe('parseHex', () => {
     }
   })
 })
+
+describe('composite backgrounds', () => {
+  function uniform(width: number, height: number, rgb: [number, number, number]) {
+    const bmp = createBitmap(width, height)
+    for (let i = 0; i < width * height; i++) bmp.data.set([...rgb, 255], i * 4)
+    return bmp
+  }
+
+  it('writes the mask into alpha when transparent', () => {
+    const image = uniform(4, 1, [200, 50, 50])
+    const mask = maskFrom([1, 1, 0, 0], 4, 1)
+    const out = composite({ image, mask, background: 'transparent' })
+    expect(out.data[3]).toBe(255)
+    expect(out.data[11]).toBe(0)
+    expect(out.data[0]).toBe(200) // opaque pixel keeps its colour
+  })
+
+  it('blends onto a background image, pixel by pixel', () => {
+    const image = uniform(2, 1, [255, 0, 0])
+    const mask = maskFrom([0, 0], 2, 1)
+    const bg = createBitmap(2, 1)
+    bg.data.set([0, 0, 255, 255, 0, 255, 0, 255])
+    const out = composite({ image, mask, background: bg })
+    expect(Array.from(out.data.slice(0, 3))).toEqual([0, 0, 255])
+    expect(Array.from(out.data.slice(4, 7))).toEqual([0, 255, 0])
+  })
+
+  it('rejects a background image of the wrong size', () => {
+    const image = uniform(2, 2, [1, 2, 3])
+    expect(() =>
+      composite({ image, mask: maskFrom([1, 1, 1, 1], 2, 2), background: createBitmap(3, 3) }),
+    ).toThrow(/background/)
+  })
+
+  it('applies saturation to the subject but not to a colour background', () => {
+    const image = uniform(2, 1, [200, 100, 50])
+    const mask = maskFrom([1, 0], 2, 1)
+    const out = composite({ image, mask, background: '#3366CC', saturation: -50 })
+    expect(Math.abs(out.data[0] - out.data[1])).toBeLessThanOrEqual(1) // subject went grey
+    expect(Array.from(out.data.slice(4, 7))).toEqual([0x33, 0x66, 0xcc]) // backdrop untouched
+  })
+})

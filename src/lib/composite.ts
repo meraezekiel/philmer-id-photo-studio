@@ -14,7 +14,7 @@
  */
 
 import { boxBlur, clamp, createBitmap, parseHex, type Bitmap, type Rgb } from './pixels'
-import { toneTables, type ToneOptions } from './enhance'
+import { applyEnhance, sharpenRadius, toneTables, type EnhanceSettings, type ToneOptions } from './enhance'
 
 export { boxBlur, createBitmap, parseHex, toneTables }
 export type { Bitmap, Rgb, ToneOptions }
@@ -255,23 +255,32 @@ export function estimateForeground(
 
 // --- compositing --------------------------------------------------------
 
-export interface CompositeOptions extends MaskOptions, ToneOptions {
+/**
+ * A `#RRGGBB` colour, the literal `'transparent'`, or a bitmap the same size
+ * as the image (Photo Print's own background picture, already placed).
+ */
+export type CompositeBackground = string | Bitmap
+
+export interface CompositeOptions extends MaskOptions, EnhanceSettings {
   /** Cropped source pixels, RGBA. */
   image: Bitmap
   /** Alpha mask, the same size as `image`. */
   mask: Bitmap
-  /** New background, as `#RRGGBB`. */
-  background: string
+  background: CompositeBackground
   /**
    * Skip foreground estimation. Only for measuring what the estimation is
    * worth — the halo it removes is the reason this module exists.
    */
   skipDecontamination?: boolean
+  /** Unsharp radius; defaults to `sharpenRadius` of this image. Strips pass the whole photo's. */
+  sharpenRadius?: number
 }
 
 /**
- * Produce the final opaque image: subject on the chosen background, with the
- * old background's colour removed from the fringe.
+ * The subject on the chosen background, with the old background's colour
+ * removed from the fringe. Enhance applies to the subject before it meets the
+ * background, so a white backdrop stays exactly white however far the
+ * sliders go. Transparent output keeps the shaped mask as alpha.
  */
 export function composite(options: CompositeOptions): Bitmap & { data: Uint8ClampedArray } {
   const { image, mask, background } = options
@@ -280,42 +289,88 @@ export function composite(options: CompositeOptions): Bitmap & { data: Uint8Clam
       `mask is ${mask.width}x${mask.height} but the image is ${image.width}x${image.height}`,
     )
   }
-
   const { width, height } = image
-  const bg = parseHex(background)
+  const transparent = background === 'transparent'
+  const bgImage = typeof background === 'string' ? null : background
+  if (bgImage && (bgImage.width !== width || bgImage.height !== height)) {
+    throw new Error(`background is ${bgImage.width}x${bgImage.height} but the image is ${width}x${height}`)
+  }
+  const bg = typeof background === 'string' && !transparent ? parseHex(background) : { r: 0, g: 0, b: 0 }
+
   const alpha = shapeMask(maskToAlpha(mask), width, height, options)
-
-  const out = createBitmap(width, height)
   const n = width * height
-  // Tone applies to the subject before it meets the background, so a white
-  // backdrop stays exactly white however far the sliders go.
-  const tone = toneTables(options)
-  const [tr, tg, tb] = tone ?? [null, null, null]
 
+  // The foreground colour of every pixel, as float planes.
+  let fr: ArrayLike<number>
+  let fg: ArrayLike<number>
+  let fb: ArrayLike<number>
   if (options.skipDecontamination) {
+    const r = new Float32Array(n)
+    const g = new Float32Array(n)
+    const b = new Float32Array(n)
     for (let i = 0; i < n; i++) {
-      const a = alpha[i]
-      const r = image.data[i * 4]
-      const g = image.data[i * 4 + 1]
-      const b = image.data[i * 4 + 2]
-      out.data[i * 4] = (tr ? tr[r] : r) * a + bg.r * (1 - a)
-      out.data[i * 4 + 1] = (tg ? tg[g] : g) * a + bg.g * (1 - a)
-      out.data[i * 4 + 2] = (tb ? tb[b] : b) * a + bg.b * (1 - a)
-      out.data[i * 4 + 3] = 255
+      r[i] = image.data[i * 4]
+      g[i] = image.data[i * 4 + 1]
+      b[i] = image.data[i * 4 + 2]
     }
-    return out
+    fr = r
+    fg = g
+    fb = b
+  } else {
+    const f = estimateForeground(image, alpha)
+    fr = f.r
+    fg = f.g
+    fb = f.b
   }
 
-  const f = estimateForeground(image, alpha)
+  // Saturation and sharpening need whole-image passes; tone alone stays a
+  // per-pixel table so the ID flow's output is unchanged.
+  let tables = toneTables(options)
+  if ((options.saturation ?? 0) !== 0 || (options.sharpness ?? 0) > 0) {
+    const fgBitmap = createBitmap(width, height)
+    for (let i = 0; i < n; i++) {
+      fgBitmap.data[i * 4] = fr[i]
+      fgBitmap.data[i * 4 + 1] = fg[i]
+      fgBitmap.data[i * 4 + 2] = fb[i]
+      fgBitmap.data[i * 4 + 3] = 255
+    }
+    const enhanced = applyEnhance(fgBitmap, options, {
+      radius: options.sharpenRadius ?? sharpenRadius(width, height),
+    })
+    const r = new Float32Array(n)
+    const g = new Float32Array(n)
+    const b = new Float32Array(n)
+    for (let i = 0; i < n; i++) {
+      r[i] = enhanced.data[i * 4]
+      g[i] = enhanced.data[i * 4 + 1]
+      b[i] = enhanced.data[i * 4 + 2]
+    }
+    fr = r
+    fg = g
+    fb = b
+    tables = null
+  }
+  const [tr, tg, tb] = tables ?? [null, null, null]
+
+  const out = createBitmap(width, height)
   for (let i = 0; i < n; i++) {
     const a = alpha[i]
-    const r = f.r[i]
-    const g = f.g[i]
-    const b = f.b[i]
-    out.data[i * 4] = (tr ? tr[Math.round(r)] : r) * a + bg.r * (1 - a)
-    out.data[i * 4 + 1] = (tg ? tg[Math.round(g)] : g) * a + bg.g * (1 - a)
-    out.data[i * 4 + 2] = (tb ? tb[Math.round(b)] : b) * a + bg.b * (1 - a)
-    // ID photos print on paper; there is no transparency in the output.
+    const r = tr ? tr[Math.round(fr[i])] : fr[i]
+    const g = tg ? tg[Math.round(fg[i])] : fg[i]
+    const b = tb ? tb[Math.round(fb[i])] : fb[i]
+    if (transparent) {
+      out.data[i * 4] = r
+      out.data[i * 4 + 1] = g
+      out.data[i * 4 + 2] = b
+      out.data[i * 4 + 3] = Math.round(a * 255)
+      continue
+    }
+    const br = bgImage ? bgImage.data[i * 4] : bg.r
+    const bgg = bgImage ? bgImage.data[i * 4 + 1] : bg.g
+    const bb = bgImage ? bgImage.data[i * 4 + 2] : bg.b
+    out.data[i * 4] = r * a + br * (1 - a)
+    out.data[i * 4 + 1] = g * a + bgg * (1 - a)
+    out.data[i * 4 + 2] = b * a + bb * (1 - a)
     out.data[i * 4 + 3] = 255
   }
   return out
