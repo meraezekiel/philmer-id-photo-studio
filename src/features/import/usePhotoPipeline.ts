@@ -16,16 +16,27 @@ import {
   loadImage,
   onSegmentProgress,
   segment,
+  type LoadedImageInfo,
 } from '../../lib/tauri'
+import { useEdit } from '../../store/edit'
 import { useJob } from '../../store/job'
 
 /** Canvas preview cap. The export always re-fetches at full resolution. */
-const PREVIEW_MAX_DIM = 1400
+export const PREVIEW_MAX_DIM = 1400
+
+/** The canvas copy of a loaded photo, shared by both flows. */
+export async function previewFor(info: LoadedImageInfo): Promise<ImageData> {
+  const bytes = await getImageBytes({ id: info.id, maxDim: PREVIEW_MAX_DIM })
+  return decodeToBitmap(bytes, 'image/jpeg')
+}
 
 export function useSegmentProgressListener(): void {
   const setProgress = useJob((s) => s.setProgress)
   useEffect(() => {
-    const unlisten = onSegmentProgress(setProgress)
+    const unlisten = onSegmentProgress((progress) => {
+      setProgress(progress)
+      useEdit.getState().setProgress(progress)
+    })
     return () => {
       unlisten.then((fn) => fn())
     }
@@ -46,8 +57,7 @@ export function usePhotoPipeline() {
         s.setLoaded(info)
 
         // Show the photo right away; the mask takes seconds.
-        const previewBytes = await getImageBytes({ id: info.id, maxDim: PREVIEW_MAX_DIM })
-        const preview = await decodeToBitmap(previewBytes, 'image/jpeg')
+        const preview = await previewFor(info)
 
         const quality = store.getState().quality
         const [maskBytes, faces] = await Promise.all([

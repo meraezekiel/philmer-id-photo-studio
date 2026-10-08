@@ -6,6 +6,7 @@
  */
 
 import type { Bitmap } from './composite'
+import { coverSourceRect, type BackgroundView } from './fitToPaper'
 import { nameTagFont, nameTagLayout, type NameTag } from './nameTag'
 
 /** Decode encoded image bytes into raw RGBA pixels. */
@@ -184,4 +185,19 @@ export function nameTagMeasurer(tag: NameTag): (text: string, fontPx: number) =>
     ctx.font = nameTagFont(tag, fontPx)
     return ctx.measureText(text).width
   }
+}
+
+/**
+ * A background picture cut to exactly `width` x `height`: the part chosen by
+ * `view`, scaled to cover, so it can go straight behind the subject.
+ */
+export async function coverFit(
+  bg: Bitmap,
+  width: number,
+  height: number,
+  view: BackgroundView,
+): Promise<ImageData> {
+  const r = coverSourceRect(bg, { width, height }, view)
+  const cut = cropRotate(bg, r, 0)
+  return resampleBitmap(cut, width, height)
 }
