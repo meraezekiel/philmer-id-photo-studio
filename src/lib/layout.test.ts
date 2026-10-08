@@ -17,8 +17,8 @@ import {
   PACKAGE_PRESETS,
   PAPERS,
   PHOTO_PRESETS,
-  type PaperId,
   type PhotoPresetId,
+  type SheetPaperId,
 } from './presets'
 
 /**
@@ -27,7 +27,7 @@ import {
  *
  * Gap 2 mm; margins 3 mm on 4R and 5 mm elsewhere.
  */
-const EXPECTED: Record<PaperId, { '1x1': number; '2x2': number; passport: number }> = {
+const EXPECTED: Record<SheetPaperId, { '1x1': number; '2x2': number; passport: number }> = {
   '4r': { '1x1': 15, '2x2': 2, passport: 8 },
   a4: { '1x1': 70, '2x2': 15, passport: 30 },
   short: { '1x1': 63, '2x2': 15, passport: 28 },
@@ -37,7 +37,7 @@ const EXPECTED: Record<PaperId, { '1x1': number; '2x2': number; passport: number
 const SIZES: PhotoPresetId[] = ['1x1', '2x2', 'passport']
 
 describe('fillSheet matches the BUILD_PLAN §7 table', () => {
-  for (const paper of Object.keys(EXPECTED) as PaperId[]) {
+  for (const paper of Object.keys(EXPECTED) as SheetPaperId[]) {
     for (const size of SIZES) {
       it(`${PAPERS[paper].label} fits ${EXPECTED[paper][size]} x ${size}`, () => {
         expect(capacity(paper, photoSizeMm(size))).toBe(EXPECTED[paper][size])
@@ -71,7 +71,7 @@ describe('fillSheet geometry', () => {
   })
 
   it('keeps every photo inside the margins', () => {
-    for (const paper of Object.keys(EXPECTED) as PaperId[]) {
+    for (const paper of Object.keys(EXPECTED) as SheetPaperId[]) {
       for (const size of SIZES) {
         const layout = fillSheet(paper, photoSizeMm(size))
         const { widthMm, heightMm } = PAPERS[paper]
@@ -288,7 +288,7 @@ describe('presets stay consistent with the plan', () => {
 describe('paper orientation', () => {
   it('a uniform grid fits the same count either way round', () => {
     // cols * rows is symmetric when the paper's sides swap.
-    for (const paper of Object.keys(EXPECTED) as PaperId[]) {
+    for (const paper of Object.keys(EXPECTED) as SheetPaperId[]) {
       for (const size of SIZES) {
         const portrait = fillSheet(paper, photoSizeMm(size), { paperLandscape: false })
         const landscape = fillSheet(paper, photoSizeMm(size), { paperLandscape: true })
@@ -305,7 +305,7 @@ describe('paper orientation', () => {
   })
 
   it('still matches the §7 table through the auto chooser', () => {
-    for (const paper of Object.keys(EXPECTED) as PaperId[]) {
+    for (const paper of Object.keys(EXPECTED) as SheetPaperId[]) {
       for (const size of SIZES) {
         expect(fillSheetAuto(paper, photoSizeMm(size), 'auto').capacity).toBe(
           EXPECTED[paper][size],

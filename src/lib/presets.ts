@@ -99,7 +99,11 @@ export const PHOTO_PRESETS: Record<PhotoPresetId, PhotoPreset> = {
 
 export const PHOTO_PRESET_ORDER: PhotoPresetId[] = ['1x1', '2x2', 'passport']
 
-export type PaperId = '4r' | 'a4' | 'short' | 'long'
+export type PaperId = '3r' | '4r' | '5r' | '8r' | 'a4' | 'short' | 'long'
+/** Papers the ID print sheet offers. */
+export type SheetPaperId = '4r' | 'a4' | 'short' | 'long'
+/** Papers Photo Print offers. */
+export type EditPaperId = '3r' | '4r' | '5r' | '8r' | 'a4'
 
 export interface PaperPreset {
   id: PaperId
@@ -112,12 +116,36 @@ export interface PaperPreset {
 }
 
 export const PAPERS: Record<PaperId, PaperPreset> = {
+  '3r': {
+    id: '3r',
+    label: '3R',
+    sublabel: '88.9 x 127 mm - 3.5 x 5 in',
+    widthMm: 88.9,
+    heightMm: 127,
+    defaultMarginMm: 3,
+  },
   '4r': {
     id: '4r',
     label: '4R',
     sublabel: '101.6 x 152.4 mm - 4 x 6 in',
     widthMm: 101.6,
     heightMm: 152.4,
+    defaultMarginMm: 3,
+  },
+  '5r': {
+    id: '5r',
+    label: '5R',
+    sublabel: '127 x 177.8 mm - 5 x 7 in',
+    widthMm: 127,
+    heightMm: 177.8,
+    defaultMarginMm: 3,
+  },
+  '8r': {
+    id: '8r',
+    label: '8R',
+    sublabel: '203.2 x 254 mm - 8 x 10 in',
+    widthMm: 203.2,
+    heightMm: 254,
     defaultMarginMm: 3,
   },
   a4: {
@@ -146,7 +174,9 @@ export const PAPERS: Record<PaperId, PaperPreset> = {
   },
 }
 
-export const PAPER_ORDER: PaperId[] = ['4r', 'a4', 'short', 'long']
+export const PAPER_ORDER: SheetPaperId[] = ['4r', 'a4', 'short', 'long']
+
+export const EDIT_PAPER_ORDER: EditPaperId[] = ['3r', '4r', '5r', '8r', 'a4']
 
 /** Default spacing between tiled photos. */
 export const DEFAULT_GAP_MM = 2

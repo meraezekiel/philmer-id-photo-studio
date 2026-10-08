@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   defaultFileName,
   dpiToPixelsPerMetre,
+  editedFileName,
   mmToPoints,
   mmToPx,
   outputSizePx,
@@ -156,5 +157,17 @@ describe('defaultFileName', () => {
     expect(defaultFileName('Custom / 2:1', 'png', new Date(2026, 0, 2, 3, 4))).toBe(
       'IDPhoto_Custom21_20260102-0304.png',
     )
+  })
+})
+
+describe('editedFileName', () => {
+  it('adds -edited to the original name', () => {
+    expect(editedFileName('IMG_0042', 'jpg')).toBe('IMG_0042-edited.jpg')
+  })
+  it('falls back to photo for a pasted image', () => {
+    expect(editedFileName(null, 'png')).toBe('photo-edited.png')
+  })
+  it('drops characters Windows will not take', () => {
+    expect(editedFileName('a:b*c?', 'png')).toBe('a_b_c_-edited.png')
   })
 })

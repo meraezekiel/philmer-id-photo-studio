@@ -247,3 +247,9 @@ export function defaultFileName(sizeLabel: string, ext: string, now: Date = new 
   const safe = sizeLabel.replace(/[^A-Za-z0-9]+/g, '')
   return `IDPhoto_${safe}_${stamp}.${ext}`
 }
+
+/** `IMG_0042-edited.jpg` — Photo Print keeps the customer's own file name. */
+export function editedFileName(sourceName: string | null, ext: string): string {
+  const base = (sourceName ?? '').replace(/[<>:"/\\|?*]/g, '_').trim() || 'photo'
+  return `${base}-edited.${ext}`
+}

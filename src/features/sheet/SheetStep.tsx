@@ -19,7 +19,7 @@ import {
   PAPER_ORDER,
   PHOTO_PRESETS,
   PHOTO_PRESET_ORDER,
-  type PaperId,
+  type SheetPaperId,
 } from '../../lib/presets'
 import type { NameTag } from '../../lib/nameTag'
 import type { LoadedImageInfo } from '../../lib/tauri'
@@ -647,9 +647,9 @@ export function SheetPanel() {
   const moved =
     offsetXMm !== 0 || offsetYMm !== 0 || Object.keys(photoOffsets).length > 0
 
-  const suggestBigger = (): PaperId | null => {
-    const order: PaperId[] = ['4r', 'short', 'a4', 'long']
-    const i = order.indexOf(paper)
+  const suggestBigger = (): SheetPaperId | null => {
+    const order: SheetPaperId[] = ['4r', 'short', 'a4', 'long']
+    const i = order.indexOf(paper as SheetPaperId)
     return i >= 0 && i < order.length - 1 ? order[i + 1] : null
   }
 
