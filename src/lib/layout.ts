@@ -106,11 +106,7 @@ function grid(
   return { cols, rows, count: cols * rows }
 }
 
-export function photoSizeMm(presetId: PhotoPresetId, custom?: SizeMm): SizeMm {
-  if (presetId === 'custom') {
-    if (!custom) throw new Error('a custom preset needs an explicit size')
-    return custom
-  }
+export function photoSizeMm(presetId: PhotoPresetId): SizeMm {
   const p = PHOTO_PRESETS[presetId]
   return { widthMm: p.widthMm, heightMm: p.heightMm }
 }
@@ -201,8 +197,6 @@ export function capacity(
 export interface PackageRequest {
   presetId: PhotoPresetId
   qty: number
-  /** Required when `presetId` is `'custom'`. */
-  custom?: SizeMm
 }
 
 export interface PackageResult
@@ -239,7 +233,7 @@ export function packPackage(
   // before short ones fragment the sheet.
   const units = items
     .flatMap((item, itemIndex) => {
-      const size = photoSizeMm(item.presetId, item.custom)
+      const size = photoSizeMm(item.presetId)
       return Array.from({ length: Math.max(0, item.qty) }, () => ({
         ...size,
         itemIndex,

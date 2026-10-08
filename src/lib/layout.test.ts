@@ -34,7 +34,7 @@ const EXPECTED: Record<PaperId, { '1x1': number; '2x2': number; passport: number
   long: { '1x1': 77, '2x2': 18, passport: 32 },
 }
 
-const SIZES: Exclude<PhotoPresetId, 'custom'>[] = ['1x1', '2x2', 'passport']
+const SIZES: PhotoPresetId[] = ['1x1', '2x2', 'passport']
 
 describe('fillSheet matches the BUILD_PLAN §7 table', () => {
   for (const paper of Object.keys(EXPECTED) as PaperId[]) {
@@ -136,13 +136,6 @@ describe('fillSheet geometry', () => {
     )
   })
 
-  it('accepts a custom size and rejects one with no dimensions', () => {
-    expect(photoSizeMm('custom', { widthMm: 30, heightMm: 40 })).toEqual({
-      widthMm: 30,
-      heightMm: 40,
-    })
-    expect(() => photoSizeMm('custom')).toThrow()
-  })
 })
 
 describe('packPackage', () => {

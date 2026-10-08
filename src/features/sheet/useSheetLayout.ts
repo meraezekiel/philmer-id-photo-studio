@@ -16,7 +16,7 @@ import {
   type PackageRequest,
   type Placement,
 } from '../../lib/layout'
-import { PAPERS, PHOTO_PRESETS } from '../../lib/presets'
+import { PAPERS } from '../../lib/presets'
 import { useJob } from '../../store/job'
 
 export interface SheetResult {
@@ -86,12 +86,7 @@ export function useSheetLayout(): SheetResult {
       }
     }
 
-    const photo = photoSizeMm(
-      presetId,
-      presetId === 'custom'
-        ? { widthMm: PHOTO_PRESETS.custom.widthMm, heightMm: PHOTO_PRESETS.custom.heightMm }
-        : undefined,
-    )
+    const photo = photoSizeMm(presetId)
     // Capacity is measured before any quantity cap, so "Fill sheet" can show
     // the true maximum even while Exact quantity is selected.
     const full = fillSheetAuto(paper, photo, orientation, { marginMm: margin, offsetXMm, offsetYMm })

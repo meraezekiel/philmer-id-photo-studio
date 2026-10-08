@@ -12,7 +12,7 @@ export const VENDOR = 'Philmer Digi Art'
 export const PRINT_DPI = 300
 export const MM_PER_INCH = 25.4
 
-export type PhotoPresetId = '1x1' | '2x2' | 'passport' | 'custom'
+export type PhotoPresetId = '1x1' | '2x2' | 'passport'
 
 export interface PhotoPreset {
   id: PhotoPresetId
@@ -55,9 +55,7 @@ export interface PhotoPreset {
  * 32-36 mm head, so 34/45 = 0.7556 nominal and 0.711-0.800 as the band. The
  * 4 mm top gap is 4/45.
  */
-export const PHOTO_PRESETS: Record<Exclude<PhotoPresetId, 'custom'>, PhotoPreset> & {
-  custom: PhotoPreset
-} = {
+export const PHOTO_PRESETS: Record<PhotoPresetId, PhotoPreset> = {
   '1x1': {
     id: '1x1',
     label: '1x1',
@@ -97,21 +95,9 @@ export const PHOTO_PRESETS: Record<Exclude<PhotoPresetId, 'custom'>, PhotoPreset
     nameTagByDefault: true,
     note: 'Check the latest requirements of the requesting agency.',
   },
-  custom: {
-    id: 'custom',
-    label: 'Custom',
-    sublabel: 'Your own size',
-    widthMm: 35,
-    heightMm: 45,
-    crownRatio: 0.1,
-    chinMin: 0.7,
-    chinMax: 0.8,
-    defaultBackground: '#FFFFFF',
-    allowNameTag: true,
-  },
 }
 
-export const PHOTO_PRESET_ORDER: PhotoPresetId[] = ['1x1', '2x2', 'passport', 'custom']
+export const PHOTO_PRESET_ORDER: PhotoPresetId[] = ['1x1', '2x2', 'passport']
 
 export type PaperId = '4r' | 'a4' | 'short' | 'long'
 
@@ -181,7 +167,7 @@ export const BACKGROUND_SWATCHES: Swatch[] = [
 
 /** Shipped combos. Every one of these is asserted to fit in layout.test.ts. */
 export interface PackageItem {
-  presetId: Exclude<PhotoPresetId, 'custom'>
+  presetId: PhotoPresetId
   qty: number
 }
 

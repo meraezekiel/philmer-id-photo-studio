@@ -20,7 +20,6 @@ import {
   PHOTO_PRESETS,
   PHOTO_PRESET_ORDER,
   type PaperId,
-  type PhotoPresetId,
 } from '../../lib/presets'
 import type { NameTag } from '../../lib/nameTag'
 import type { LoadedImageInfo } from '../../lib/tauri'
@@ -865,10 +864,7 @@ function PackageBuilder({
   rows: PackageRow[]
   onChange: (rows: PackageRow[]) => void
 }) {
-  const sizes = PHOTO_PRESET_ORDER.filter((id) => id !== 'custom') as Exclude<
-    PhotoPresetId,
-    'custom'
-  >[]
+  const sizes = PHOTO_PRESET_ORDER
 
   return (
     <div className="flex flex-col gap-2">
