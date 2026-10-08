@@ -14,9 +14,10 @@
  */
 
 import { boxBlur, clamp, createBitmap, parseHex, type Bitmap, type Rgb } from './pixels'
+import { toneTables, type ToneOptions } from './enhance'
 
-export { boxBlur, createBitmap, parseHex }
-export type { Bitmap, Rgb }
+export { boxBlur, createBitmap, parseHex, toneTables }
+export type { Bitmap, Rgb, ToneOptions }
 
 /** Alpha below this is background; above it is subject. Between is the fringe. */
 const ALPHA_FLOOR = 0.02
@@ -251,36 +252,6 @@ export function estimateForeground(
 }
 
 // --- light and colour ---------------------------------------------------
-
-export interface ToneOptions {
-  /** -50..+50. Lifts or lowers every channel. */
-  brightness?: number
-  /** -50..+50. Stretches channels away from mid-grey, or flattens them. */
-  contrast?: number
-  /** -50..+50. Positive shifts toward red/yellow, negative toward blue. */
-  warmth?: number
-}
-
-/**
- * One lookup table per channel. Walk-in photos are often dark or yellow from
- * the shop's own lights; this corrects the subject without an outside editor.
- */
-export function toneTables(options: ToneOptions): [Uint8ClampedArray, Uint8ClampedArray, Uint8ClampedArray] | null {
-  const brightness = clamp(options.brightness ?? 0, -50, 50)
-  const contrast = clamp(options.contrast ?? 0, -50, 50)
-  const warmth = clamp(options.warmth ?? 0, -50, 50)
-  if (brightness === 0 && contrast === 0 && warmth === 0) return null
-
-  const gain = 1 + contrast / 100
-  const lift = brightness * 1.5
-  const shift = warmth * 0.6
-  const table = (offset: number) => {
-    const t = new Uint8ClampedArray(256)
-    for (let v = 0; v < 256; v++) t[v] = (v - 128) * gain + 128 + lift + offset
-    return t
-  }
-  return [table(shift), table(0), table(-shift)]
-}
 
 // --- compositing --------------------------------------------------------
 
