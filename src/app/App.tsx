@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { AdjustCanvas } from '../features/adjust/AdjustCanvas'
 import { AdjustPanel } from '../features/adjust/AdjustStep'
+import { AttireCanvas, AttirePanel } from '../features/attire/AttireStep'
 import { BackgroundCanvas, BackgroundPanel } from '../features/background/BackgroundStep'
 import { ExportCanvas, ExportPanel } from '../features/export/ExportStep'
 import { ImportStep } from '../features/import/ImportStep'
@@ -108,6 +109,7 @@ export function App() {
           {step === 'import' && <ImportStep />}
           {step === 'adjust' && <AdjustCanvas />}
           {step === 'background' && <BackgroundCanvas />}
+          {step === 'attire' && <AttireCanvas />}
           {step === 'sheet' && <SheetCanvas />}
           {step === 'export' && <ExportCanvas />}
         </div>
@@ -120,6 +122,7 @@ export function App() {
             {step !== 'sheet' && <SizeSection />}
             {step === 'adjust' && <AdjustPanel />}
             {step === 'background' && <BackgroundPanel />}
+            {step === 'attire' && <AttirePanel />}
             {step === 'sheet' && <SheetPanel />}
             {step === 'export' && <ExportPanel />}
           </aside>

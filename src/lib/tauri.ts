@@ -215,3 +215,33 @@ export function licenseStatus(): Promise<LicenseStatus> {
 export function activateLicense(key: string): Promise<LicenseStatus> {
   return invoke('activate_license', { key })
 }
+
+// --- attire templates ----------------------------------------------------
+
+export interface AttireEntry {
+  id: string
+  name: string
+  group: 'men' | 'women' | 'other'
+  file: string
+  addedAt: string
+}
+
+export function listAttire(): Promise<AttireEntry[]> {
+  return invoke('list_attire')
+}
+
+export function importAttire(args: {
+  path: string
+  name: string
+  group: AttireEntry['group']
+}): Promise<AttireEntry> {
+  return invoke('import_attire', { args })
+}
+
+export function removeAttire(id: string): Promise<void> {
+  return invoke('remove_attire', { id })
+}
+
+export function readAttire(id: string): Promise<ArrayBuffer> {
+  return invoke('read_attire', { id })
+}

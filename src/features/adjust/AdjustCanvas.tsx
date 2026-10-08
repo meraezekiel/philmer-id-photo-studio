@@ -25,9 +25,10 @@ import {
   rollDegrees,
   type Geometry,
   type HeadStatus,
+  type CropRect,
 } from '../../lib/autoCrop'
 import { PHOTO_PRESETS } from '../../lib/presets'
-import { useJob } from '../../store/job'
+import { framedCrop, useJob } from '../../store/job'
 
 /** Crop window height as a fraction of the canvas, from the design. */
 const CROP_FRACTION = 0.66
@@ -58,6 +59,7 @@ export function AdjustCanvas() {
   const background = useJob((s) => s.background)
   const edgeSoftness = useJob((s) => s.edgeSoftness)
   const hairDetail = useJob((s) => s.hairDetail)
+  const tone = useJob((s) => s.tone)
   const presetId = useJob((s) => s.presetId)
   const zoom = useJob((s) => s.zoom)
   const rotation = useJob((s) => s.rotation)
@@ -69,6 +71,10 @@ export function AdjustCanvas() {
   const chinOverride = useJob((s) => s.chinOverride)
   const setCrownChin = useJob((s) => s.setCrownChin)
   const setCropRect = useJob((s) => s.setCropRect)
+  const headShift = useJob((s) => s.headShift)
+  const headScale = useJob((s) => s.headScale)
+  const resetHead = useJob((s) => s.resetHead)
+  const setZoom = useJob((s) => s.setZoom)
 
   const areaRef = useRef<HTMLDivElement>(null)
   const cropRef = useRef<HTMLDivElement>(null)
@@ -101,8 +107,8 @@ export function AdjustCanvas() {
   // final look rather than against the original backdrop.
   const result = useMemo(() => {
     if (!preview || !previewMask) return null
-    return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail })
-  }, [preview, previewMask, background, edgeSoftness, hairDetail])
+    return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail, ...tone })
+  }, [preview, previewMask, background, edgeSoftness, hairDetail, tone])
 
   /**
    * Landmarks in *preview* pixels. Detection runs on the original, so
@@ -134,6 +140,32 @@ export function AdjustCanvas() {
     [anatomy, preview, g, cropSize, zoom, rotation, levelEyes, offsetX, offsetY],
   )
 
+  /*
+   * A person moved or resized on the Attire step becomes Adjust's own zoom
+   * and pan, so both steps show — and export — the same framing. The zoom and
+   * pan are solved from the final crop rather than added up, which keeps it
+   * exact when the eyes have been levelled.
+   */
+  useEffect(() => {
+    if (headShift.x === 0 && headShift.y === 0 && headScale === 1) return
+    if (!placement || !preview || !info || cropSize.height <= 0) return
+    // Work from the crop this placement publishes, not the store's copy,
+    // which lags a render behind while the canvas is measured.
+    const own = cropFromPlacement(placement, preview, info, cropSize)
+    const { faces } = useJob.getState()
+    const target = framedCrop({ cropRect: own, headShift, headScale, faces, info })
+    if (!target) return
+    const screenPerOriginal = cropSize.width / target.width
+    const nextZoom = (zoom * screenPerOriginal) / (preview.width / info.width) / placement.scale
+    const base = computePlacement({
+      anatomy, preview, g, cropSize, zoom: nextZoom, rotation, levelEyes, offsetX: 0, offsetY: 0,
+    })
+    if (!base) return
+    setZoom(nextZoom)
+    setPan(-target.x * screenPerOriginal - base.left, -target.y * screenPerOriginal - base.top)
+    resetHead()
+  }, [headShift, headScale, placement, preview, info, cropSize, zoom, anatomy, g, rotation, levelEyes, setZoom, setPan, resetHead])
+
   useEffect(() => {
     if (result && canvasRef.current) drawBitmap(canvasRef.current, result)
   }, [result, placement])
@@ -150,15 +182,7 @@ export function AdjustCanvas() {
       setCropRect(null)
       return
     }
-    const previewScale = preview.width / info.width
-    const toOriginal = 1 / (placement.scale * previewScale)
-    setCropRect({
-      x: -placement.left * toOriginal,
-      y: -placement.top * toOriginal,
-      width: cropSize.width * toOriginal,
-      height: cropSize.height * toOriginal,
-      rotationDeg: placement.rotation,
-    })
+    setCropRect(cropFromPlacement(placement, preview, info, cropSize))
   }, [placement, preview, info, cropSize, setCropRect])
 
   const head = {
@@ -371,6 +395,23 @@ export function AdjustCanvas() {
  * Without a detected face there is nothing to solve for, so the photo is simply
  * fitted to the window and the operator uses the handles.
  */
+/** The framed region in original photo pixels, for a placement on the crop box. */
+function cropFromPlacement(
+  placement: Placement,
+  preview: { width: number },
+  info: { width: number },
+  cropSize: { width: number; height: number },
+): CropRect {
+  const toOriginal = 1 / (placement.scale * (preview.width / info.width))
+  return {
+    x: -placement.left * toOriginal,
+    y: -placement.top * toOriginal,
+    width: cropSize.width * toOriginal,
+    height: cropSize.height * toOriginal,
+    rotationDeg: placement.rotation,
+  }
+}
+
 function computePlacement({
   anatomy,
   preview,

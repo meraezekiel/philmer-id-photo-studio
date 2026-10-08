@@ -308,9 +308,41 @@ export function estimateForeground(
   return { r: out[0], g: out[1], b: out[2] }
 }
 
+// --- light and colour ---------------------------------------------------
+
+export interface ToneOptions {
+  /** -50..+50. Lifts or lowers every channel. */
+  brightness?: number
+  /** -50..+50. Stretches channels away from mid-grey, or flattens them. */
+  contrast?: number
+  /** -50..+50. Positive shifts toward red/yellow, negative toward blue. */
+  warmth?: number
+}
+
+/**
+ * One lookup table per channel. Walk-in photos are often dark or yellow from
+ * the shop's own lights; this corrects the subject without an outside editor.
+ */
+export function toneTables(options: ToneOptions): [Uint8ClampedArray, Uint8ClampedArray, Uint8ClampedArray] | null {
+  const brightness = clamp(options.brightness ?? 0, -50, 50)
+  const contrast = clamp(options.contrast ?? 0, -50, 50)
+  const warmth = clamp(options.warmth ?? 0, -50, 50)
+  if (brightness === 0 && contrast === 0 && warmth === 0) return null
+
+  const gain = 1 + contrast / 100
+  const lift = brightness * 1.5
+  const shift = warmth * 0.6
+  const table = (offset: number) => {
+    const t = new Uint8ClampedArray(256)
+    for (let v = 0; v < 256; v++) t[v] = (v - 128) * gain + 128 + lift + offset
+    return t
+  }
+  return [table(shift), table(0), table(-shift)]
+}
+
 // --- compositing --------------------------------------------------------
 
-export interface CompositeOptions extends MaskOptions {
+export interface CompositeOptions extends MaskOptions, ToneOptions {
   /** Cropped source pixels, RGBA. */
   image: Bitmap
   /** Alpha mask, the same size as `image`. */
@@ -342,13 +374,20 @@ export function composite(options: CompositeOptions): Bitmap & { data: Uint8Clam
 
   const out = createBitmap(width, height)
   const n = width * height
+  // Tone applies to the subject before it meets the background, so a white
+  // backdrop stays exactly white however far the sliders go.
+  const tone = toneTables(options)
+  const [tr, tg, tb] = tone ?? [null, null, null]
 
   if (options.skipDecontamination) {
     for (let i = 0; i < n; i++) {
       const a = alpha[i]
-      out.data[i * 4] = image.data[i * 4] * a + bg.r * (1 - a)
-      out.data[i * 4 + 1] = image.data[i * 4 + 1] * a + bg.g * (1 - a)
-      out.data[i * 4 + 2] = image.data[i * 4 + 2] * a + bg.b * (1 - a)
+      const r = image.data[i * 4]
+      const g = image.data[i * 4 + 1]
+      const b = image.data[i * 4 + 2]
+      out.data[i * 4] = (tr ? tr[r] : r) * a + bg.r * (1 - a)
+      out.data[i * 4 + 1] = (tg ? tg[g] : g) * a + bg.g * (1 - a)
+      out.data[i * 4 + 2] = (tb ? tb[b] : b) * a + bg.b * (1 - a)
       out.data[i * 4 + 3] = 255
     }
     return out
@@ -357,9 +396,12 @@ export function composite(options: CompositeOptions): Bitmap & { data: Uint8Clam
   const f = estimateForeground(image, alpha)
   for (let i = 0; i < n; i++) {
     const a = alpha[i]
-    out.data[i * 4] = f.r[i] * a + bg.r * (1 - a)
-    out.data[i * 4 + 1] = f.g[i] * a + bg.g * (1 - a)
-    out.data[i * 4 + 2] = f.b[i] * a + bg.b * (1 - a)
+    const r = f.r[i]
+    const g = f.g[i]
+    const b = f.b[i]
+    out.data[i * 4] = (tr ? tr[Math.round(r)] : r) * a + bg.r * (1 - a)
+    out.data[i * 4 + 1] = (tg ? tg[Math.round(g)] : g) * a + bg.g * (1 - a)
+    out.data[i * 4 + 2] = (tb ? tb[Math.round(b)] : b) * a + bg.b * (1 - a)
     // ID photos print on paper; there is no transparency in the output.
     out.data[i * 4 + 3] = 255
   }

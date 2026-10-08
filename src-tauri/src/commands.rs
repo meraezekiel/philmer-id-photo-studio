@@ -17,7 +17,7 @@ use tauri::{AppHandle, Emitter, State};
 use crate::error::{AppError, Result};
 use crate::models::{self, SegModel};
 use crate::state::AppState;
-use crate::{face, image_io, resize, segment};
+use crate::{attire, face, image_io, resize, segment};
 
 /// Anything larger than this and the canvas preview is downscaled; the original
 /// stays intact for compositing.
@@ -432,4 +432,42 @@ pub fn license_status() -> crate::license::LicenseStatus {
 #[tauri::command]
 pub fn activate_license(key: String) -> Result<crate::license::LicenseStatus> {
     crate::license::activate(&key)
+}
+
+// --- attire templates ----------------------------------------------------
+
+#[tauri::command]
+pub fn list_attire(state: State<'_, AppState>) -> Vec<attire::AttireEntry> {
+    attire::list(&state.attire_dir)
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportAttireArgs {
+    pub path: String,
+    pub name: String,
+    pub group: String,
+}
+
+#[tauri::command]
+pub async fn import_attire(
+    state: State<'_, AppState>,
+    args: ImportAttireArgs,
+) -> Result<attire::AttireEntry> {
+    let dir = state.attire_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        attire::import(&dir, &PathBuf::from(&args.path), &args.name, &args.group)
+    })
+    .await
+    .map_err(|e| AppError::Other(format!("import_attire task failed: {e}")))?
+}
+
+#[tauri::command]
+pub fn remove_attire(state: State<'_, AppState>, id: String) -> Result<()> {
+    attire::remove(&state.attire_dir, &id)
+}
+
+#[tauri::command]
+pub fn read_attire(state: State<'_, AppState>, id: String) -> Result<Response> {
+    Ok(Response::new(attire::read(&state.attire_dir, &id)?))
 }

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="520" viewBox="0 0 600 520">
+  <!-- Placeholder template: white collared shirt with a dark necktie. -->
+  <path d="M245 40 L300 112 L355 40 L535 108 Q592 136 600 260 L600 520 L0 520 L0 260 Q8 136 65 108 Z"
+        fill="#f3f3f1" stroke="#d6d6d2" stroke-width="3"/>
+  <path d="M300 112 L300 520" stroke="#dcdcd8" stroke-width="3"/>
+  <path d="M245 40 L300 112 L236 158 L222 66 Z" fill="#ffffff" stroke="#c9c9c4" stroke-width="3"/>
+  <path d="M355 40 L300 112 L364 158 L378 66 Z" fill="#ffffff" stroke="#c9c9c4" stroke-width="3"/>
+  <path d="M283 106 L317 106 L322 140 L278 140 Z" fill="#1d2740"/>
+  <path d="M278 140 L322 140 L338 440 L300 482 L262 440 Z" fill="#24304f"/>
+</svg>

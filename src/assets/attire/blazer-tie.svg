@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="520" viewBox="0 0 600 520">
+  <!-- Placeholder template: dark blazer over a white shirt and tie. -->
+  <path d="M245 40 L300 112 L355 40 L535 108 Q592 136 600 260 L600 520 L0 520 L0 260 Q8 136 65 108 Z"
+        fill="#2f333b"/>
+  <path d="M238 52 L300 112 L362 52 L382 72 L300 400 L218 72 Z" fill="#f5f5f3"/>
+  <path d="M245 40 L300 112 L240 150 L226 62 Z" fill="#ffffff" stroke="#c9c9c4" stroke-width="3"/>
+  <path d="M355 40 L300 112 L360 150 L374 62 Z" fill="#ffffff" stroke="#c9c9c4" stroke-width="3"/>
+  <path d="M284 106 L316 106 L320 136 L280 136 Z" fill="#5a1820"/>
+  <path d="M280 136 L320 136 L332 370 L300 404 L268 370 Z" fill="#6b1d27"/>
+  <path d="M218 72 L300 400 L250 470 L196 250 L226 210 L190 170 Z" fill="#262a31"/>
+  <path d="M382 72 L300 400 L350 470 L404 250 L374 210 L410 170 Z" fill="#262a31"/>
+</svg>

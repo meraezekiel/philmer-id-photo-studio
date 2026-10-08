@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Icon, ICONS, Notice, Section, Slider } from '../../app/components/ui'
+import { Icon, ICONS, Notice, ResetButton, Section, Slider } from '../../app/components/ui'
 import { drawBitmap, nameTagMeasurer } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
 import {
@@ -29,6 +29,7 @@ export function BackgroundCanvas() {
   const background = useJob((s) => s.background)
   const edgeSoftness = useJob((s) => s.edgeSoftness)
   const hairDetail = useJob((s) => s.hairDetail)
+  const tone = useJob((s) => s.tone)
   const presetId = useJob((s) => s.presetId)
 
   const beforeRef = useRef<HTMLCanvasElement>(null)
@@ -46,8 +47,8 @@ export function BackgroundCanvas() {
 
   const result = useMemo(() => {
     if (!preview || !previewMask) return null
-    return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail })
-  }, [preview, previewMask, background, edgeSoftness, hairDetail])
+    return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail, ...tone })
+  }, [preview, previewMask, background, edgeSoftness, hairDetail, tone])
 
   useEffect(() => {
     if (preview && beforeRef.current) drawBitmap(beforeRef.current, preview)
@@ -278,6 +279,8 @@ export function BackgroundPanel() {
         </p>
       </Section>
 
+      <ToneSection />
+
       <NameSection />
 
       {preset.note && (
@@ -286,6 +289,56 @@ export function BackgroundPanel() {
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * Brightness, contrast and warmth of the person. Shop lighting leaves many
+ * walk-in photos dark or yellow; this fixes them without a second program.
+ * The background is never touched, so white stays white.
+ */
+function ToneSection() {
+  const tone = useJob((s) => s.tone)
+  const setTone = useJob((s) => s.setTone)
+  const resetTone = useJob((s) => s.resetTone)
+  const signed = (v: number) => (v > 0 ? `+${v}` : `${v}`)
+
+  return (
+    <Section title="Light & colour" action={<ResetButton onClick={resetTone} />}>
+      <Slider
+        label="Brightness"
+        value={tone.brightness}
+        min={-50}
+        max={50}
+        step={1}
+        defaultValue={0}
+        format={signed}
+        onChange={(brightness) => setTone({ brightness })}
+      />
+      <Slider
+        label="Contrast"
+        value={tone.contrast}
+        min={-50}
+        max={50}
+        step={1}
+        defaultValue={0}
+        format={signed}
+        onChange={(contrast) => setTone({ contrast })}
+      />
+      <Slider
+        label="Warmth"
+        value={tone.warmth}
+        min={-50}
+        max={50}
+        step={1}
+        defaultValue={0}
+        format={signed}
+        onChange={(warmth) => setTone({ warmth })}
+      />
+      <p className="text-xs text-muted">
+        Lower warmth to take the yellow out of indoor light.
+      </p>
+    </Section>
   )
 }
 

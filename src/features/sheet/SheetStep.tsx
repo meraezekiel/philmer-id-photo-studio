@@ -9,8 +9,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Icon, ICONS, Notice, Section, Segmented } from '../../app/components/ui'
+import { withAttire, type AttireLayer } from '../../lib/attireDraw'
 import type { CropRect } from '../../lib/autoCrop'
-import { composite, type Bitmap } from '../../lib/composite'
+import { composite, type Bitmap, type ToneOptions } from '../../lib/composite'
 import { cutMarks, PHOTO_BORDER_MM } from '../../lib/layout'
 import {
   PACKAGE_PRESETS,
@@ -24,16 +25,19 @@ import {
 import type { NameTag } from '../../lib/nameTag'
 import type { LoadedImageInfo } from '../../lib/tauri'
 import { useJob, type PackageRow } from '../../store/job'
+import { useFramedCrop } from '../../store/useFramedCrop'
+import { useAttireLayer } from '../attire/useAttireLayer'
 import { useSheetLayout } from './useSheetLayout'
 
 export function SheetCanvas() {
   const preview = useJob((s) => s.preview)
   const previewMask = useJob((s) => s.previewMask)
   const info = useJob((s) => s.info)
-  const cropRect = useJob((s) => s.cropRect)
+  const cropRect = useFramedCrop()
   const background = useJob((s) => s.background)
   const edgeSoftness = useJob((s) => s.edgeSoftness)
   const hairDetail = useJob((s) => s.hairDetail)
+  const tone = useJob((s) => s.tone)
   const showCutMarks = useJob((s) => s.cutMarks)
   const paper = useJob((s) => s.paper)
 
@@ -176,6 +180,8 @@ export function SheetCanvas() {
     background,
     edgeSoftness,
     hairDetail,
+    tone,
+    attire: useAttireLayer(),
     nameTag,
   })
 
@@ -565,9 +571,11 @@ function usePhotoUrl(args: {
   background: string
   edgeSoftness: number
   hairDetail: number
+  tone: ToneOptions
+  attire: AttireLayer | null
   nameTag: NameTag
 }): string | null {
-  const { preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail, nameTag } =
+  const { preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail, tone, attire, nameTag } =
     args
   const [url, setUrl] = useState<string | null>(null)
 
@@ -595,7 +603,7 @@ function usePhotoUrl(args: {
         mask = cropRotate(previewMask, rect, cropRect.rotationDeg)
       }
       const out = withNameTag(
-        composite({ image, mask, background, edgeSoftness, hairDetail }),
+        withAttire(composite({ image, mask, background, edgeSoftness, hairDetail, ...tone }), attire, mask),
         nameTag,
       )
       const bytes = await encodeBitmap(out, 'image/png')
@@ -609,7 +617,7 @@ function usePhotoUrl(args: {
       cancelled = true
       if (revoked) URL.revokeObjectURL(revoked)
     }
-  }, [preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail, nameTag])
+  }, [preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail, tone, attire, nameTag])
 
   return url
 }

@@ -20,7 +20,7 @@ A desktop app for a small printing counter that turns an ordinary photo into pri
 7. **Print sheet:** tile copies on 4R, A4, Short bond (Letter), or Long bond (8.5×13) with cut lines, including mixed "packages" (e.g. 4 pcs 1x1 + 2 pcs 2x2).
 8. **Export** a 300 DPI JPG/PNG/PDF and **print** at true size.
 
-Non-goals for v1: clothing/suit replacement, skin retouching, cloud features, accounts, macOS build.
+Non-goals for v1: AI clothing replacement (template attire overlays are in — see docs/superpowers/specs/2026-10-07-formal-attire-design.md), skin retouching, cloud features, accounts, macOS build.
 
 ---
 

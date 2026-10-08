@@ -4,6 +4,7 @@
 //! the CPU is several times faster than WASM in the webview, and it does not
 //! run out of memory on a 12 MP photo. The frontend owns UI and compositing.
 
+pub mod attire;
 pub mod commands;
 pub mod engine;
 pub mod error;
@@ -52,6 +53,10 @@ pub fn run() {
             commands::runtime_info,
             commands::license_status,
             commands::activate_license,
+            commands::list_attire,
+            commands::import_attire,
+            commands::remove_attire,
+            commands::read_attire,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Philmer ID Photo Studio");

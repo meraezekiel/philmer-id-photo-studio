@@ -10,9 +10,12 @@ import { useEffect, useMemo, useRef } from 'react'
 
 import { Button, Field, FieldList, Icon, ICONS, Notice, Section } from '../../app/components/ui'
 import { cropRotate, drawBitmap } from '../../lib/bitmap'
+import { withAttire } from '../../lib/attireDraw'
 import { composite } from '../../lib/composite'
 import { PAPERS, PHOTO_PRESETS, PRINT_DPI } from '../../lib/presets'
 import { useJob } from '../../store/job'
+import { useFramedCrop } from '../../store/useFramedCrop'
+import { useAttireLayer } from '../attire/useAttireLayer'
 import { useLicense } from '../license/LicenseDialog'
 import { SheetPrintButton } from '../sheet/SheetPrintButton'
 import { useExport } from './useExport'
@@ -21,11 +24,13 @@ export function ExportCanvas() {
   const preview = useJob((s) => s.preview)
   const previewMask = useJob((s) => s.previewMask)
   const info = useJob((s) => s.info)
-  const cropRect = useJob((s) => s.cropRect)
+  const cropRect = useFramedCrop()
   const presetId = useJob((s) => s.presetId)
   const background = useJob((s) => s.background)
   const edgeSoftness = useJob((s) => s.edgeSoftness)
   const hairDetail = useJob((s) => s.hairDetail)
+  const tone = useJob((s) => s.tone)
+  const attire = useAttireLayer()
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const preset = PHOTO_PRESETS[presetId]
@@ -33,7 +38,11 @@ export function ExportCanvas() {
   const result = useMemo(() => {
     if (!preview || !previewMask) return null
     if (!cropRect || !info) {
-      return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail })
+      return withAttire(
+        composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail, ...tone }),
+        attire,
+        previewMask,
+      )
     }
     const s = preview.width / info.width
     const rect = {
@@ -42,14 +51,20 @@ export function ExportCanvas() {
       width: cropRect.width * s,
       height: cropRect.height * s,
     }
-    return composite({
-      image: cropRotate(preview, rect, cropRect.rotationDeg),
-      mask: cropRotate(previewMask, rect, cropRect.rotationDeg),
-      background,
-      edgeSoftness,
-      hairDetail,
-    })
-  }, [preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail])
+    const mask = cropRotate(previewMask, rect, cropRect.rotationDeg)
+    return withAttire(
+      composite({
+        image: cropRotate(preview, rect, cropRect.rotationDeg),
+        mask,
+        background,
+        edgeSoftness,
+        hairDetail,
+        ...tone,
+      }),
+      attire,
+      mask,
+    )
+  }, [preview, previewMask, info, cropRect, background, edgeSoftness, hairDetail, tone, attire])
 
   useEffect(() => {
     if (result && canvasRef.current) drawBitmap(canvasRef.current, result)

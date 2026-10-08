@@ -367,3 +367,17 @@ export const ICONS = {
   help: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3', 'M12 17h.01'],
   save: ['M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z', 'M17 21v-8H7v8', 'M7 3v5h8'],
 } as const
+
+/** Reset inline in a section header, icon plus label. */
+export function ResetButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-1.5 text-[13px] font-bold text-muted transition-colors duration-[var(--duration-fast)] hover:text-accent"
+    >
+      <Icon path={ICONS.rotate} size={14} />
+      Reset
+    </button>
+  )
+}

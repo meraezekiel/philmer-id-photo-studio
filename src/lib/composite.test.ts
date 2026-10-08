@@ -150,6 +150,54 @@ describe('composite output invariants', () => {
   })
 })
 
+describe('light and colour act on the subject only', () => {
+  /** RGB of the pixel deep inside the subject, and of one in the background. */
+  function probe(tone: { brightness?: number; contrast?: number; warmth?: number }) {
+    const { image, mask, width, height } = syntheticEdge()
+    const out = composite({ image, mask, background: '#FFFFFF', ...tone })
+    const row = (height >> 1) * width
+    const at = (x: number) => {
+      const i = (row + x) * 4
+      return [out.data[i], out.data[i + 1], out.data[i + 2]]
+    }
+    return { subject: at(2), background: at(width - 1) }
+  }
+
+  it('changes nothing at the neutral settings', () => {
+    expect(probe({ brightness: 0, contrast: 0, warmth: 0 })).toEqual(probe({}))
+  })
+
+  it('brightness lightens or darkens every channel of the subject', () => {
+    const base = probe({}).subject
+    const up = probe({ brightness: 30 }).subject
+    const down = probe({ brightness: -30 }).subject
+    for (let c = 0; c < 3; c++) {
+      expect(up[c]).toBeGreaterThan(base[c])
+      expect(down[c]).toBeLessThan(base[c])
+    }
+  })
+
+  it('contrast pushes channels away from mid-grey', () => {
+    const base = probe({}).subject // 220, 40, 40
+    const more = probe({ contrast: 30 }).subject
+    expect(more[0]).toBeGreaterThan(base[0])
+    expect(more[1]).toBeLessThan(base[1])
+  })
+
+  it('warmth moves the subject toward red, cooler toward blue', () => {
+    const base = probe({}).subject
+    const warm = probe({ warmth: 30 }).subject
+    const cool = probe({ warmth: -30 }).subject
+    expect(warm[0] - warm[2]).toBeGreaterThan(base[0] - base[2])
+    expect(cool[0] - cool[2]).toBeLessThan(base[0] - base[2])
+  })
+
+  it('never touches the background colour — white stays pure white', () => {
+    const { background } = probe({ brightness: -50, contrast: 50, warmth: 50 })
+    expect(background).toEqual([255, 255, 255])
+  })
+})
+
 describe('mask shaping', () => {
   const width = 32
   const height = 1

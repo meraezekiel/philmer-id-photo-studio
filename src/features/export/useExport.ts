@@ -14,12 +14,15 @@ import { openPath } from '@tauri-apps/plugin-opener'
 import { tempDir, join } from '@tauri-apps/api/path'
 
 import { cropRotate, decodeToBitmap, encodeBitmap, resampleBitmap, withNameTag } from '../../lib/bitmap'
+import { withAttire } from '../../lib/attireDraw'
 import { composite, type Bitmap } from '../../lib/composite'
 import { defaultFileName, outputSizePx, setJpegDpi, setPngDpi } from '../../lib/dpi'
 import { buildSheetPdf, renderSheetBitmap, type SheetSpec } from '../../lib/sheetPdf'
 import { PHOTO_PRESETS, PRINT_DPI } from '../../lib/presets'
 import { getImageBytes, printSheet, saveFile, segment } from '../../lib/tauri'
 import { useJob } from '../../store/job'
+import { useFramedCrop } from '../../store/useFramedCrop'
+import { useAttireLayer } from '../attire/useAttireLayer'
 import { useSheetLayout } from '../sheet/useSheetLayout'
 
 export type ExportPhase =
@@ -31,15 +34,17 @@ export type ExportPhase =
 export function useExport() {
   const info = useJob((s) => s.info)
   const presetId = useJob((s) => s.presetId)
-  const cropRect = useJob((s) => s.cropRect)
+  const cropRect = useFramedCrop()
   const background = useJob((s) => s.background)
   const edgeSoftness = useJob((s) => s.edgeSoftness)
   const hairDetail = useJob((s) => s.hairDetail)
+  const tone = useJob((s) => s.tone)
   const quality = useJob((s) => s.quality)
   const nameTag = useJob((s) => s.nameTag)
   const showCutMarks = useJob((s) => s.cutMarks)
   const showBorders = useJob((s) => s.photoBorders)
   const sheet = useSheetLayout()
+  const attire = useAttireLayer()
 
   const [state, setState] = useState<ExportPhase>({ phase: 'idle' })
   const preset = PHOTO_PRESETS[presetId]
@@ -73,7 +78,7 @@ export function useExport() {
       ])
 
       report('Replacing the background…')
-      const photo = composite({ image, mask, background, edgeSoftness, hairDetail })
+      const photo = withAttire(composite({ image, mask, background, edgeSoftness, hairDetail, ...tone }), attire, mask)
       // The name goes on last, over the finished pixels, so it is never
       // softened by the resample or tinted by the decontamination.
       return withNameTag(photo, nameTag)
@@ -87,6 +92,8 @@ export function useExport() {
       background,
       edgeSoftness,
       hairDetail,
+      tone,
+      attire,
       nameTag,
     ],
   )

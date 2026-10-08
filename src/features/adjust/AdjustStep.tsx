@@ -6,7 +6,7 @@
 
 import { useCallback, useMemo } from 'react'
 
-import { Icon, ICONS, IconButton, Notice, Section, Segmented, Slider } from '../../app/components/ui'
+import { Icon, ICONS, IconButton, Notice, ResetButton, Section, Segmented, Slider } from '../../app/components/ui'
 import { geometry, headStatus, headStatusMessage } from '../../lib/autoCrop'
 import { PHOTO_PRESETS } from '../../lib/presets'
 import { useJob } from '../../store/job'
@@ -80,7 +80,7 @@ export function AdjustPanel() {
               max={180}
               step={1}
               defaultValue={100}
-              format={(v) => `${v}%`}
+              format={(v) => `${Math.round(v)}%`}
               onChange={setZoom}
             />
           </div>
@@ -116,19 +116,5 @@ export function AdjustPanel() {
         </Section>
       )}
     </>
-  )
-}
-
-/** The design puts Reset inline in the Transform header, icon plus label. */
-function ResetButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-1.5 text-[13px] font-bold text-muted transition-colors duration-[var(--duration-fast)] hover:text-accent"
-    >
-      <Icon path={ICONS.rotate} size={14} />
-      Reset
-    </button>
   )
 }

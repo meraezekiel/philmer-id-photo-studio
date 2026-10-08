@@ -83,6 +83,16 @@ export const TOUR: Tip[] = [
     anchor: 'name-section',
     title: 'The name on the photo',
     body: 'Type the name as SURNAME, FIRST MIDDLE. It prints in a white band inside the bottom of the photo. Switch it off for any ID that does not want a name.',
+    waitFor: 'Press Next: Attire',
+  },
+
+  // --- Attire ---------------------------------------------------------
+  {
+    id: 'attire-pick',
+    step: 'attire',
+    anchor: 'attire-picker',
+    title: 'Customer not in formal wear?',
+    body: 'Pick a shirt and tie or a suit — it snaps under the chin. Drag it on the photo to move it and scroll to resize. Leave it on None when the customer is already dressed for the ID. Add template… brings in your own PNG with a transparent background.',
     waitFor: 'Press Next: Print sheet',
   },
 

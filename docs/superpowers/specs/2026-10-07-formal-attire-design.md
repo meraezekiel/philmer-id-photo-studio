@@ -265,3 +265,68 @@ Changed:
 - Upload-time calibration of neck and shoulders (possible later).
 - Recolouring templates or changing tie colour in the app.
 - Shipping the owner's downloaded templates in the installer.
+
+## Changes made during implementation
+
+Found while testing in the running app with the owner's nine templates:
+
+- **Anchor at the collar top, not a neck point.** A "neck point" means
+  something different on a V-collar suit (where the collar closes) and on a
+  high blouse (the top of the blouse), and the blouse templates landed far
+  too low. Every template is now placed by the top centre of its collar,
+  `COLLAR_DROP = 0.06` face heights below the chin; shoulders are
+  `SHOULDER_PER_FACE = 3` face widths.
+- **Hide old clothes** (on by default, a checkbox in Fit). Below the chin,
+  outside the neck, the photo is painted with the background colour before
+  the attire goes on — what operators did by hand. The painted region follows
+  a shoulder slope from the face edge at the chin to the neck edge at the
+  collar, with blurred edges.
+- **Old clothes are traced, not guessed** (`clothesMask` in `attire.ts`).
+  Skin colour is sampled from the cheeks (median Cb/Cr); the old clothes are
+  flooded from the bottom and sides of the photo through person pixels that
+  are not skin (chroma distance > 30) and have no sharp colour edge, never
+  above 0.35 face heights over the chin. That region is painted with the
+  background before the attire goes on, so the neck and jaw keep their real
+  outline. If the cheeks do not look like skin, it falls back to the
+  geometric shoulder-slope guess.
+- Below the jaw (0.15 face heights under the chin), every person pixel that
+  is not skin joined to the face is old clothing, so badges, logos and
+  skin-coloured patches go too.
+- **The head is protected along its real outline**: person pixels above the
+  chin that are not old clothing, with background removal's soft edge, are
+  cut out of the attire. Dragging the attire up over the face leaves the head
+  intact with no box around it. Untraced photos fall back to a box 1.1 face
+  widths wide.
+- **Dragging moves the person, not the attire** (owner's choice): the suit
+  stays put and the head is dragged into it, as with a suit template in
+  Photoshop. Scrolling (or the Person size slider, 50–200 %) resizes the
+  person around the middle of the face; Shift+drag and Shift+scroll move and
+  resize the attire. The move and resize are `headShift` and `headScale` on
+  top of Adjust's crop; every output uses `framedCrop`, and returning to
+  Adjust solves the equivalent zoom and pan from the final crop and folds
+  them in, so Adjust's guides judge the real framing.
+  Moving the person counts as placing the attire by hand, so re-framing keeps
+  it. While dragging, the preview renders at half size without fringe
+  clean-up (~64 ms per move instead of ~440 ms).
+- **Blending.** Skin must lean red over blue (Cr − Cb ≥ 20), so light grey
+  and white tops are never kept as "skin". Inside the attire's collar
+  opening, the neck is carried a short way down (0.2 face heights) in its own
+  colour, darkening then fading out, so there is no pale gap under the neck;
+  further down an open neckline the customer's own top is kept, as what they
+  wear under the jacket. A soft contact shadow of the attire falls on the
+  customer's own skin and hair (never the backdrop), and the Blend section
+  has Shadow, Attire brightness and Attire warmth to match the photo's light.
+- **Eraser** (Touch up section: Move | Eraser). Brush kinds: *Skin & hair*
+  removes the photo there, so the attire shows where it reaches (the head no
+  longer covers it) and the backdrop elsewhere, *Attire* cuts the attire away,
+  *Restore* undoes either; size 1–20 % of the photo width (scroll sizes it),
+  soft edges, Undo and Clear all. Strokes are stored in photo fractions
+  (`attireStrokes`) and replayed in order in `withAttire`, so preview, sheet
+  and export match. Cleared on a new customer or a different template; New
+  photo also returns the tool to Move.
+- Rotation defaults to 0; corner handles were not built (drag, scroll and the
+  Size/Rotate sliders cover the same adjustments).
+
+Known limits: open-neck templates (blouse, open jacket) show the customer's
+own top inside the V; a high-collared garment can still show beside the jaw.
+The operator can resize, move, or switch Hide old clothes off.
