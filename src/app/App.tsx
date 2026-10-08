@@ -16,26 +16,25 @@ import { AttireCanvas, AttirePanel } from '../features/attire/AttireStep'
 import { BackgroundCanvas, BackgroundPanel } from '../features/background/BackgroundStep'
 import { ExportCanvas, ExportPanel } from '../features/export/ExportStep'
 import { ImportStep } from '../features/import/ImportStep'
-import { LicenseChip, useLicense } from '../features/license/LicenseDialog'
+import { EditApp } from '../features/edit/EditApp'
 import { SheetPrintButton } from '../features/sheet/SheetPrintButton'
-import { useTutorial } from '../features/tutorial/TutorialProvider'
 import { SheetCanvas, SheetPanel } from '../features/sheet/SheetStep'
 import { useSegmentProgressListener } from '../features/import/usePhotoPipeline'
-import { APP_NAME, PHOTO_PRESETS, PHOTO_PRESET_ORDER, VENDOR } from '../lib/presets'
+import { PHOTO_PRESETS, PHOTO_PRESET_ORDER } from '../lib/presets'
 import { runtimeInfo, type RuntimeInfo } from '../lib/tauri'
 import {
   ACTIVE_STEPS,
   ALL_STEPS,
   STEP_LABELS,
   useJob,
+  type Step,
 } from '../store/job'
-import { AppMark, Icon, ICONS, IconButton, Section, Segmented } from './components/ui'
+import { useMode } from '../store/mode'
+import { Section, Segmented } from './components/ui'
+import { ActionBar, StepHeader } from './Shell'
 
 export function App() {
-  const step = useJob((s) => s.step)
-  const setStep = useJob((s) => s.setStep)
-  const reset = useJob((s) => s.reset)
-
+  const mode = useMode((s) => s.mode)
   const [runtime, setRuntime] = useState<RuntimeInfo | null>(null)
   useSegmentProgressListener()
 
@@ -44,6 +43,26 @@ export function App() {
       .then(setRuntime)
       .catch(() => setRuntime(null))
   }, [])
+
+  // Ctrl+P must never reach the webview in either flow (BUILD_PLAN §8):
+  // WebView2 would print the app's own interface. Each flow adds its own
+  // meaning on top of this.
+  useEffect(() => {
+    const block = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') event.preventDefault()
+    }
+    window.addEventListener('keydown', block, true)
+    return () => window.removeEventListener('keydown', block, true)
+  }, [])
+
+  return mode === 'edit' ? <EditApp runtime={runtime} /> : <IdApp runtime={runtime} />
+}
+
+function IdApp({ runtime }: { runtime: RuntimeInfo | null }) {
+  const step = useJob((s) => s.step)
+  const status = useJob((s) => s.status)
+  const setStep = useJob((s) => s.setStep)
+  const reset = useJob((s) => s.reset)
 
   const index = ACTIVE_STEPS.indexOf(step)
   const nextStep = ACTIVE_STEPS[index + 1]
@@ -96,7 +115,14 @@ export function App() {
       className="fixed inset-0 flex flex-col overflow-hidden"
       style={{ background: 'var(--color-neutral-300)' }}
     >
-      <Header runtime={runtime} />
+      <StepHeader
+        runtime={runtime}
+        steps={ALL_STEPS.map((key) => ({ key, label: STEP_LABELS[key] }))}
+        activeSteps={ACTIVE_STEPS}
+        current={step}
+        ready={status === 'ready'}
+        onSelect={(key) => setStep(key as Step)}
+      />
 
       <div className="flex min-h-0 flex-1">
         <div
@@ -144,106 +170,6 @@ export function App() {
   )
 }
 
-function Header({ runtime }: { runtime: RuntimeInfo | null }) {
-  const { open: openLicense } = useLicense()
-  const { start: startTutorial } = useTutorial()
-  const step = useJob((s) => s.step)
-  const status = useJob((s) => s.status)
-  const setStep = useJob((s) => s.setStep)
-
-  const currentIndex = ALL_STEPS.indexOf(step)
-
-  return (
-    <header
-      className="flex h-[var(--topbar-height)] flex-none items-center gap-3 border-b-2 border-divider pl-4 pr-3 2xl:gap-5 2xl:pl-5 2xl:pr-4"
-      style={{ background: 'var(--color-bg)' }}
-    >
-      <div className="flex min-w-0 flex-none items-center gap-2.5">
-        <AppMark size={28} />
-        <div className="flex flex-col leading-[1.1]">
-          <span className="truncate font-heading text-[15px] font-extrabold">{APP_NAME}</span>
-          <span className="text-xs text-muted">{VENDOR}</span>
-        </div>
-      </div>
-
-      <div className="h-8 w-0.5 flex-none bg-divider" />
-
-      <nav className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto 2xl:gap-3" aria-label="Steps">
-        {ALL_STEPS.map((candidate, i) => {
-          const isCurrent = candidate === step
-          const isActive = ACTIVE_STEPS.includes(candidate)
-          // Only a step that exists and was actually passed through counts as
-          // done. Print sheet is not built yet, so it must not claim a tick
-          // just because Export comes after it.
-          const isDone = isActive && i < currentIndex && status === 'ready'
-          const reachable = isActive && status === 'ready'
-
-          return (
-            <div key={candidate} className="flex flex-none items-center gap-1.5 2xl:gap-3">
-              {i > 0 && <div className="h-0.5 w-3 flex-none bg-divider 2xl:w-7" />}
-              {isCurrent ? (
-                <div className="flex h-9 flex-none items-center gap-2 2xl:h-10 2xl:gap-2.5">
-                  <span
-                    className="tabular grid h-6 w-6 place-items-center 2xl:h-7 2xl:w-7 text-sm font-extrabold"
-                    style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="whitespace-nowrap text-[13px] 2xl:text-[15px] font-extrabold">
-                    {STEP_LABELS[candidate]}
-                  </span>
-                </div>
-              ) : isDone ? (
-                <button
-                  type="button"
-                  onClick={() => setStep(candidate)}
-                  title="Go back to this step"
-                  className="flex h-9 flex-none items-center gap-2 2xl:h-10 2xl:gap-2.5 pr-2 hover:text-accent-700"
-                >
-                  <span className="grid h-6 w-6 place-items-center 2xl:h-7 2xl:w-7 border-2 border-current">
-                    <Icon path={ICONS.check} size={14} strokeWidth={3} />
-                  </span>
-                  <span className="whitespace-nowrap text-[13px] 2xl:text-[15px] font-semibold">
-                    {STEP_LABELS[candidate]}
-                  </span>
-                </button>
-              ) : (
-                <div
-                  className="flex h-9 flex-none items-center gap-2 2xl:h-10 2xl:gap-2.5 text-muted"
-                  title={reachable ? undefined : 'Not available yet'}
-                >
-                  <span className="tabular grid h-6 w-6 place-items-center 2xl:h-7 2xl:w-7 border border-divider text-sm">
-                    {i + 1}
-                  </span>
-                  <span className="whitespace-nowrap text-[13px] 2xl:text-[15px]">{STEP_LABELS[candidate]}</span>
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </nav>
-
-      <div className="ml-auto flex flex-none items-center gap-3">
-        <span className="flex flex-none items-center gap-2 text-[13px] text-muted">
-          <span
-            className="h-2 w-2"
-            style={{ background: runtime?.ortLoaded ? 'var(--ok-line)' : 'var(--danger)' }}
-            aria-hidden
-          />
-          <span className="hidden 2xl:inline">{runtime?.ortLoaded ? 'Offline & ready' : 'Runtime unavailable'}</span>
-        </span>
-        <LicenseChip />
-        <IconButton title="Show me how to use this" onClick={startTutorial}>
-          <Icon path={ICONS.help} size={18} />
-        </IconButton>
-        <IconButton title="Licence and settings" onClick={openLicense}>
-          <Icon path={ICONS.settings} size={18} />
-        </IconButton>
-      </div>
-    </header>
-  )
-}
-
 function SizeSection() {
   const presetId = useJob((s) => s.presetId)
   const setPreset = useJob((s) => s.setPreset)
@@ -266,76 +192,3 @@ function SizeSection() {
   )
 }
 
-function ActionBar({
-  onBack,
-  onNext,
-  canGoBack,
-  nextLabel,
-  onNewPhoto,
-  isLast,
-  primaryAction,
-}: {
-  onBack: () => void
-  onNext: () => void
-  canGoBack: boolean
-  nextLabel: string
-  onNewPhoto: () => void
-  isLast: boolean
-  /** Rendered as the step's own primary action, ahead of Next. */
-  primaryAction?: React.ReactNode
-}) {
-  return (
-    <footer
-      className="flex h-[var(--actionbar-height)] flex-none items-center justify-between gap-4 border-t-2 border-divider px-5"
-      style={{ background: 'var(--color-bg)' }}
-    >
-      <button
-        type="button"
-        data-tour="new-photo"
-        onClick={onNewPhoto}
-        className="px-1 text-sm font-extrabold text-accent hover:underline"
-      >
-        New photo
-      </button>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={!canGoBack}
-          className="flex h-11 items-center gap-2 border border-divider px-4 text-sm font-extrabold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--hover)] disabled:opacity-45"
-        >
-          <Icon path={ICONS.back} size={16} />
-          Back
-        </button>
-        {/*
-          When a step supplies its own primary action, that action takes the
-          accent and Next steps down to an outline. On the sheet step the job
-          is finished by printing; going on to Export is a choice, not the
-          next thing to do.
-        */}
-        {primaryAction ? (
-          <>
-            <button
-              type="button"
-              onClick={isLast ? onNewPhoto : onNext}
-              className="h-11 border border-divider px-4 text-sm font-extrabold transition-colors duration-[var(--duration-fast)] hover:bg-[var(--hover)]"
-            >
-              {nextLabel}
-            </button>
-            {primaryAction}
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={isLast ? onNewPhoto : onNext}
-            className="h-11 px-6 text-[15px] font-extrabold transition-colors duration-[var(--duration-fast)]"
-            style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
-          >
-            {nextLabel}
-          </button>
-        )}
-      </div>
-    </footer>
-  )
-}
