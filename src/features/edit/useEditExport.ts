@@ -8,7 +8,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { save } from '@tauri-apps/plugin-dialog'
 
 import { coverFit, decodeToBitmap, encodeBitmap, renderOnPaper, resampleBitmap } from '../../lib/bitmap'
-import { composite, type Bitmap, type CompositeBackground } from '../../lib/composite'
+import { composite, compositeInStrips, type Bitmap, type CompositeBackground } from '../../lib/composite'
 import { editedFileName, setJpegDpi, setPngDpi } from '../../lib/dpi'
 import { applyEnhance } from '../../lib/enhance'
 import { placeOnPaper } from '../../lib/fitToPaper'
@@ -57,14 +57,8 @@ export function useEditExport() {
       background = await coverFit(bg, image.width, image.height, s.backgroundView)
     }
     report('Replacing the background…')
-    return composite({
-      image,
-      mask,
-      background,
-      edgeSoftness: s.edgeSoftness,
-      hairDetail: s.hairDetail,
-      ...s.enhance,
-    })
+    const options = { image, mask, background, edgeSoftness: s.edgeSoftness, hairDetail: s.hairDetail, ...s.enhance }
+    return maxDim === 0 ? compositeInStrips(options) : composite(options)
   }, [])
 
   const save_ = useCallback(

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   boxBlur,
   composite,
+  compositeInStrips,
   createBitmap,
   crop,
   estimateForeground,
@@ -342,5 +343,27 @@ describe('composite backgrounds', () => {
     const out = composite({ image, mask, background: '#3366CC', saturation: -50 })
     expect(Math.abs(out.data[0] - out.data[1])).toBeLessThanOrEqual(1) // subject went grey
     expect(Array.from(out.data.slice(4, 7))).toEqual([0x33, 0x66, 0xcc]) // backdrop untouched
+  })
+})
+
+describe('compositeInStrips', () => {
+  it('matches a single pass', () => {
+    const width = 40
+    const height = 300
+    const image = createBitmap(width, height)
+    const mask = createBitmap(width, height)
+    let seed = 7
+    const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648)
+    for (let i = 0; i < width * height; i++) {
+      image.data.set([rand() * 255, rand() * 255, rand() * 255, 255], i * 4)
+      const a = (i % width) < 15 ? 255 : (i % width) < 25 ? Math.round(rand() * 255) : 0
+      mask.data.set([a, a, a, 255], i * 4)
+    }
+    const options = { image, mask, background: '#2050A0', edgeSoftness: 1, saturation: 20, sharpness: 30 }
+    const whole = composite(options)
+    const strips = compositeInStrips(options, 64)
+    let worst = 0
+    for (let i = 0; i < whole.data.length; i++) worst = Math.max(worst, Math.abs(whole.data[i] - strips.data[i]))
+    expect(worst).toBeLessThanOrEqual(1)
   })
 })

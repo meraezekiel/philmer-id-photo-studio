@@ -451,3 +451,41 @@ export function findCrownY(
   }
   return null
 }
+
+/**
+ * `composite` over horizontal strips, for full-resolution saves: foreground
+ * estimation allocates several float planes per pixel, which a 24 MP photo
+ * cannot afford in one go. Every step is local, so each strip is computed
+ * with `overlap` extra rows above and below and only its middle is kept; the
+ * result matches a single pass.
+ */
+export function compositeInStrips(options: CompositeOptions, stripRows = 512): Bitmap & { data: Uint8ClampedArray } {
+  const { image, mask, background } = options
+  const { width, height } = image
+  // Mask shaping (≤4) + foreground estimation (16, twice in the fallback) + sharpening.
+  const radius = options.sharpenRadius ?? sharpenRadius(width, height)
+  const overlap = 40 + radius
+  if (height <= stripRows + overlap * 2) return composite(options)
+
+  const slice = (b: Bitmap, y0: number, y1: number): Bitmap => ({
+    width,
+    height: y1 - y0,
+    data: b.data.subarray(y0 * width * 4, y1 * width * 4),
+  })
+  const out = createBitmap(width, height)
+  for (let top = 0; top < height; top += stripRows) {
+    const rows = Math.min(stripRows, height - top)
+    const y0 = Math.max(0, top - overlap)
+    const y1 = Math.min(height, top + rows + overlap)
+    const part = composite({
+      ...options,
+      image: slice(image, y0, y1),
+      mask: slice(mask, y0, y1),
+      background: typeof background === 'string' ? background : slice(background, y0, y1),
+      sharpenRadius: radius,
+    })
+    const from = (top - y0) * width * 4
+    out.data.set(part.data.subarray(from, from + rows * width * 4), top * width * 4)
+  }
+  return out
+}
