@@ -9,7 +9,7 @@ import { create } from 'zustand'
 import type { Bitmap } from '../lib/composite'
 import { NEUTRAL_ENHANCE, type EnhanceSettings } from '../lib/enhance'
 import { DEFAULT_VIEW, type BackgroundView, type PaperFit, type PaperOrientation } from '../lib/fitToPaper'
-import type { EditPaperId } from '../lib/presets'
+import type { CustomPaper, EditPaperChoice, LengthUnit } from '../lib/editPaper'
 import {
   asAppError,
   releaseImage,
@@ -62,7 +62,11 @@ export interface EditState {
   quality: SegModel
   enhance: Required<EnhanceSettings>
 
-  paper: EditPaperId
+  paper: EditPaperChoice
+  /** The size used when `paper` is Custom, in millimetres. */
+  customPaper: CustomPaper
+  /** The unit the custom size is typed in. */
+  paperUnit: LengthUnit
   paperFit: PaperFit
   orientation: PaperOrientation
 
@@ -80,7 +84,9 @@ export interface EditState {
   setHairDetail: (value: number) => void
   setEnhance: (patch: EnhanceSettings) => void
   resetEnhance: () => void
-  setPaper: (paper: EditPaperId) => void
+  setPaper: (paper: EditPaperChoice) => void
+  setCustomPaper: (patch: Partial<CustomPaper>) => void
+  setPaperUnit: (unit: LengthUnit) => void
   setPaperFit: (fit: PaperFit) => void
   setOrientation: (orientation: PaperOrientation) => void
   maskStarted: () => void
@@ -115,6 +121,8 @@ export const useEdit = create<EditState>((set, get) => ({
   quality: 'lite',
   enhance: NEUTRAL_ENHANCE,
   paper: '4r',
+  customPaper: { widthMm: 127, heightMm: 177.8 },
+  paperUnit: 'in',
   paperFit: 'fit',
   orientation: 'auto',
 
@@ -151,6 +159,8 @@ export const useEdit = create<EditState>((set, get) => ({
   setEnhance: (patch) => set((s) => ({ enhance: { ...s.enhance, ...patch } })),
   resetEnhance: () => set({ enhance: NEUTRAL_ENHANCE }),
   setPaper: (paper) => set({ paper }),
+  setCustomPaper: (patch) => set((s) => ({ customPaper: { ...s.customPaper, ...patch } })),
+  setPaperUnit: (paperUnit) => set({ paperUnit }),
   setPaperFit: (paperFit) => set({ paperFit }),
   setOrientation: (orientation) => set({ orientation }),
   maskStarted: () => set({ maskStatus: 'running', maskError: null, progress: null }),

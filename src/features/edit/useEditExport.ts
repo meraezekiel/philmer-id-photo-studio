@@ -10,9 +10,10 @@ import { save } from '@tauri-apps/plugin-dialog'
 import { coverFit, decodeToBitmap, encodeBitmap, renderOnPaper, resampleBitmap } from '../../lib/bitmap'
 import { composite, compositeInStrips, type Bitmap, type CompositeBackground } from '../../lib/composite'
 import { editedFileName, setJpegDpi, setPngDpi } from '../../lib/dpi'
+import { editPaper } from '../../lib/editPaper'
 import { applyEnhance, applyEnhanceInStrips } from '../../lib/enhance'
 import { placeOnPaper } from '../../lib/fitToPaper'
-import { PAPERS, PRINT_DPI } from '../../lib/presets'
+import { PRINT_DPI } from '../../lib/presets'
 import { getImageBytes, printSheet, saveFile, segment } from '../../lib/tauri'
 import { needsMask, useEdit } from '../../store/edit'
 import type { ExportPhase } from '../export/useExport'
@@ -21,14 +22,15 @@ import type { PrintRequest } from '../sheet/PrintDialog'
 export function useEditExport() {
   const preview = useEdit((s) => s.preview)
   const paper = useEdit((s) => s.paper)
+  const customPaper = useEdit((s) => s.customPaper)
   const paperFit = useEdit((s) => s.paperFit)
   const orientation = useEdit((s) => s.orientation)
   const [state, setState] = useState<ExportPhase>({ phase: 'idle' })
 
   // Placement from the preview's shape; the preview is the oriented photo.
   const placement = useMemo(
-    () => (preview ? placeOnPaper(preview, PAPERS[paper], paperFit, orientation) : null),
-    [preview, paper, paperFit, orientation],
+    () => (preview ? placeOnPaper(preview, editPaper(paper, customPaper), paperFit, orientation) : null),
+    [preview, paper, customPaper, paperFit, orientation],
   )
 
   /** The finished photo, from a copy at most `maxDim` on its long edge (0 = original). */
@@ -92,7 +94,8 @@ export function useEditExport() {
       const sized = await resampleBitmap(photo, rect.width, rect.height)
       const sheet = await renderOnPaper(sized, placement)
       const png = await encodeBitmap(sheet, 'image/png')
-      const p = PAPERS[useEdit.getState().paper]
+      const { paper: choice, customPaper: custom } = useEdit.getState()
+      const p = editPaper(choice, custom)
       const short = Math.min(p.widthMm, p.heightMm)
       const long = Math.max(p.widthMm, p.heightMm)
       await printSheet({
@@ -101,7 +104,7 @@ export function useEditExport() {
         widthMm: paperPx.width > paperPx.height ? long : short,
         heightMm: paperPx.width > paperPx.height ? short : long,
         copies: request.copies,
-        jobName: `Photo print ${p.label}`,
+        jobName: `Photo print ${choice === 'custom' ? p.sublabel : p.label}`,
       })
     },
     [build, placement],

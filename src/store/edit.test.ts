@@ -87,4 +87,16 @@ describe('the Photo Print store', () => {
     expect(useEdit.getState().backgroundImage).toBeNull()
     expect(releaseImage).toHaveBeenCalledWith('bg1')
   })
+
+  it('keeps a custom paper size and unit for the next customer', () => {
+    useEdit.getState().setPaper('custom')
+    useEdit.getState().setCustomPaper({ widthMm: 130 })
+    useEdit.getState().setCustomPaper({ heightMm: 180 })
+    useEdit.getState().setPaperUnit('mm')
+    useEdit.getState().reset()
+    const s = useEdit.getState()
+    expect(s.paper).toBe('custom')
+    expect(s.customPaper).toEqual({ widthMm: 130, heightMm: 180 })
+    expect(s.paperUnit).toBe('mm')
+  })
 })

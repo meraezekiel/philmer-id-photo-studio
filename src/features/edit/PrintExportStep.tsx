@@ -8,7 +8,16 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button, Icon, ICONS, Notice, Section, Segmented } from '../../app/components/ui'
 import { drawBitmap } from '../../lib/bitmap'
 import type { PaperFit, PaperOrientation } from '../../lib/fitToPaper'
-import { EDIT_PAPER_ORDER, PAPERS, type EditPaperId } from '../../lib/presets'
+import {
+  CUSTOM_PAPER_MAX_MM,
+  CUSTOM_PAPER_MIN_MM,
+  EDIT_PAPER_CHOICES,
+  editPaper,
+  formatLength,
+  parseLength,
+  type EditPaperChoice,
+  type LengthUnit,
+} from '../../lib/editPaper'
 import { useEdit } from '../../store/edit'
 import { useLicense } from '../license/LicenseDialog'
 import { PrintDialog, type PrintRequest } from '../sheet/PrintDialog'
@@ -53,6 +62,7 @@ export function PrintCanvas() {
 export function PrintPanel() {
   const paper = useEdit((s) => s.paper)
   const setPaper = useEdit((s) => s.setPaper)
+  const customPaper = useEdit((s) => s.customPaper)
   const paperFit = useEdit((s) => s.paperFit)
   const setPaperFit = useEdit((s) => s.setPaperFit)
   const orientation = useEdit((s) => s.orientation)
@@ -78,13 +88,14 @@ export function PrintPanel() {
       )}
 
       <Section title="Paper">
-        <Segmented<EditPaperId>
-          options={EDIT_PAPER_ORDER.map((id) => ({ value: id, label: PAPERS[id].label }))}
+        <Segmented<EditPaperChoice>
+          options={EDIT_PAPER_CHOICES.map((id) => ({ value: id, label: editPaper(id, customPaper).label }))}
           value={paper}
           onChange={setPaper}
-          columns={5}
+          columns={3}
         />
-        <p className="tabular text-xs text-muted">{PAPERS[paper].sublabel}</p>
+        {paper === 'custom' && <CustomPaperFields />}
+        <p className="tabular text-xs text-muted">{editPaper(paper, customPaper).sublabel}</p>
         <Segmented<PaperFit>
           options={[{ value: 'fit', label: 'Fit' }, { value: 'fill', label: 'Fill' }]}
           value={paperFit}
@@ -117,9 +128,68 @@ export function PrintPanel() {
   )
 }
 
+/** Width and height of the Custom paper, typed in mm or inches. */
+function CustomPaperFields() {
+  const custom = useEdit((s) => s.customPaper)
+  const setCustom = useEdit((s) => s.setCustomPaper)
+  const unit = useEdit((s) => s.paperUnit)
+  const setUnit = useEdit((s) => s.setPaperUnit)
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-end gap-2">
+        <LengthField label="Width" mm={custom.widthMm} unit={unit} onChange={(widthMm) => setCustom({ widthMm })} />
+        <span className="pb-2 text-muted">×</span>
+        <LengthField label="Height" mm={custom.heightMm} unit={unit} onChange={(heightMm) => setCustom({ heightMm })} />
+        <Segmented<LengthUnit>
+          options={[{ value: 'mm', label: 'mm' }, { value: 'in', label: 'in' }]}
+          value={unit}
+          onChange={setUnit}
+          columns={2}
+        />
+      </div>
+    </div>
+  )
+}
+
+function LengthField({ label, mm, unit, onChange }: { label: string; mm: number; unit: LengthUnit; onChange: (mm: number) => void }) {
+  const [text, setText] = useState(() => formatLength(mm, unit))
+  const typing = useRef(false)
+  // Follow the stored size and the unit, except while the operator is typing.
+  useEffect(() => {
+    if (!typing.current) setText(formatLength(mm, unit))
+  }, [mm, unit])
+  const invalid = parseLength(text, unit) === null
+  return (
+    <label className="flex min-w-0 flex-1 flex-col gap-1">
+      <span className="text-xs text-muted">{label}</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={text}
+        aria-invalid={invalid}
+        title={invalid ? `Between ${formatLength(CUSTOM_PAPER_MIN_MM, unit)} and ${formatLength(CUSTOM_PAPER_MAX_MM, unit)} ${unit}` : undefined}
+        onFocus={() => (typing.current = true)}
+        onBlur={() => {
+          typing.current = false
+          setText(formatLength(mm, unit))
+        }}
+        onChange={(e) => {
+          setText(e.target.value)
+          const value = parseLength(e.target.value, unit)
+          if (value !== null) onChange(value)
+        }}
+        className={`tabular min-h-9 w-full border bg-surface px-2 text-sm outline-none focus-visible:border-accent ${invalid ? 'border-[var(--danger)]' : 'border-divider'}`}
+        style={{ caretColor: 'var(--color-accent)' }}
+      />
+    </label>
+  )
+}
+
 export function EditPrintButton() {
   const { printDirect } = useEditExport()
   const paper = useEdit((s) => s.paper)
+  const customPaper = useEdit((s) => s.customPaper)
+  const sheet = editPaper(paper, customPaper)
   const { canProduce, open: openLicence } = useLicense()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -168,8 +238,8 @@ export function EditPrintButton() {
       {open && (
         <PrintDialog
           title="Print photo"
-          summary={`One photo on ${PAPERS[paper].label}, at true size.`}
-          paperLabel={PAPERS[paper].label}
+          summary={`One photo on ${paper === 'custom' ? sheet.longLabel : sheet.label}, at true size.`}
+          paperLabel={sheet.longLabel}
           busy={busy}
           status={status}
           onPrint={onPrint}
