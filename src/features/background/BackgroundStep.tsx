@@ -8,10 +8,11 @@
  * hairline and study the edge.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { CompareView } from '../../app/components/CompareView'
 import { Icon, ICONS, Notice, ResetButton, Section, Slider } from '../../app/components/ui'
-import { drawBitmap, nameTagMeasurer } from '../../lib/bitmap'
+import { nameTagMeasurer } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
 import {
   DEFAULT_NAME_TAG,
@@ -32,12 +33,6 @@ export function BackgroundCanvas() {
   const tone = useJob((s) => s.tone)
   const presetId = useJob((s) => s.presetId)
 
-  const beforeRef = useRef<HTMLCanvasElement>(null)
-  const afterRef = useRef<HTMLCanvasElement>(null)
-  const boxRef = useRef<HTMLDivElement>(null)
-  const draggingRef = useRef(false)
-
-  const [split, setSplit] = useState(50)
   const [inspecting, setInspecting] = useState(false)
 
   const preset = PHOTO_PRESETS[presetId]
@@ -50,112 +45,16 @@ export function BackgroundCanvas() {
     return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail, ...tone })
   }, [preview, previewMask, background, edgeSoftness, hairDetail, tone])
 
-  useEffect(() => {
-    if (preview && beforeRef.current) drawBitmap(beforeRef.current, preview)
-  }, [preview])
-  useEffect(() => {
-    if (result && afterRef.current) drawBitmap(afterRef.current, result)
-  }, [result])
-
-  const moveSplit = useCallback((clientX: number) => {
-    const rect = boxRef.current?.getBoundingClientRect()
-    if (!rect || rect.width === 0) return
-    setSplit(Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100)))
-  }, [])
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (draggingRef.current) moveSplit(e.clientX)
-    }
-    const onUp = () => {
-      draggingRef.current = false
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-    return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-  }, [moveSplit])
-
-  // Hold "\" to see the original outright (DESIGN_BRIEF §6).
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === '\\') setSplit(100)
-    }
-    const up = (e: KeyboardEvent) => {
-      if (e.key === '\\') setSplit(50)
-    }
-    window.addEventListener('keydown', down)
-    window.addEventListener('keyup', up)
-    return () => {
-      window.removeEventListener('keydown', down)
-      window.removeEventListener('keyup', up)
-    }
-  }, [])
-
   if (!preview) return null
 
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden p-8">
-      <div
-        ref={boxRef}
-        className="relative select-none shadow-lg"
-        style={{
-          height: '78%',
-          aspectRatio: `${preset.widthMm / preset.heightMm}`,
-          cursor: 'ew-resize',
-          overflow: 'hidden',
-        }}
-        onMouseDown={(e) => {
-          draggingRef.current = true
-          moveSplit(e.clientX)
-        }}
-      >
-        <canvas
-          ref={afterRef}
-          className="absolute inset-0 h-full w-full"
-          style={{ objectFit: 'cover', imageRendering: inspecting ? 'pixelated' : 'auto' }}
-        />
-        <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - split}% 0 0)` }}>
-          <canvas
-            ref={beforeRef}
-            className="h-full w-full"
-            style={{ objectFit: 'cover', imageRendering: inspecting ? 'pixelated' : 'auto' }}
-          />
-        </div>
-
-        <div
-          className="absolute bottom-0 top-0"
-          style={{
-            left: `${split}%`,
-            width: 2,
-            marginLeft: -1,
-            background: '#fff',
-            boxShadow: '0 0 0 1px rgba(0,0,0,.15)',
-          }}
-        >
-          <div
-            className="absolute grid place-items-center bg-white shadow"
-            style={{ left: -17, top: '50%', marginTop: -18, width: 36, height: 36, color: '#201e1d' }}
-          >
-            <Icon path={['m9 18-6-6 6-6', 'm15 6 6 6-6 6']} size={18} />
-          </div>
-        </div>
-
-        <span
-          className="pointer-events-none absolute left-3 top-3 px-2 py-1 text-xs font-bold uppercase tracking-[0.08em] text-white"
-          style={{ background: 'rgba(32,30,29,.8)' }}
-        >
-          Before
-        </span>
-        <span
-          className="pointer-events-none absolute right-3 top-3 px-2 py-1 text-xs font-bold uppercase tracking-[0.08em] text-white"
-          style={{ background: 'rgba(32,30,29,.8)' }}
-        >
-          After
-        </span>
-      </div>
+      <CompareView
+        before={preview}
+        after={result ?? preview}
+        inspecting={inspecting}
+        boxStyle={{ height: '78%', aspectRatio: `${preset.widthMm / preset.heightMm}` }}
+      />
 
       <div className="pointer-events-none absolute left-6 top-5 flex flex-col items-start gap-2.5">
         <div

@@ -9,6 +9,7 @@ import { ActionBar, StepHeader } from '../../app/Shell'
 import type { RuntimeInfo } from '../../lib/tauri'
 import { EDIT_STEP_LABELS, EDIT_STEPS, useEdit, type EditStep } from '../../store/edit'
 import { ImportStep } from '../import/ImportStep'
+import { EditCanvas, EditPanel } from './EditStep'
 
 export function EditApp({ runtime }: { runtime: RuntimeInfo | null }) {
   const step = useEdit((s) => s.step)
@@ -55,7 +56,7 @@ export function EditApp({ runtime }: { runtime: RuntimeInfo | null }) {
       <div className="flex min-h-0 flex-1">
         <div className="relative min-w-0 flex-1 overflow-hidden" style={{ background: 'var(--canvas)' }}>
           {step === 'import' && <ImportStep />}
-          {/* Task 8: {step === 'edit' && <EditCanvas />} */}
+          {step === 'edit' && <EditCanvas />}
           {/* Task 9: {step === 'print' && <PrintCanvas />} */}
         </div>
         {showChrome && (
@@ -63,7 +64,7 @@ export function EditApp({ runtime }: { runtime: RuntimeInfo | null }) {
             className="flex w-[var(--panel-width)] flex-none flex-col overflow-y-auto border-l-2 border-divider"
             style={{ background: 'var(--panel)' }}
           >
-            {/* Task 8: {step === 'edit' && <EditPanel />} */}
+            {step === 'edit' && <EditPanel />}
             {/* Task 9: {step === 'print' && <PrintPanel />} */}
           </aside>
         )}
