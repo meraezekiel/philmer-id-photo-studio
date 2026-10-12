@@ -10,7 +10,7 @@ import { save } from '@tauri-apps/plugin-dialog'
 import { coverFit, decodeToBitmap, encodeBitmap, renderOnPaper, resampleBitmap } from '../../lib/bitmap'
 import { composite, compositeInStrips, type Bitmap, type CompositeBackground } from '../../lib/composite'
 import { editedFileName, setJpegDpi, setPngDpi } from '../../lib/dpi'
-import { applyEnhance } from '../../lib/enhance'
+import { applyEnhance, applyEnhanceInStrips } from '../../lib/enhance'
 import { placeOnPaper } from '../../lib/fitToPaper'
 import { PAPERS, PRINT_DPI } from '../../lib/presets'
 import { getImageBytes, printSheet, saveFile, segment } from '../../lib/tauri'
@@ -42,7 +42,7 @@ export function useEditExport() {
     )
     if (!needsMask(s.backgroundMode)) {
       report('Enhancing…')
-      return applyEnhance(image, s.enhance)
+      return maxDim === 0 ? applyEnhanceInStrips(image, s.enhance) : applyEnhance(image, s.enhance)
     }
     report('Fetching the cutout…')
     const fullMask = await decodeToBitmap(await segment({ id: s.info.id, model: s.quality }), 'image/png')

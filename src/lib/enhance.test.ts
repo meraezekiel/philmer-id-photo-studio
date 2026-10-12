@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { applyEnhance, autoEnhance, NEUTRAL_ENHANCE } from './enhance'
+import { applyEnhance, applyEnhanceInStrips, autoEnhance, NEUTRAL_ENHANCE, sharpenRadius } from './enhance'
 import { createBitmap, type Bitmap } from './pixels'
 
 function solid(width: number, height: number, r: number, g: number, b: number): Bitmap & { data: Uint8ClampedArray } {
@@ -89,5 +89,22 @@ describe('autoEnhance', () => {
       mask.data.set([m, m, m, 255], i * 4)
     }
     expect(autoEnhance(img, mask).brightness).toBeGreaterThan(autoEnhance(img).brightness)
+  })
+})
+
+describe('applyEnhanceInStrips', () => {
+  it('matches a single pass, sharpening included', () => {
+    const width = 40
+    const height = 300
+    const image = createBitmap(width, height)
+    let seed = 11
+    const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648)
+    for (let i = 0; i < width * height; i++) image.data.set([rand() * 255, rand() * 255, rand() * 255, 255], i * 4)
+    const settings = { brightness: 10, contrast: -5, warmth: 8, saturation: 20, sharpness: 30 }
+    const whole = applyEnhance(image, settings, { radius: sharpenRadius(width, height) })
+    const strips = applyEnhanceInStrips(image, settings, 64)
+    let worst = 0
+    for (let i = 0; i < whole.data.length; i++) worst = Math.max(worst, Math.abs(whole.data[i] - strips.data[i]))
+    expect(worst).toBe(0)
   })
 })

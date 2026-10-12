@@ -238,11 +238,14 @@ every operation is local. The first implementation task measures a single
 pass on a 24 MP test image; if peak memory is under ~1 GB, strips are left out
 (YAGNI) and this section is struck.
 
-**As built:** strips are in use (`compositeInStrips`, 512 rows, overlap
-40 rows plus the sharpening radius) for every full-size save; print copies
-are small enough for one pass. They were built without measuring the single
+**As built:** every full-size save works in 512-row strips: a cut-out
+through `compositeInStrips` (overlap 40 rows plus the sharpening radius),
+Original through `applyEnhanceInStrips` (overlap four sharpening radii), both
+with the whole photo's sharpening radius. Print copies, made at print size,
+use one pass. They were built without measuring the single
 pass first, because phone photos now reach 48–50 MP; a test proves the
-strips match one pass within one level per channel. Peak memory on a large
+strips match one pass (within one level per channel for a cut-out,
+exactly for Original). Peak memory on a large
 photo is still to be measured in the running app.
 
 ## ID flow change

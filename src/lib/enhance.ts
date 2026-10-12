@@ -115,6 +115,34 @@ export function applyEnhance(image: Bitmap, settings: EnhanceSettings, options: 
   return out
 }
 
+/**
+ * `applyEnhance` over horizontal strips, for full-resolution saves: the
+ * sharpening planes for a 48 MP photo cannot all be held at once. Only the
+ * sharpening blur looks at neighbours, so each strip carries a few blur
+ * radii of extra rows and keeps its middle; the result equals one pass.
+ */
+export function applyEnhanceInStrips(image: Bitmap, settings: EnhanceSettings, stripRows = 512): Bitmap {
+  const { width, height } = image
+  const radius = sharpenRadius(width, height)
+  const overlap = 4 * radius + 2
+  if (height <= stripRows + overlap * 2) return applyEnhance(image, settings, { radius })
+
+  const out = createBitmap(width, height)
+  for (let top = 0; top < height; top += stripRows) {
+    const rows = Math.min(stripRows, height - top)
+    const y0 = Math.max(0, top - overlap)
+    const y1 = Math.min(height, top + rows + overlap)
+    const part = applyEnhance(
+      { width, height: y1 - y0, data: image.data.subarray(y0 * width * 4, y1 * width * 4) },
+      settings,
+      { radius },
+    )
+    const from = (top - y0) * width * 4
+    out.data.set(part.data.subarray(from, from + rows * width * 4), top * width * 4)
+  }
+  return out
+}
+
 /** Clamp an auto value to the slider's safe range, as a whole number. */
 const auto = (v: number) => Math.round(clamp(v, -35, 35))
 

@@ -55,8 +55,10 @@ export function SheetPrintButton({ block = false }: { block?: boolean } = {}) {
 
   // Ctrl+P on this step opens the same dialog; App blocks the webview's own
   // print handler so it can never reach WebView2.
+  // An empty sheet has nothing to print; the button is disabled then, and
+  // the shortcut must not reach the dialog either.
   const openRef = useRef(openDialog)
-  openRef.current = openDialog
+  openRef.current = sheet.count > 0 ? openDialog : () => {}
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'p') {
