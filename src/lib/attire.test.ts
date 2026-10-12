@@ -7,8 +7,13 @@ import {
   clothesMask,
   DEFAULT_FIT,
   faceFrame,
+  bodyMask,
+  measureNeck,
   measureTemplate,
   NECK_BAND,
+  NECK_FIT,
+  NECK_PER_SHOULDER,
+  neckFrame,
   COLLAR_DROP,
   neckBand,
   scaleCrop,
@@ -85,6 +90,23 @@ describe('measureTemplate', () => {
     expect(measureTemplate(t).shoulderWidth).toBe(5)
   })
 
+  it('measures the neck opening between the collar tips', () => {
+    const t = templateFrom([
+      '..##.....##..',
+      '..###...###..',
+      '.#####.#####.',
+      '#############',
+      '#############',
+    ])
+    expect(measureTemplate(t).neckWidth).toBe(5)
+  })
+
+  it('guesses the neck opening from the shoulders when the collar is closed', () => {
+    const t = templateFrom(['...###...', '.#######.', '#########', '#########'])
+    const a = measureTemplate(t)
+    expect(a.neckWidth).toBeCloseTo(NECK_PER_SHOULDER * a.shoulderWidth)
+  })
+
   it('refuses a template with nothing opaque', () => {
     expect(() => measureTemplate(templateFrom(['....', '....']))).toThrow(/no clothing/i)
   })
@@ -130,6 +152,34 @@ describe('autoFit', () => {
     expect(fit.scale).toBeCloseTo(SHOULDER_PER_FACE * 0.3)
     expect(fit.rotation).toBe(0)
   })
+
+  it('fits the collar opening to the measured neck, at the base of the neck', () => {
+    const frame = { chinX: 0.5, chinY: 0.6, faceWidth: 0.3, faceHeight: 0.4 }
+    const neck = { x: 0.48, top: 0.62, base: 0.7, width: 0.12 }
+    const anchors = { collar: { x: 50, y: 0 }, shoulderWidth: 300, neckWidth: 100, bottom: 400, width: 300, height: 400 }
+    const fit = autoFit(frame, neck, anchors)
+    expect(fit.x).toBeCloseTo(0.48)
+    expect(fit.y).toBeCloseTo(0.7)
+    // The opening is NECK_FIT necks wide, and the shoulders follow the template.
+    expect(fit.scale).toBeCloseTo(0.12 * NECK_FIT * 3)
+  })
+})
+
+describe('neckFrame', () => {
+  it('maps the neck through the crop like the face', () => {
+    const neck = { x: 600, top: 500, base: 560, width: 100 }
+    const crop = { x: 400, y: 300, width: 400, height: 500, rotationDeg: 0 }
+    expect(neckFrame(neck, crop, { width: 1000, height: 1000 })).toEqual({
+      x: 0.5,
+      top: 0.4,
+      base: 0.52,
+      width: 0.25,
+    })
+  })
+
+  it('is null without a neck', () => {
+    expect(neckFrame(null, null, { width: 10, height: 10 })).toBeNull()
+  })
 })
 
 describe('neckBand', () => {
@@ -141,7 +191,7 @@ describe('neckBand', () => {
 })
 
 describe('attireMatrix', () => {
-  const anchors = { collar: { x: 50, y: 20 }, shoulderWidth: 100, bottom: 120, width: 100, height: 120 }
+  const anchors = { collar: { x: 50, y: 20 }, shoulderWidth: 100, neckWidth: 32, bottom: 120, width: 100, height: 120 }
   const fit = { x: 0.5, y: 0.7, scale: 0.8, rotation: 10 }
 
   it('puts the template collar on the fitted point at any resolution', () => {
@@ -241,9 +291,98 @@ describe('clothesMask', () => {
     expect(at(m, 20, 24)).toBe(0)
   })
 
+  it('never floods into the face or neck through shadowed skin', () => {
+    // Side light: the image-left side of the face and neck is in shadow and
+    // lit grey by the wall, so it fails the skin test, and it runs without an
+    // edge into a grey top.
+    const { photo, alpha } = person()
+    const SHADOW = [120, 120, 125]
+    for (let y = 26; y <= 39; y++)
+      for (let x = 2; x <= 37; x++) photo.data.set([110, 110, 115, 255], (y * W + x) * 4)
+    for (let y = 10; y <= 19; y++)
+      for (let x = 12; x <= 14; x++) photo.data.set([...SHADOW, 255], (y * W + x) * 4)
+    for (let y = 20; y <= 27; y++)
+      for (let x = 16; x <= 17; x++) photo.data.set([...SHADOW, 255], (y * W + x) * 4)
+    const m = clothesMask(photo, alpha, frame)!
+    expect(at(m, 5, 30)).toBe(1)
+    expect(at(m, 13, 15)).toBe(0)
+    expect(at(m, 16, 21)).toBe(0)
+  })
+
   it('gives up when the face shows no skin to compare against', () => {
     const { photo, alpha } = person(SHIRT)
     expect(clothesMask(photo, alpha, frame)).toBeNull()
+  })
+})
+
+/** A silhouette: head, a narrow neck, then wide shoulders to the bottom. */
+function silhouette(neck: [number, number] = [16, 23]) {
+  const W = 40
+  const H = 60
+  const alpha = new Float32Array(W * H)
+  const fill = (x0: number, x1: number, y0: number, y1: number) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) alpha[y * W + x] = 1
+  }
+  fill(12, 27, 5, 24)
+  fill(neck[0], neck[1], 25, 34)
+  fill(2, 37, 35, 59)
+  return { alpha, W, H }
+}
+
+describe('measureNeck', () => {
+  const chin = { x: 20, y: 24 }
+
+  it('finds the narrowest part under the face and where the shoulders begin', () => {
+    const { alpha, W, H } = silhouette()
+    expect(measureNeck(alpha, W, H, chin, 16, 20)).toEqual({ x: 19.5, top: 25, base: 35, width: 8 })
+  })
+
+  it('follows a neck that is off the chin line', () => {
+    const { alpha, W, H } = silhouette([18, 25])
+    expect(measureNeck(alpha, W, H, chin, 16, 20)?.x).toBe(21.5)
+  })
+
+  it('gives up when nothing narrows below the face (hair down to the shoulders)', () => {
+    const { alpha, W, H } = silhouette([12, 27])
+    expect(measureNeck(alpha, W, H, chin, 16, 20)).toBeNull()
+  })
+
+  it('gives up when the chin is not on the person', () => {
+    const { alpha, W, H } = silhouette()
+    expect(measureNeck(alpha, W, H, { x: 1, y: 24 }, 16, 20)).toBeNull()
+  })
+})
+
+describe('bodyMask', () => {
+  it('keeps the head and the neck, and drops everything else of the person', () => {
+    const { alpha, W, H } = silhouette()
+    const neck = { x: 19.5, top: 25, base: 35, width: 8 }
+    const m = bodyMask(alpha, W, H, neck, 40)
+    const at = (x: number, y: number) => m[y * W + x]
+    expect(at(20, 10)).toBe(0) // face
+    expect(at(20, 30)).toBe(0) // neck
+    expect(at(20, 37)).toBe(0) // neck carried into the collar, above the cut
+    expect(at(5, 37)).toBe(1) // shoulder beside it
+    expect(at(20, 45)).toBe(1) // below the cut
+    expect(at(2, 2)).toBe(0) // backdrop
+  })
+
+  it('keeps everything above the neck, however wide', () => {
+    const { alpha, W, H } = silhouette()
+    const neck = { x: 19.5, top: 25, base: 35, width: 8 }
+    const m = bodyMask(alpha, W, H, neck, 40)
+    expect(m[22 * W + 13]).toBe(0)
+  })
+
+  it('takes straps that rise beside the neck, and the soft edge around them', () => {
+    const { alpha, W, H } = silhouette()
+    for (let y = 26; y <= 34; y++) for (let x = 6; x <= 9; x++) alpha[y * W + x] = 1
+    alpha[30 * W + 5] = 0.3
+    const neck = { x: 19.5, top: 25, base: 35, width: 8 }
+    const m = bodyMask(alpha, W, H, neck, 40)
+    expect(m[30 * W + 7]).toBe(1)
+    expect(m[30 * W + 5]).toBe(1)
+    expect(m[30 * W + 20]).toBe(0)
   })
 })
 

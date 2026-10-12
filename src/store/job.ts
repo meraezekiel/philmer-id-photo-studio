@@ -9,11 +9,21 @@
 
 import { create } from 'zustand'
 
-import { autoFit, faceFrame, scaleCrop, shiftCrop, type AttireFit } from '../lib/attire'
+import {
+  autoFit,
+  faceFrame,
+  neckFrame,
+  neckInImage,
+  scaleCrop,
+  shiftCrop,
+  type AttireFit,
+  type Neck,
+} from '../lib/attire'
 import { SKIN_PAINT, type EraserStroke } from '../lib/attireDraw'
 import { largestFace, type CropRect } from '../lib/autoCrop'
 import { reduceRequest, type PaperOrientation } from '../lib/layout'
 import { DEFAULT_NAME_TAG, type NameTag } from '../lib/nameTag'
+import { useAttireLibrary } from './attire'
 import type { Bitmap, ToneOptions } from '../lib/composite'
 import { PHOTO_PRESETS, type PaperId, type PhotoPresetId } from '../lib/presets'
 import {
@@ -257,10 +267,21 @@ export function framedCrop(state: Framing): CropRect | null {
   return scaleCrop(moved, headScale, px, py)
 }
 
-/** Snap attire under the face as the job currently frames it. */
-function fitFor(state: Framing): AttireFit {
+/**
+ * The customer's neck in the finished photo, measured on the mask; null
+ * before the mask arrives or when the silhouette shows no neck.
+ */
+export function jobNeck(state: Framing & Pick<JobState, 'previewMask'>): Neck | null {
+  if (!state.info || !state.previewMask) return null
+  const neck = neckInImage(state.previewMask, largestFace(state.faces), state.info)
+  return neckFrame(neck, framedCrop(state), state.info)
+}
+
+/** Snap the attire onto the customer's neck as the job currently frames it. */
+function fitFor(state: Framing & Pick<JobState, 'previewMask'>, attireId: string | null): AttireFit {
   const frame = state.info ? faceFrame(largestFace(state.faces), framedCrop(state), state.info) : null
-  return autoFit(frame)
+  const anchors = useAttireLibrary.getState().templates.find((t) => t.id === attireId)?.anchors ?? null
+  return autoFit(frame, jobNeck(state), anchors)
 }
 
 const NO_ATTIRE = { attireId: null, attireFit: null, attireTouched: false, attireStrokes: [] as EraserStroke[] }
@@ -358,7 +379,7 @@ export const useJob = create<JobState>((set) => ({
   setCropRect: (cropRect) =>
     set((state) =>
       state.attireId && !state.attireTouched
-        ? { cropRect, attireFit: fitFor({ ...state, cropRect }) }
+        ? { cropRect, attireFit: fitFor({ ...state, cropRect }, state.attireId) }
         : { cropRect },
     ),
 
@@ -464,14 +485,14 @@ export const useJob = create<JobState>((set) => ({
       const keep = state.attireTouched && state.attireFit
       // Strokes were painted against the old template's shape.
       const attireStrokes = attireId === state.attireId ? state.attireStrokes : []
-      return { attireId, attireFit: keep ? state.attireFit : fitFor(state), attireStrokes }
+      return { attireId, attireFit: keep ? state.attireFit : fitFor(state, attireId), attireStrokes }
     }),
   setAttireFit: (patch) =>
     set((state) =>
       state.attireFit ? { attireFit: { ...state.attireFit, ...patch }, attireTouched: true } : {},
     ),
   resetAttireFit: () =>
-    set((state) => (state.attireId ? { attireFit: fitFor(state), attireTouched: false } : {})),
+    set((state) => (state.attireId ? { attireFit: fitFor(state, state.attireId), attireTouched: false } : {})),
   setAttireHideOriginal: (attireHideOriginal) => set({ attireHideOriginal }),
   // Moving the person into the attire is placing the attire by hand, so a
   // later re-frame must not snap it back under the chin.

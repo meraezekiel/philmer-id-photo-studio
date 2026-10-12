@@ -8,7 +8,7 @@
  */
 
 import { estimateChinY, mouthMidpoint, type CropRect } from './autoCrop'
-import type { Bitmap } from './composite'
+import { maskToAlpha, type Bitmap } from './composite'
 import type { Face } from './tauri'
 
 /** Measured once per template, in template pixels. */
@@ -21,6 +21,11 @@ export interface TemplateAnchors {
   collar: { x: number; y: number }
   /** Widest opaque run in the top 60 % of the clothing. */
   shoulderWidth: number
+  /**
+   * The gap between the collar tips that the neck goes into. A closed, high
+   * collar has none to measure, so it is guessed from the shoulders.
+   */
+  neckWidth: number
   /** One past the last opaque row. */
   bottom: number
   width: number
@@ -55,6 +60,12 @@ export const SHOULDER_PER_FACE = 3
 
 /** Width of the neck kept when hiding old clothes, in face widths. */
 export const NECK_BAND = 0.6
+
+/** How much wider than the neck the collar opening is, so it wraps around it. */
+export const NECK_FIT = 1.15
+
+/** A closed collar's neck opening, guessed as a share of its shoulders. */
+export const NECK_PER_SHOULDER = 0.32
 
 /** No face found: centred, low, and nearly the photo's width. */
 export const DEFAULT_FIT: AttireFit = { x: 0.5, y: 0.65, scale: 0.9, rotation: 0 }
@@ -95,7 +106,23 @@ export function measureTemplate(template: Bitmap): TemplateAnchors {
   let shoulderWidth = 0
   for (let y = top; y < top + shoulderRows; y++) shoulderWidth = Math.max(shoulderWidth, runs[y])
 
-  return { collar: { x: cx, y: top }, shoulderWidth, bottom: bottomRow + 1, width, height }
+  // The first row near the top where the centre is see-through and closed in
+  // by clothing on both sides: the collar tips around the neck.
+  let neckWidth = NECK_PER_SHOULDER * shoulderWidth
+  const collarRows = Math.max(1, Math.floor(0.25 * (bottomRow - top + 1)))
+  for (let y = top; y < top + collarRows; y++) {
+    if (opaque(cx, y)) continue
+    let left = cx
+    while (left >= 0 && !opaque(left, y)) left--
+    let right = cx
+    while (right < width && !opaque(right, y)) right++
+    if (left >= 0 && right < width) {
+      neckWidth = right - left - 1
+      break
+    }
+  }
+
+  return { collar: { x: cx, y: top }, shoulderWidth, neckWidth, bottom: bottomRow + 1, width, height }
 }
 
 /**
@@ -121,16 +148,66 @@ export function faceFrame(
     }
   }
 
+  const at = intoCrop(chin, cropRect)
+  return {
+    chinX: at.x,
+    chinY: at.y,
+    faceWidth: face.box[2] / cropRect.width,
+    faceHeight: face.box[3] / cropRect.height,
+  }
+}
+
+/** An image pixel as fractions of the finished photo that `cropRect` makes. */
+function intoCrop(p: { x: number; y: number }, cropRect: CropRect): { x: number; y: number } {
   const theta = (cropRect.rotationDeg * Math.PI) / 180
   const cos = Math.cos(theta)
   const sin = Math.sin(theta)
-  const dx = chin.x - (cropRect.x + cropRect.width / 2)
-  const dy = chin.y - (cropRect.y + cropRect.height / 2)
+  const dx = p.x - (cropRect.x + cropRect.width / 2)
+  const dy = p.y - (cropRect.y + cropRect.height / 2)
   return {
-    chinX: (dx * cos - dy * sin + cropRect.width / 2) / cropRect.width,
-    chinY: (dx * sin + dy * cos + cropRect.height / 2) / cropRect.height,
-    faceWidth: face.box[2] / cropRect.width,
-    faceHeight: face.box[3] / cropRect.height,
+    x: (dx * cos - dy * sin + cropRect.width / 2) / cropRect.width,
+    y: (dx * sin + dy * cos + cropRect.height / 2) / cropRect.height,
+  }
+}
+
+const necks = new WeakMap<Bitmap, { face: Face; neck: Neck | null }>()
+
+/**
+ * The neck in original-image pixels, measured on the job's mask (which may
+ * be a smaller preview of the image). Cached per mask and face.
+ */
+export function neckInImage(mask: Bitmap, face: Face | null, image: { width: number; height: number }): Neck | null {
+  if (!face) return null
+  const hit = necks.get(mask)
+  if (hit && hit.face === face) return hit.neck
+  const k = mask.width / image.width
+  const chin = { x: mouthMidpoint(face).x * k, y: estimateChinY(face) * k }
+  const found = measureNeck(maskToAlpha(mask), mask.width, mask.height, chin, face.box[2] * k, face.box[3] * k)
+  const neck = found && { x: found.x / k, top: found.top / k, base: found.base / k, width: found.width / k }
+  necks.set(mask, { face, neck })
+  return neck
+}
+
+/** The neck as fractions of the finished photo, as `faceFrame` maps the face. */
+export function neckFrame(
+  neck: Neck | null,
+  cropRect: CropRect | null,
+  image: { width: number; height: number },
+): Neck | null {
+  if (!neck) return null
+  if (!cropRect) {
+    return {
+      x: neck.x / image.width,
+      top: neck.top / image.height,
+      base: neck.base / image.height,
+      width: neck.width / image.width,
+    }
+  }
+  return {
+    x: intoCrop({ x: neck.x, y: (neck.top + neck.base) / 2 }, cropRect).x,
+    top: intoCrop({ x: neck.x, y: neck.top }, cropRect).y,
+    base: intoCrop({ x: neck.x, y: neck.base }, cropRect).y,
+    width: neck.width / cropRect.width,
   }
 }
 
@@ -139,8 +216,22 @@ export function faceFrame(
  * the crop is already level, and a tilted head on square shoulders is how
  * people actually stand.
  */
-export function autoFit(frame: FaceFrame | null): AttireFit {
+export function autoFit(
+  frame: FaceFrame | null,
+  neck: Neck | null = null,
+  anchors: TemplateAnchors | null = null,
+): AttireFit {
   if (!frame) return { ...DEFAULT_FIT }
+  // Measured: the collar opening wraps the customer's real neck, and the
+  // collar starts where the neck meets the shoulders.
+  if (neck && anchors && anchors.neckWidth > 0) {
+    return {
+      x: neck.x,
+      y: neck.base,
+      scale: (neck.width * NECK_FIT * anchors.shoulderWidth) / anchors.neckWidth,
+      rotation: 0,
+    }
+  }
   return {
     x: frame.chinX,
     y: frame.chinY + COLLAR_DROP * frame.faceHeight,
@@ -156,6 +247,111 @@ export function autoFit(frame: FaceFrame | null): AttireFit {
 export function neckBand(frame: FaceFrame): { left: number; right: number } {
   const half = (NECK_BAND * frame.faceWidth) / 2
   return { left: frame.chinX - half, right: frame.chinX + half }
+}
+
+/**
+ * The customer's neck, read from the shape of background removal's mask:
+ * `top` is its narrowest row, `base` where it widens into the shoulders,
+ * `x` its middle and `width` its narrowest width. In whatever units the
+ * caller works in — pixels from `measureNeck`, photo fractions in a layer.
+ */
+export interface Neck {
+  x: number
+  top: number
+  base: number
+  width: number
+}
+
+/** The shoulders begin where the silhouette is this many necks wide. */
+const SHOULDER_FLARE = 1.6
+
+/**
+ * Measure the neck from the silhouette alone, never from colour, so shadows,
+ * white beards and grey tops cannot fool it. On each row from a little above
+ * the chin, the run of person pixels under the face is followed down; the
+ * narrowest one is the neck. Null when nothing narrows (hair down to the
+ * shoulders, a hood) or the chin is not on the person.
+ */
+export function measureNeck(
+  alpha: Float32Array,
+  width: number,
+  height: number,
+  chin: { x: number; y: number },
+  faceWidth: number,
+  faceHeight: number,
+): Neck | null {
+  const person = (x: number, y: number) => alpha[y * width + x] >= 0.5
+  const first = Math.max(0, Math.round(chin.y - 0.35 * faceHeight))
+  const lastNeck = Math.min(height - 1, Math.round(chin.y + 0.5 * faceHeight))
+  const last = Math.min(height - 1, Math.round(chin.y + 0.8 * faceHeight))
+
+  const runs: { y: number; left: number; right: number }[] = []
+  let c = Math.round(chin.x)
+  for (let y = first; y <= last; y++) {
+    if (c < 0 || c >= width || !person(c, y)) break
+    let left = c
+    while (left > 0 && person(left - 1, y)) left--
+    let right = c
+    while (right < width - 1 && person(right + 1, y)) right++
+    runs.push({ y, left, right })
+    c = Math.round((left + right) / 2)
+  }
+  if (runs.length === 0) return null
+
+  let narrow = runs[0]
+  for (const run of runs) {
+    if (run.y > lastNeck) break
+    if (run.right - run.left < narrow.right - narrow.left) narrow = run
+  }
+  const neckWidth = narrow.right - narrow.left + 1
+  if (neckWidth >= 0.9 * faceWidth) return null
+
+  let base = runs[runs.length - 1].y + 1
+  for (const run of runs) {
+    if (run.y > narrow.y && run.right - run.left + 1 > SHOULDER_FLARE * neckWidth) {
+      base = run.y
+      break
+    }
+  }
+  return { x: (narrow.left + narrow.right) / 2, top: narrow.y, base, width: neckWidth }
+}
+
+/**
+ * Everything of the person that is not their head and neck, as 0/1: what the
+ * attire replaces. Above the neck's narrowest row nothing is taken, however
+ * wide (ears, hair); below it nothing wider than the neck is head, so only
+ * the neck's own column is kept — shoulders and straps that rise beside it
+ * go — and below `cutY`, under the attire, nothing of the person is kept.
+ */
+export function bodyMask(alpha: Float32Array, width: number, height: number, neck: Neck, cutY: number): Uint8Array {
+  const body = new Uint8Array(width * height)
+  const from = Math.max(0, Math.ceil(neck.top))
+  const half = 0.52 * neck.width
+  for (let y = from; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      if (alpha[i] < 0.5) continue
+      if (y >= cutY || Math.abs(x - neck.x) > half) body[i] = 1
+    }
+  }
+  // A few pixels more, into background removal's soft edge, so the old
+  // shoulders' outline does not stay behind as a faint line. Never into the
+  // head and neck that are kept.
+  let grown = body
+  for (let pass = 0; pass < 4; pass++) {
+    const next = grown.slice()
+    for (let y = from; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = y * width + x
+        if (grown[i] || alpha[i] >= 0.5) continue
+        if ((x > 0 && grown[i - 1]) || (x < width - 1 && grown[i + 1]) || (y > from && grown[i - width]) || (y < height - 1 && grown[i + width])) {
+          next[i] = 1
+        }
+      }
+    }
+    grown = next
+  }
+  return grown
 }
 
 /** Canvas `setTransform` arguments that draw the template where `fit` says. */
@@ -282,12 +478,25 @@ export function clothesMask(photo: Bitmap, alpha: Float32Array, frame: FaceFrame
   }
 
   const limitY = Math.max(0, at((frame.chinY - 0.35 * frame.faceHeight) * h))
+  const jawY = Math.min(h, at((frame.chinY + 0.15 * frame.faceHeight) * h))
+  // A collar rises beside the jaw, never inside the face or across the neck.
+  // Side light leaves one side of the face and neck in grey shadow that fails
+  // the skin test, and a white beard fails it too; without this guard the
+  // flood climbs that side from the shirt and paints the jaw out.
+  // The column is the face's width, down to the jaw: a thick neck is as wide
+  // as the jaw above it.
+  const faceLeft = (frame.chinX - frame.faceWidth / 2) * w
+  const faceRight = (frame.chinX + frame.faceWidth / 2) * w
+  const guarded = (i: number) => {
+    const x = i % w
+    return i < jawY * w && x >= faceLeft && x <= faceRight
+  }
   const clothes = new Uint8Array(w * h)
   const stack: number[] = []
   // Seeds: clothes run off the bottom of the photo, and off its sides below
   // the chin.
   const seed = (i: number) => {
-    if (!clothes[i] && alpha[i] >= 0.5 && !isSkin(i)) {
+    if (!clothes[i] && alpha[i] >= 0.5 && !isSkin(i) && !guarded(i)) {
       clothes[i] = 1
       stack.push(i)
     }
@@ -302,7 +511,7 @@ export function clothesMask(photo: Bitmap, alpha: Float32Array, frame: FaceFrame
     const x = i % w
     const y = (i - x) / w
     const visit = (j: number) => {
-      if (clothes[j] || alpha[j] < 0.5 || step(i, j) > EDGE_STEP * EDGE_STEP || isSkin(j)) return
+      if (clothes[j] || alpha[j] < 0.5 || step(i, j) > EDGE_STEP * EDGE_STEP || isSkin(j) || guarded(j)) return
       clothes[j] = 1
       stack.push(j)
     }
@@ -341,7 +550,6 @@ export function clothesMask(photo: Bitmap, alpha: Float32Array, frame: FaceFrame
   // and some are skin-coloured. Well below the jaw only clothes are left, so
   // anything there that is part of the person but not their own skin is
   // clothing too.
-  const jawY = Math.min(h, at((frame.chinY + 0.15 * frame.faceHeight) * h))
   for (let i = jawY * w; i < w * h; i++) {
     if (!clothes[i] && alpha[i] >= 0.5 && !own[i]) clothes[i] = 1
   }
@@ -356,7 +564,7 @@ export function clothesMask(photo: Bitmap, alpha: Float32Array, frame: FaceFrame
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const i = y * w + x
-        if (grown[i] || own[i]) continue
+        if (grown[i] || own[i] || guarded(i)) continue
         if ((x > 0 && grown[i - 1]) || (x < w - 1 && grown[i + 1]) || (y > 0 && grown[i - w]) || (y < h - 1 && grown[i + w])) {
           next[i] = 1
         }

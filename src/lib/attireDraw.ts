@@ -3,7 +3,16 @@
  * apart from the geometry in `attire.ts`.
  */
 
-import { attireMatrix, clothesMask, neckBand, type AttireFit, type FaceFrame, type TemplateAnchors } from './attire'
+import {
+  attireMatrix,
+  bodyMask,
+  clothesMask,
+  neckBand,
+  type AttireFit,
+  type FaceFrame,
+  type Neck,
+  type TemplateAnchors,
+} from './attire'
 import { maskToAlpha, parseHex, toneTables, type Bitmap } from './composite'
 
 export interface AttireLayer {
@@ -11,6 +20,12 @@ export interface AttireLayer {
   fit: AttireFit
   /** The face in the finished photo; nothing above its chin line is covered. */
   frame: FaceFrame | null
+  /**
+   * The neck in the finished photo, measured from background removal's mask.
+   * With it, the attire replaces everything below the head and neck by shape;
+   * without it, the old clothes are traced by colour.
+   */
+  neck: Neck | null
   /** Paint over the old clothes that stick out past the attire. */
   hideOriginal: boolean
   /** The photo's background colour, for that paint. */
@@ -187,12 +202,25 @@ interface Tracing {
 /** Tracing is per photo, not per drag: cache it on the photo bitmap. */
 const tracings = new WeakMap<Bitmap, { key: string; tracing: Tracing }>()
 
-function trace(photo: Bitmap, personMask: Bitmap, frame: FaceFrame): Tracing {
-  const key = JSON.stringify(frame)
+/** How far below the collar's top the neck is cut, in face heights; under it the neck is carried on in paint. */
+const NECK_CUT = 0.25
+
+function trace(photo: Bitmap, personMask: Bitmap, frame: FaceFrame, neck: Neck | null, collarY: number): Tracing {
+  const key = JSON.stringify([frame, neck, neck ? collarY : null])
   const hit = tracings.get(photo)
   if (hit && hit.key === key) return hit.tracing
+  const { width: w, height: h } = photo
   const alpha = maskToAlpha(personMask)
-  const tracing = { alpha, clothes: clothesMask(photo, alpha, frame) }
+  const clothes = neck
+    ? bodyMask(
+        alpha,
+        w,
+        h,
+        { x: neck.x * w, top: neck.top * h, base: neck.base * h, width: neck.width * w },
+        (Math.max(neck.base, collarY) + NECK_CUT * frame.faceHeight) * h,
+      )
+    : clothesMask(photo, alpha, frame)
+  const tracing = { alpha, clothes }
   tracings.set(photo, { key, tracing })
   return tracing
 }
@@ -219,7 +247,7 @@ export function withAttire(photo: Bitmap, layer: AttireLayer | null, personMask:
   const frame = layer.frame
   const tracing =
     frame && personMask && personMask.width === width && personMask.height === height
-      ? trace(photo, personMask, frame)
+      ? trace(photo, personMask, frame, layer.neck, layer.fit.y)
       : null
   const clothes = tracing?.clothes ?? null
 

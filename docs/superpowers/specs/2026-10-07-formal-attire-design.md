@@ -285,7 +285,10 @@ Found while testing in the running app with the owner's nine templates:
   Skin colour is sampled from the cheeks (median Cb/Cr); the old clothes are
   flooded from the bottom and sides of the photo through person pixels that
   are not skin (chroma distance > 30) and have no sharp colour edge, never
-  above 0.35 face heights over the chin. That region is painted with the
+  above 0.35 face heights over the chin, and never into the face's own
+  column (the face box's width) above the jaw — side light leaves one side
+  of the face and neck grey enough to fail the skin test, and a white beard
+  fails it too. That region is painted with the
   background before the attire goes on, so the neck and jaw keep their real
   outline. If the cheeks do not look like skin, it falls back to the
   geometric shoulder-slope guess.
@@ -326,6 +329,31 @@ Found while testing in the running app with the owner's nine templates:
   photo also returns the tool to Move.
 - Rotation defaults to 0; corner handles were not built (drag, scroll and the
   Size/Rotate sliders cover the same adjustments).
+
+### 2026-10-12: fit to the measured neck, keep only head and neck
+
+Operators were still moving the head, resizing the suit, erasing bites out
+of jaws and painting over old straps on most passport jobs — every guess
+came from the face box alone, and old clothes were found by colour, which
+side light, white beards and grey tops defeat. Decided with the owner:
+
+- **The neck is measured from the mask's shape** (`measureNeck`): the
+  narrowest run of person pixels under the face is the neck (its width,
+  middle and row), and the shoulders begin where the silhouette is 1.6
+  necks wide. No colour is read. Null when nothing narrows (hair down to
+  the shoulders, a hood); then the face-ratio fit and colour tracing above
+  are used as before.
+- **Each template's neck opening is measured** (`neckWidth`: the
+  see-through gap between the collar tips near the top; 0.32 of the
+  shoulders for a closed collar).
+- **The suit fits the neck** (`autoFit`): the opening is 1.15 necks wide,
+  centred on the neck, with the collar's top at the base of the neck.
+- **Only head and neck are kept** (`bodyMask`, owner's choice): below the
+  neck's narrowest row only the neck's own column survives, and under the
+  collar (0.25 face heights below its top) nothing of the person does.
+  Everything else is painted with the backdrop, grown 4 px into the soft
+  edge so no outline is left; the collar opening is filled from the neck
+  as before.
 
 Known limits: open-neck templates (blouse, open jacket) show the customer's
 own top inside the V; a high-collared garment can still show beside the jaw.

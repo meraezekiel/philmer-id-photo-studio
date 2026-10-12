@@ -5,7 +5,7 @@
 
 import { useMemo } from 'react'
 
-import { faceFrame } from '../../lib/attire'
+import { faceFrame, neckFrame, neckInImage } from '../../lib/attire'
 import type { AttireLayer } from '../../lib/attireDraw'
 import { largestFace } from '../../lib/autoCrop'
 import { useAttireLibrary } from '../../store/attire'
@@ -23,11 +23,14 @@ export function useAttireLayer(): AttireLayer | null {
   const blend = useJob((s) => s.attireBlend)
   const strokes = useJob((s) => s.attireStrokes)
   const templates = useAttireLibrary((s) => s.templates)
+  const mask = useJob((s) => s.previewMask)
 
   return useMemo(() => {
     const template = templates.find((t) => t.id === attireId)
     if (!template || !fit) return null
     const frame = info ? faceFrame(largestFace(faces), cropRect, info) : null
-    return { template, fit, frame, hideOriginal, background, blend, strokes }
-  }, [templates, attireId, fit, faces, cropRect, info, hideOriginal, background, blend, strokes])
+    const neck =
+      info && mask ? neckFrame(neckInImage(mask, largestFace(faces), info), cropRect, info) : null
+    return { template, fit, frame, neck, hideOriginal, background, blend, strokes }
+  }, [templates, attireId, fit, faces, cropRect, info, mask, hideOriginal, background, blend, strokes])
 }
