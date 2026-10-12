@@ -11,9 +11,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { CompareView } from '../../app/components/CompareView'
-import { Icon, ICONS, Notice, ResetButton, Section, Slider } from '../../app/components/ui'
+import { Button, Icon, ICONS, Notice, ResetButton, Section, Slider } from '../../app/components/ui'
 import { nameTagMeasurer } from '../../lib/bitmap'
 import { composite } from '../../lib/composite'
+import { autoEnhance } from '../../lib/enhance'
 import {
   DEFAULT_NAME_TAG,
   NAME_TAG_FONTS,
@@ -200,10 +201,20 @@ function ToneSection() {
   const tone = useJob((s) => s.tone)
   const setTone = useJob((s) => s.setTone)
   const resetTone = useJob((s) => s.resetTone)
+  const preview = useJob((s) => s.preview)
+  const previewMask = useJob((s) => s.previewMask)
   const signed = (v: number) => (v > 0 ? `+${v}` : `${v}`)
 
   return (
     <Section title="Light & colour" action={<ResetButton onClick={resetTone} />}>
+      <Button
+        block
+        disabled={!preview}
+        // Measures the face, not the old backdrop; only brightness, contrast and warmth.
+        onClick={() => preview && setTone(autoEnhance(preview, previewMask ?? undefined))}
+      >
+        Auto enhance
+      </Button>
       <Slider
         label="Brightness"
         value={tone.brightness}
@@ -235,7 +246,7 @@ function ToneSection() {
         onChange={(warmth) => setTone({ warmth })}
       />
       <p className="text-xs text-muted">
-        Lower warmth to take the yellow out of indoor light.
+        Auto enhance only moves the sliders. Lower warmth to take the yellow out of indoor light.
       </p>
     </Section>
   )
