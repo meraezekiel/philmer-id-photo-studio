@@ -1,7 +1,7 @@
 # Edit Photo mode: design
 
-Date: 2026-09-30. Status: structure approved in conversation; awaiting spec
-review.
+Date: 2026-09-30. Status: implemented 2026-10-12; see plan
+`docs/superpowers/plans/2026-10-08-photo-print-mode.md`.
 
 ## Why
 
@@ -238,6 +238,13 @@ every operation is local. The first implementation task measures a single
 pass on a 24 MP test image; if peak memory is under ~1 GB, strips are left out
 (YAGNI) and this section is struck.
 
+**As built:** strips are in use (`compositeInStrips`, 512 rows, overlap
+40 rows plus the sharpening radius) for every full-size save; print copies
+are small enough for one pass. They were built without measuring the single
+pass first, because phone photos now reach 48–50 MP; a test proves the
+strips match one pass within one level per channel. Peak memory on a large
+photo is still to be measured in the running app.
+
 ## ID flow change
 
 The Background step's tone section gets the same **Auto enhance** button, using
@@ -277,8 +284,32 @@ added to the ID flow.
 - Tutorial steps for Edit mode (the first-run tutorial stays ID-only for now).
 - Saving Edit jobs to the Recent Jobs feature (separate spec, 2026-09-28).
 
-## Note on current working tree
+## Changes made during implementation
 
-Brightness/contrast/warmth (`ToneOptions`, `toneTables`, the `tone` field in
-`useJob`) are uncommitted. They should be committed as their own change
-before this work starts, since `enhance.ts` builds on them.
+The operator-facing name is **Photo Print**; the code keeps `edit`
+(`mode: 'id' | 'edit'`, `src/features/edit/`, `useEdit`).
+
+- **Auto enhance measures warmth over the whole photo**, never subject-only:
+  skin is not grey, so a grey-world estimate over a face would always cool
+  it. Exposure and contrast still use the subject when a mask exists.
+- **Auto enhance sets three sliders only** (brightness, contrast, warmth,
+  each within ±35); the operator's saturation and sharpness are left alone.
+- **The background picture is loaded through Rust** (`loadImage`, kept by
+  id) instead of by path, so EXIF orientation is handled and no fs
+  permission is needed; it is released on Remove and on New photo.
+- **Background picture placement uses Zoom / Horizontal / Vertical
+  sliders**, not dragging, because dragging on the canvas already moves the
+  Before | After divider.
+- **No HD-model control** in Photo Print; like the ID flow, it uses the
+  bundled Lite model.
+- **Copies are chosen in the shared print dialog** (1–99), not stored in
+  `useEdit`. The dialog now takes a `title` and `summary`, and keeps its
+  paper name for the "set the paper in Printer settings" reminder.
+- **`reset()` turns an Image background back to Original**, since the
+  picture itself is cleared.
+- **The Before | After box is shared** (`CompareView`) between the ID
+  Background step and Photo Print's Edit step.
+- **Full-size saves composite in strips** (see Memory above).
+- The end-to-end run in the app (every background mode, save, print on 4R
+  and 3R, New photo during background removal, paste, the unchanged ID
+  flow) is left to the owner, who is testing the running app.
