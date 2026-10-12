@@ -28,15 +28,18 @@ export interface PrintRequest {
 }
 
 export function PrintDialog({
+  title,
+  summary,
   paperLabel,
-  photoCount,
   busy,
   status,
   onPrint,
   onClose,
 }: {
+  title: string
+  summary: string
+  /** For the reminder to set the same paper in the printer settings. */
   paperLabel: string
-  photoCount: number
   busy: boolean
   status: { tone: 'ok' | 'danger'; message: string } | null
   onPrint: (request: PrintRequest) => void
@@ -101,10 +104,8 @@ export function PrintDialog({
         role="dialog"
         aria-modal="true"
       >
-        <h4 className="font-heading text-xl font-extrabold">Print sheet</h4>
-        <p className="text-sm text-muted">
-          {photoCount} {photoCount === 1 ? 'photo' : 'photos'} on {paperLabel}, at true size.
-        </p>
+        <h4 className="font-heading text-xl font-extrabold">{title}</h4>
+        <p className="text-sm text-muted">{summary}</p>
 
         <label className="flex flex-col gap-1.5">
           <span className="text-xs text-muted">Printer</span>
@@ -176,7 +177,7 @@ export function PrintDialog({
           <button
             type="button"
             onClick={() => onPrint({ copies, printer: printer || undefined })}
-            disabled={busy || !printer || photoCount === 0}
+            disabled={busy || !printer}
             className="h-11 px-6 text-[15px] font-extrabold transition-colors duration-[var(--duration-fast)] disabled:opacity-45"
             style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
           >

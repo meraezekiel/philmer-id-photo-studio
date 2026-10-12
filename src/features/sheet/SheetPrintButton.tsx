@@ -91,8 +91,9 @@ export function SheetPrintButton({ block = false }: { block?: boolean } = {}) {
 
       {open && (
         <PrintDialog
+          title="Print sheet"
+          summary={`${sheet.count} ${sheet.count === 1 ? 'photo' : 'photos'} on ${PAPERS[paper].label}, at true size.`}
           paperLabel={PAPERS[paper].label}
-          photoCount={sheet.count}
           busy={busy}
           status={status}
           onPrint={onPrint}

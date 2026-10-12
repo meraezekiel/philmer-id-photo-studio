@@ -6,7 +6,7 @@
  */
 
 import type { Bitmap } from './composite'
-import { coverSourceRect, type BackgroundView } from './fitToPaper'
+import { coverSourceRect, type BackgroundView, type PaperPlacement } from './fitToPaper'
 import { nameTagFont, nameTagLayout, type NameTag } from './nameTag'
 
 /** Decode encoded image bytes into raw RGBA pixels. */
@@ -200,4 +200,22 @@ export async function coverFit(
   const r = coverSourceRect(bg, { width, height }, view)
   const cut = cropRotate(bg, r, 0)
   return resampleBitmap(cut, width, height)
+}
+
+/**
+ * The photo on white paper at print pixels. `photo` is already at
+ * `placement.rect` size; in Fill mode it runs past the edges and the canvas
+ * crops it. Transparency prints on white.
+ */
+export async function renderOnPaper(photo: Bitmap, placement: PaperPlacement): Promise<ImageData> {
+  const { paper, rect } = placement
+  const src = new OffscreenCanvas(photo.width, photo.height)
+  src.getContext('2d')?.putImageData(new ImageData(photo.data, photo.width, photo.height), 0, 0)
+  const out = new OffscreenCanvas(paper.width, paper.height)
+  const ctx = out.getContext('2d', { willReadFrequently: true })
+  if (!ctx) throw new Error('could not get a 2D context')
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, paper.width, paper.height)
+  ctx.drawImage(src, rect.x, rect.y, rect.width, rect.height)
+  return ctx.getImageData(0, 0, paper.width, paper.height)
 }

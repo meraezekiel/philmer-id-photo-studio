@@ -10,6 +10,7 @@ import type { RuntimeInfo } from '../../lib/tauri'
 import { EDIT_STEP_LABELS, EDIT_STEPS, useEdit, type EditStep } from '../../store/edit'
 import { ImportStep } from '../import/ImportStep'
 import { EditCanvas, EditPanel } from './EditStep'
+import { EditPrintButton, PrintCanvas, PrintPanel } from './PrintExportStep'
 
 export function EditApp({ runtime }: { runtime: RuntimeInfo | null }) {
   const step = useEdit((s) => s.step)
@@ -57,7 +58,7 @@ export function EditApp({ runtime }: { runtime: RuntimeInfo | null }) {
         <div className="relative min-w-0 flex-1 overflow-hidden" style={{ background: 'var(--canvas)' }}>
           {step === 'import' && <ImportStep />}
           {step === 'edit' && <EditCanvas />}
-          {/* Task 9: {step === 'print' && <PrintCanvas />} */}
+          {step === 'print' && <PrintCanvas />}
         </div>
         {showChrome && (
           <aside
@@ -65,7 +66,7 @@ export function EditApp({ runtime }: { runtime: RuntimeInfo | null }) {
             style={{ background: 'var(--panel)' }}
           >
             {step === 'edit' && <EditPanel />}
-            {/* Task 9: {step === 'print' && <PrintPanel />} */}
+            {step === 'print' && <PrintPanel />}
           </aside>
         )}
       </div>
@@ -77,6 +78,7 @@ export function EditApp({ runtime }: { runtime: RuntimeInfo | null }) {
           nextLabel={nextStep ? `Next: ${EDIT_STEP_LABELS[nextStep]}` : 'New photo'}
           onNewPhoto={reset}
           isLast={!nextStep}
+          primaryAction={step === 'print' ? <EditPrintButton /> : undefined}
         />
       )}
     </div>
