@@ -91,7 +91,7 @@ function BackgroundSection() {
           options={MODES}
           value={mode}
           onChange={(m) => (m === 'image' && !bgImage ? void chooseImage() : chooseBackground(m))}
-          columns={4}
+          columns={2}
         />
         {mode === 'original' && <p className="text-xs text-muted">The photo keeps its own background.</p>}
         {mode === 'transparent' && <p className="text-xs text-muted">Saved as PNG with no background. Prints on white.</p>}

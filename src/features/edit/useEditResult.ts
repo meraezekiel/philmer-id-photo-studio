@@ -4,7 +4,7 @@
  * enhanced original, so the operator is never looking at a blank canvas.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { coverFit } from '../../lib/bitmap'
 import { composite, type Bitmap, type CompositeBackground } from '../../lib/composite'
@@ -36,11 +36,31 @@ export function useEditResult(): Bitmap | null {
     }
   }, [mode, bgImage, preview, view])
 
-  return useMemo(() => {
+  // Compositing a full preview takes longer than a drag event, so dragging a
+  // colour or slider would queue one composite per event. Instead, keep the
+  // latest settings and composite them once the previous result is shown.
+  const [result, setResult] = useState<Bitmap | null>(null)
+  const latest = useRef<() => Bitmap | null>(() => null)
+  const pending = useRef(false)
+  latest.current = () => {
     if (!preview) return null
     if (mode === 'original' || !previewMask) return applyEnhance(preview, enhance)
     const background: CompositeBackground =
       mode === 'transparent' ? 'transparent' : mode === 'image' && placed ? placed : color
     return composite({ image: preview, mask: previewMask, background, edgeSoftness, hairDetail, ...enhance })
+  }
+  useEffect(() => {
+    if (!preview) {
+      setResult(null)
+      return
+    }
+    if (pending.current) return
+    pending.current = true
+    setTimeout(() => {
+      pending.current = false
+      setResult(latest.current())
+    }, 0)
   }, [preview, previewMask, mode, color, placed, edgeSoftness, hairDetail, enhance])
+
+  return preview ? result : null
 }
