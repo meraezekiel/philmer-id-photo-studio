@@ -420,6 +420,14 @@ pub async fn print_sheet(job: crate::printing::PrintJob) -> Result<()> {
         .map_err(|e| AppError::Other(format!("print_sheet task failed: {e}")))?
 }
 
+#[tauri::command]
+pub async fn print_sheets(job: crate::printing::MultiPrintJob) -> Result<()> {
+    crate::license::require_active()?;
+    tauri::async_runtime::spawn_blocking(move || crate::printing::print_many(job))
+        .await
+        .map_err(|e| AppError::Other(format!("print_sheets task failed: {e}")))?
+}
+
 // ---------------------------------------------------------------------------
 // Licensing (BUILD_PLAN has no section for this; see docs/licensing.md)
 // ---------------------------------------------------------------------------

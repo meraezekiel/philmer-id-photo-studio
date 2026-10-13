@@ -327,3 +327,15 @@ export function bookClearStaged(): Promise<void> {
 export function onBookProgress(handler: (progress: BookProgress) => void): Promise<UnlistenFn> {
   return listen<BookProgress>('book://progress', (event) => handler(event.payload))
 }
+
+/** A whole book: staged sheet files printed as one job, copies collated. */
+export function printSheets(job: {
+  printer?: string
+  paths: string[]
+  widthMm: number
+  heightMm: number
+  copies?: number
+  jobName?: string
+}): Promise<void> {
+  return invoke('print_sheets', { job })
+}

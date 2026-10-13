@@ -36,6 +36,21 @@ pub struct PrintJob {
     pub job_name: Option<String>,
 }
 
+/// A book: several staged sheets, printed as one job in the queue.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MultiPrintJob {
+    pub printer: Option<String>,
+    /// Sheet images on disk, in order (`book_stage_sheet`).
+    pub paths: Vec<String>,
+    pub width_mm: f64,
+    pub height_mm: f64,
+    /// Whole-book copies, collated.
+    #[serde(default = "one")]
+    pub copies: u32,
+    pub job_name: Option<String>,
+}
+
 fn one() -> u32 {
     1
 }
@@ -219,22 +234,22 @@ mod imp {
         }
     }
 
-    pub fn print(job: PrintJob) -> Result<()> {
-        let printer = match job.printer.clone().filter(|p| !p.is_empty()) {
+    /// One print job of `count` pages, the `i`-th drawn from `page(i)`.
+    fn print_pages(
+        printer: Option<String>,
+        job_name: &str,
+        width_mm: f64,
+        height_mm: f64,
+        count: usize,
+        page: &dyn Fn(usize) -> Result<image::RgbImage>,
+    ) -> Result<()> {
+        let printer = match printer.filter(|p| !p.is_empty()) {
             Some(p) => p,
             None => default_printer()
                 .ok_or_else(|| AppError::Other("no printer is installed".into()))?,
         };
-
-        // Decode here rather than in the webview: the sheet is a 300 DPI
-        // bitmap and pushing raw pixels over IPC would be pointless traffic.
-        let image = image::load_from_memory(&job.png)
-            .map_err(|e| AppError::Other(format!("could not decode the sheet: {e}")))?
-            .to_rgb8();
-        let (src_w, src_h) = image.dimensions();
-
         let name = wide(&printer);
-        let doc_name = wide(job.job_name.as_deref().unwrap_or("ID photo sheet"));
+        let doc_name = wide(job_name);
 
         unsafe {
             // Use whatever was chosen in the driver's dialog. Without this the
@@ -244,12 +259,7 @@ mod imp {
             let hdc = match devmode.as_ref() {
                 Some(bytes) => {
                     log::info!("printing with the custom settings saved for {printer}");
-                    CreateDCW(
-                        None,
-                        PCWSTR(name.as_ptr()),
-                        None,
-                        Some(bytes.as_ptr() as *const DEVMODEW),
-                    )
+                    CreateDCW(None, PCWSTR(name.as_ptr()), None, Some(bytes.as_ptr() as *const DEVMODEW))
                 }
                 None => CreateDCW(None, PCWSTR(name.as_ptr()), None, None),
             };
@@ -267,16 +277,13 @@ mod imp {
             let printable_h = GetDeviceCaps(Some(hdc), VERTRES);
 
             // True size: millimetres straight into device pixels.
-            let target_w = ((job.width_mm / 25.4) * dpi_x as f64).round() as i32;
-            let target_h = ((job.height_mm / 25.4) * dpi_y as f64).round() as i32;
+            let target_w = ((width_mm / 25.4) * dpi_x as f64).round() as i32;
+            let target_h = ((height_mm / 25.4) * dpi_y as f64).round() as i32;
 
             log::info!(
-                "printing to {printer}: {}x{} dev px at {dpi_x}x{dpi_y} DPI, \
-                 printable {printable_w}x{printable_h}, offset {off_x},{off_y}",
-                target_w,
-                target_h
+                "printing {count} page(s) to {printer}: {target_w}x{target_h} dev px at {dpi_x}x{dpi_y} DPI, \
+                 printable {printable_w}x{printable_h}, offset {off_x},{off_y}"
             );
-
             if target_w > printable_w + off_x || target_h > printable_h + off_y {
                 log::warn!(
                     "the sheet ({target_w}x{target_h}) is larger than the printable area; \
@@ -284,51 +291,57 @@ mod imp {
                 );
             }
 
-            let header = BITMAPINFOHEADER {
-                biSize: size_of::<BITMAPINFOHEADER>() as u32,
-                biWidth: src_w as i32,
-                // Negative height: our rows run top-down, Windows assumes up.
-                biHeight: -(src_h as i32),
-                biPlanes: 1,
-                biBitCount: 24,
-                biCompression: BI_RGB.0,
-                ..Default::default()
-            };
-            let info = BITMAPINFO {
-                bmiHeader: header,
-                ..Default::default()
-            };
-
-            // A 24bpp DIB is BGR with every row padded to four bytes.
-            let stride = ((src_w * 3 + 3) / 4 * 4) as usize;
-            let mut dib = vec![0u8; stride * src_h as usize];
-            for y in 0..src_h as usize {
-                let row = &mut dib[y * stride..y * stride + src_w as usize * 3];
-                for x in 0..src_w as usize {
-                    let px = image.get_pixel(x as u32, y as u32);
-                    row[x * 3] = px.0[2];
-                    row[x * 3 + 1] = px.0[1];
-                    row[x * 3 + 2] = px.0[0];
-                }
-            }
-
             let doc = DOCINFOW {
                 cbSize: size_of::<DOCINFOW>() as i32,
                 lpszDocName: PCWSTR(doc_name.as_ptr()),
                 ..Default::default()
             };
-
-            let copies = job.copies.clamp(1, 99);
             if StartDocW(hdc, &doc) <= 0 {
                 let _ = DeleteDC(hdc);
                 return Err(AppError::Other("the print job was refused".into()));
             }
 
-            for _ in 0..copies {
+            let fail = |message: String| -> Result<()> {
+                let _ = EndDoc(hdc);
+                let _ = DeleteDC(hdc);
+                Err(AppError::Other(message))
+            };
+
+            for i in 0..count {
+                let sheet = i + 1;
+                let image = match page(i) {
+                    Ok(image) => image,
+                    Err(e) => return fail(format!("printing stopped at sheet {sheet}: {e}")),
+                };
+                let (src_w, src_h) = image.dimensions();
+                let header = BITMAPINFOHEADER {
+                    biSize: size_of::<BITMAPINFOHEADER>() as u32,
+                    biWidth: src_w as i32,
+                    // Negative height: our rows run top-down, Windows assumes up.
+                    biHeight: -(src_h as i32),
+                    biPlanes: 1,
+                    biBitCount: 24,
+                    biCompression: BI_RGB.0,
+                    ..Default::default()
+                };
+                let info = BITMAPINFO { bmiHeader: header, ..Default::default() };
+
+                // A 24bpp DIB is BGR with every row padded to four bytes.
+                let stride = ((src_w * 3 + 3) / 4 * 4) as usize;
+                let mut dib = vec![0u8; stride * src_h as usize];
+                for y in 0..src_h as usize {
+                    let row = &mut dib[y * stride..y * stride + src_w as usize * 3];
+                    for x in 0..src_w as usize {
+                        let px = image.get_pixel(x as u32, y as u32);
+                        row[x * 3] = px.0[2];
+                        row[x * 3 + 1] = px.0[1];
+                        row[x * 3 + 2] = px.0[0];
+                    }
+                }
+                drop(image);
+
                 if StartPage(hdc) <= 0 {
-                    let _ = EndDoc(hdc);
-                    let _ = DeleteDC(hdc);
-                    return Err(AppError::Other("a page could not be started".into()));
+                    return fail(format!("printing stopped at sheet {sheet}: the page could not be started"));
                 }
                 // Halftone keeps the downscale of a 300 DPI sheet clean.
                 SetStretchBltMode(hdc, HALFTONE);
@@ -351,14 +364,10 @@ mod imp {
                 );
                 if written == 0 {
                     let _ = EndPage(hdc);
-                    let _ = EndDoc(hdc);
-                    let _ = DeleteDC(hdc);
-                    return Err(AppError::Other("the sheet could not be drawn".into()));
+                    return fail(format!("printing stopped at sheet {sheet}: it could not be drawn"));
                 }
                 if EndPage(hdc) <= 0 {
-                    let _ = EndDoc(hdc);
-                    let _ = DeleteDC(hdc);
-                    return Err(AppError::Other("a page could not be finished".into()));
+                    return fail(format!("printing stopped at sheet {sheet}: the page could not be finished"));
                 }
             }
 
@@ -368,8 +377,50 @@ mod imp {
             }
             let _ = DeleteDC(hdc);
         }
+        Ok(())
+    }
 
-        log::info!("sent {} cop{} to {printer}", job.copies, if job.copies == 1 { "y" } else { "ies" });
+    pub fn print(job: PrintJob) -> Result<()> {
+        // Decode here rather than in the webview: the sheet is a 300 DPI
+        // bitmap and pushing raw pixels over IPC would be pointless traffic.
+        let image = image::load_from_memory(&job.png)
+            .map_err(|e| AppError::Other(format!("could not decode the sheet: {e}")))?
+            .to_rgb8();
+        let copies = job.copies.clamp(1, 99) as usize;
+        print_pages(
+            job.printer,
+            job.job_name.as_deref().unwrap_or("ID photo sheet"),
+            job.width_mm,
+            job.height_mm,
+            copies,
+            &|_| Ok(image.clone()),
+        )?;
+        log::info!("sent {copies} cop{}", if copies == 1 { "y" } else { "ies" });
+        Ok(())
+    }
+
+    pub fn print_many(job: MultiPrintJob) -> Result<()> {
+        let n = job.paths.len();
+        if n == 0 {
+            return Err(AppError::Other("there is nothing to print".into()));
+        }
+        let copies = job.copies.clamp(1, 99) as usize;
+        let paths = job.paths;
+        print_pages(
+            job.printer,
+            job.job_name.as_deref().unwrap_or("Photo book"),
+            job.width_mm,
+            job.height_mm,
+            n * copies,
+            &|i| {
+                let path = &paths[i % n];
+                let bytes = std::fs::read(path).map_err(|e| AppError::Io { path: path.clone(), source: e })?;
+                Ok(image::load_from_memory(&bytes)
+                    .map_err(|e| AppError::Other(format!("could not decode {path}: {e}")))?
+                    .to_rgb8())
+            },
+        )?;
+        log::info!("sent {n} sheet(s) x {copies}");
         Ok(())
     }
 }
@@ -391,6 +442,9 @@ mod imp {
     pub fn print(_job: PrintJob) -> Result<()> {
         Err(AppError::Other("printing is only wired up on Windows".into()))
     }
+    pub fn print_many(_job: MultiPrintJob) -> Result<()> {
+        Err(AppError::Other("printing is only wired up on Windows".into()))
+    }
 }
 
-pub use imp::{clear_settings, has_custom_settings, list, print, show_properties};
+pub use imp::{clear_settings, has_custom_settings, list, print, print_many, show_properties};
