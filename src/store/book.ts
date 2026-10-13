@@ -72,6 +72,10 @@ export interface BookState {
   opened: (book: Book, path: string | null, missing: string[], dirty: boolean) => void
   setMissing: (ids: string[]) => void
   markSaved: (path: string) => void
+  /** Remember where the book was written without touching the unsaved flag. */
+  setFilePath: (path: string) => void
+  /** Point photos at new files everywhere (book and undo history); not an undo step. */
+  relinkPaths: (paths: Record<string, string>, missing: string[]) => void
   reset: () => void
 }
 
@@ -239,6 +243,21 @@ export const useBook = create<BookState>((set, get) => ({
 
   setMissing: (missing) => set({ missing }),
   markSaved: (filePath) => set({ filePath, dirty: false }),
+  setFilePath: (filePath) => set({ filePath }),
+  relinkPaths: (paths, missing) => {
+    const apply = (b: Book): Book =>
+      b.photos.some((p) => paths[p.id])
+        ? { ...b, photos: b.photos.map((p) => (paths[p.id] ? { ...p, path: paths[p.id] } : p)) }
+        : b
+    set((s) => ({
+      book: apply(s.book),
+      past: s.past.map(apply),
+      future: s.future.map(apply),
+      gestureStart: s.gestureStart ? apply(s.gestureStart) : null,
+      missing,
+      dirty: true,
+    }))
+  },
 
   reset: () => {
     const { book } = get()

@@ -20,7 +20,7 @@ import { useJob } from '../../store/job'
 import { useMode, type AppMode } from '../../store/mode'
 import { AutosaveOffer } from '../book/BookFileSection'
 import { loadBookPhotos } from '../book/bookPipeline'
-import { openBookDialog, openBookText } from '../book/bookProject'
+import { BOOK_BUSY_MESSAGE, openBookDialog, openBookText } from '../book/bookProject'
 import { loadEditPhoto } from '../edit/editPipeline'
 import { usePhotoPipeline } from './usePhotoPipeline'
 
@@ -40,6 +40,11 @@ function cardAt(position?: { x: number; y: number }): AppMode | null {
   const el = document.elementFromPoint(position.x / ratio, position.y / ratio)
   const mode = el?.closest<HTMLElement>('[data-mode]')?.dataset.mode
   return mode === 'id' || mode === 'edit' || mode === 'book' ? mode : null
+}
+
+/** An open that was refused because photos are loading must not unlock that load. */
+function reportOpenError(error: string | null): void {
+  if (error && error !== BOOK_BUSY_MESSAGE) useBook.getState().loadFailed(error)
 }
 
 export function ImportStep() {
@@ -153,7 +158,7 @@ export function ImportStep() {
             setMode('book')
             void bookReadProject(path)
               .then((text) => openBookText(text, path, false))
-              .then((e) => e && useBook.getState().loadFailed(e))
+              .then(reportOpenError)
               .catch((e) => useBook.getState().loadFailed(asAppError(e).message))
             return
           }
@@ -264,7 +269,7 @@ export function ImportStep() {
           <div className="flex flex-col gap-3">
             <AutosaveOffer />
             <div className="flex gap-2">
-              <Button onClick={() => void openBookDialog().then((e) => e && useBook.getState().loadFailed(e))}>Open saved book…</Button>
+              <Button onClick={() => void openBookDialog().then(reportOpenError)}>Open saved book…</Button>
               <Button onClick={() => void openDialog({ directory: true }).then((d) => typeof d === 'string' && openBook([d]))}>Choose a folder…</Button>
             </div>
           </div>

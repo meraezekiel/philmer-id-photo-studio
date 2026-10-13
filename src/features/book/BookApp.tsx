@@ -13,7 +13,7 @@ import { BOOK_STEP_LABELS, BOOK_STEPS, useBook, type BookStep } from '../../stor
 import { ImportStep } from '../import/ImportStep'
 import { BookFileSection } from './BookFileSection'
 import { clearThumbCache } from './bookPaint'
-import { saveBook, useBookAutosave } from './bookProject'
+import { saveBookWithFeedback, useBookAutosave } from './bookProject'
 import { PageStrip } from './PageStrip'
 import { PageView } from './PageView'
 import { PagesPanel } from './PagesPanel'
@@ -84,7 +84,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
         event.preventDefault()
         const s = useBook.getState()
-        if (s.status !== 'loading' && s.book.photos.length > 0) void saveBook(event.shiftKey)
+        if (s.status !== 'loading' && s.book.photos.length > 0) void saveBookWithFeedback(event.shiftKey)
         return
       }
       const target = event.target as HTMLElement | null

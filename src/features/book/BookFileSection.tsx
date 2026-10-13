@@ -4,7 +4,7 @@ import { Button, Notice, Section } from '../../app/components/ui'
 import { bookAutosaveClear, bookAutosaveRead } from '../../lib/tauri'
 import { useBook } from '../../store/book'
 import { fileNameOf } from '../../lib/bookFile'
-import { locateMissing, openBookText, saveBook } from './bookProject'
+import { locateMissing, openBookText, saveBookWithFeedback } from './bookProject'
 
 export function BookFileSection() {
   const filePath = useBook((s) => s.filePath)
@@ -19,6 +19,11 @@ export function BookFileSection() {
       setMessage({ tone: 'danger', text: error instanceof Error ? error.message : String(error) })
     }
   }
+  const save = async (saveAs: boolean) => {
+    // A failure is already shown in a dialog by the helper; a cancel says nothing.
+    const result = await saveBookWithFeedback(saveAs)
+    setMessage(result.kind === 'saved' ? { tone: 'ok', text: 'Saved.' } : null)
+  }
   return (
     <Section title="Book file">
       <p className="truncate text-xs text-muted" title={filePath ?? undefined}>
@@ -26,8 +31,8 @@ export function BookFileSection() {
         {dirty ? ' · unsaved changes' : ''}
       </p>
       <div className="grid grid-cols-2 gap-2">
-        <Button onClick={() => void run(async () => ((await saveBook()) ? null : 'Not saved.'), 'Saved.')}>Save</Button>
-        <Button onClick={() => void run(async () => ((await saveBook(true)) ? null : 'Not saved.'), 'Saved.')}>Save as…</Button>
+        <Button onClick={() => void save(false)}>Save</Button>
+        <Button onClick={() => void save(true)}>Save as…</Button>
       </div>
       {missing.length > 0 && <Button onClick={() => void run(locateMissing, 'Photos found.')}>Locate photos…</Button>}
       {message && <Notice tone={message.tone} action={<button type="button" onClick={() => setMessage(null)}>OK</button>}>{message.text}</Notice>}

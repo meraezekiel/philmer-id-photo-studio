@@ -269,6 +269,28 @@ describe('files', () => {
     expect(s().generation).toBe(g + 2)
   })
 
+  it('relinks photos everywhere, so undo keeps the new paths', () => {
+    s().opened({ ...newBook(), photos: photos(2) }, 'D:\a.photobook', ['p1', 'p2'], false)
+    s().update((b) => ({ ...b, pageCount: 8 }))
+    s().relinkPaths({ p1: 'E:\new\IMG_001.jpg' }, ['p2'])
+    expect(s().book.photos[0].path).toBe('E:\new\IMG_001.jpg')
+    expect(s().missing).toEqual(['p2'])
+    expect(s().dirty).toBe(true)
+    expect(s().past).toHaveLength(1)
+    s().undo()
+    expect(s().book.pageCount).not.toBe(8)
+    expect(s().book.photos[0].path).toBe('E:\new\IMG_001.jpg')
+    s().redo()
+    expect(s().book.photos[0].path).toBe('E:\new\IMG_001.jpg')
+  })
+
+  it('remembers the path without marking clean', () => {
+    s().photosAdded(photos(1), [], 0)
+    s().setFilePath('D:\b.photobook')
+    expect(s().filePath).toBe('D:\b.photobook')
+    expect(s().dirty).toBe(true)
+  })
+
   it('opens a book without pages on Setup', () => {
     s().opened({ ...newBook(), photos: photos(2) }, null, [], true)
     expect(s().step).toBe('setup')
