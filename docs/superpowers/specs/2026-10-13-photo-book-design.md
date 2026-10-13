@@ -2,7 +2,7 @@
 
 Date: 2026-10-13.
 
-Status: implemented 2026-10-13 (printer check pending); see plan docs/superpowers/plans/2026-10-13-photo-book.md
+Status: implemented 2026-10-13 (printer check and manual UI checks pending; the segmentation timing smoke test is over budget on this machine and unrelated to this branch; doc tests not run); see plan docs/superpowers/plans/2026-10-13-photo-book.md
 
 ## Why
 
@@ -298,3 +298,9 @@ Decided while building:
 - The sheet range is chosen in the Print & Export panel; Cancel lives in the print dialog.
 - Closing the window with an unsaved book asks first.
 - Relinked photo paths are not an undo step.
+- Relinking by name takes, among same-name files, the one whose folders best match the old path; a tie, or a file another photo also wants, leaves the photo missing. A relinked photo takes its new file's size, date and face.
+- Where a zoom-1 crop leaves no photo for the bleed, the crop is taken for the bled rectangle, so the bleed is always photo.
+- A borderless page that does not fill the paper on one axis (8x8 on 8R) gets cut marks in that axis's margins.
+- PDFs, JPGs and staged print sheets go to Rust as raw IPC bodies (`book_save_bytes`, `book_stage_sheet`), never as JSON number arrays.
+- The autosave keeps the book's file path, so Save after a restore writes back to that file.
+- While an export or print runs, the steps, New customer and the step shortcuts are locked; its progress and Cancel live in the shared print-range store, not in the panel.

@@ -9,7 +9,7 @@ resolution**, automatic face alignment, size presets, and print sheets at true
 
 See `BUILD_PLAN.md` for the engineering plan and `DESIGN_BRIEF.md` for the UI.
 
-**Status: milestone M0 (scaffold + runtime smoke test).**
+**Status: ID Photo, Photo Print and Photo Book are implemented; specs and plans are in `docs/superpowers/`.**
 
 ---
 
