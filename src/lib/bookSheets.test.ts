@@ -80,6 +80,24 @@ describe('planSheets', () => {
     }
   })
 
+  it('marks the cuts on the axis a borderless page does not fill (8x8 on 8R)', () => {
+    const p = expectSane(planSheets({ widthMm: 203.2, heightMm: 203.2 }, R8, true))
+    expect(p.borderless).toBe(true)
+    const { trim } = p.slots[0]
+    expect(trim.y).toBeCloseTo(25.4)
+    const lines = cutLines(p, 1)
+    expect(lines).toHaveLength(4)
+    for (const l of lines) {
+      // In the top and bottom margins, never over the page.
+      expect(l.x1).toBe(l.x2)
+      for (const y of [l.y1, l.y2]) {
+        expect(y < trim.y || y > trim.y + trim.h).toBe(true)
+        expect(y).toBeGreaterThanOrEqual(0)
+        expect(y).toBeLessThanOrEqual(p.paper.heightMm)
+      }
+    }
+  })
+
   it('refuses a page larger than the paper', () => {
     expect(planSheets(A4, R8, false)).toEqual({ ok: false, message: 'The page is larger than the paper. Choose a bigger paper or a smaller book size.' })
   })

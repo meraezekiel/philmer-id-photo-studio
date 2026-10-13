@@ -151,6 +151,15 @@ describe('autoFill', () => {
     if (!result.ok) expect(result.message).toBe('200 photos do not fit on 20 pages (6 per page at most). Remove 80 photos or choose 40 pages.')
   })
 
+  it('says the counts leave out the cover photo when the cover is on', () => {
+    const few = autoFill(photos(13), options({ pageCount: 20, cover: true }))
+    if (few.ok) throw new Error('expected a message')
+    expect(few.message).toBe('12 photos (after the cover) cannot fill 20 pages. Add 8 more photos or choose fewer pages.')
+    const many = autoFill(photos(201), options({ pageCount: 20, cover: true }))
+    if (many.ok) throw new Error('expected a message')
+    expect(many.message).toBe('200 photos (after the cover) do not fit on 20 pages (6 per page at most). Remove 80 photos or choose 40 pages.')
+  })
+
   it('does not suggest a page count when none of the offered ones fits', () => {
     const result = autoFill(photos(400), options({ pageCount: 50 }))
     expect(result.ok).toBe(false)

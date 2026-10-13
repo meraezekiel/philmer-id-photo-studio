@@ -111,10 +111,23 @@ export function planSheets(page: SizeMm, paper: SizeMm, edgeToEdge: boolean): Sh
   return { ok: false, message: 'The page is larger than the paper. Choose a bigger paper or a smaller book size.' }
 }
 
+/** A borderless page still needs trimming on an axis it is inset this far. */
+const BORDERLESS_TRIM_MM = 2
+
 /** Two short lines at each trim corner, pointing away from the page. */
 export function cutLines(plan: SheetPlan, occupied: number): CutLine[] {
-  if (!plan.ok || plan.borderless) return []
+  if (!plan.ok) return []
   const { widthMm: W, heightMm: H } = plan.paper
+  // Borderless, the page fills the paper on at least one axis: only the
+  // margins of an axis it does not fill (8x8 on 8R) get marks.
+  let marginsX = true
+  let marginsY = true
+  if (plan.borderless) {
+    const inset = (from: number, size: number, paper: number) => Math.min(from, paper - from - size) >= BORDERLESS_TRIM_MM - EPS
+    marginsX = plan.slots.every((s) => inset(s.trim.x, s.trim.w, W))
+    marginsY = plan.slots.every((s) => inset(s.trim.y, s.trim.h, H))
+    if (!marginsX && !marginsY) return []
+  }
   const start = plan.bleedMm + MARK_OFFSET_MM
   const end = start + MARK_LENGTH_MM
   const clampX = (x: number) => Math.min(W, Math.max(0, x))
@@ -126,7 +139,9 @@ export function cutLines(plan: SheetPlan, occupied: number): CutLine[] {
       for (const [cy, sy] of [[y, -1], [y + h, 1]] as const) {
         const horizontal = { x1: clampX(cx + sx * start), y1: cy, x2: clampX(cx + sx * end), y2: cy }
         const vertical = { x1: cx, y1: clampY(cy + sy * start), x2: cx, y2: clampY(cy + sy * end) }
-        for (const l of [horizontal, vertical]) {
+        // A horizontal mark lies in the left or right margin, a vertical one above or below.
+        const wanted = [...(marginsX ? [horizontal] : []), ...(marginsY ? [vertical] : [])]
+        for (const l of wanted) {
           if (Math.hypot(l.x2 - l.x1, l.y2 - l.y1) >= 0.5) lines.push(l)
         }
       }

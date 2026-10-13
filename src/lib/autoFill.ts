@@ -120,15 +120,17 @@ export function autoFill(photos: FillPhoto[], options: FillOptions): FillResult 
   if (n === 0) return { ok: true, pages }
   const target = options.pageCount === 'auto' ? autoPageCount(n) : Math.floor(options.pageCount)
   if (!(target >= 1)) return { ok: false, message: 'Choose at least one page.' }
+  // The operator counts every photo; say when the cover's is not among these.
+  const counted = options.cover ? ' (after the cover)' : ''
   if (n < target) {
-    return { ok: false, message: `${plural(n, 'photo')} cannot fill ${target} pages. Add ${plural(target - n, 'more photo')} or choose fewer pages.` }
+    return { ok: false, message: `${plural(n, 'photo')}${counted} cannot fill ${target} pages. Add ${plural(target - n, 'more photo')} or choose fewer pages.` }
   }
   if (n > target * MAX_PER_PAGE) {
     const fits = PAGE_COUNT_OPTIONS.find((c) => c >= Math.ceil(n / MAX_PER_PAGE))
     const extra = n - target * MAX_PER_PAGE
     return {
       ok: false,
-      message: `${n} photos do not fit on ${target} pages (6 per page at most). Remove ${plural(extra, 'photo')}${fits ? ` or choose ${fits} pages` : ''}.`,
+      message: `${n} photos${counted} do not fit on ${target} pages (6 per page at most). Remove ${plural(extra, 'photo')}${fits ? ` or choose ${fits} pages` : ''}.`,
     }
   }
 

@@ -51,13 +51,62 @@ describe('pageDraw', () => {
     expect(at(bled, 127)).toBeCloseTo(at(plain, 127), 12)
   })
 
-  it('stops the bleed where the photo ends', () => {
-    // Zoom 1 on a matching shape shows the whole photo: nothing left to bleed.
+  it('still covers the bleed when the crop already shows the whole photo', () => {
+    // Zoom 1 on a matching shape shows the whole photo: the crop is taken
+    // for the bled rectangle instead, so no page colour shows in the bleed.
     const b = book({ style: EDGE_TO_EDGE, photos: [photo('a'), photo('b', 1270, 1524), photo('tiny', 300, 200)] })
     const page = { ...b.pages[1], frames: [{ photoId: 'b', crop: CENTRED }] }
     const f = pageDraw(b, page, { bleedMm: 2 }).frames[0]
-    for (const [got, want] of [[f.rect.x, 0], [f.rect.y, 0], [f.rect.w, 127], [f.rect.h, 152.4], [f.source!.x, 0], [f.source!.y, 0], [f.source!.w, 1], [f.source!.h, 1]]) {
+    for (const [got, want] of [[f.rect.x, -2], [f.rect.y, -2], [f.rect.w, 131], [f.rect.h, 156.4]]) {
       expect(got).toBeCloseTo(want, 6)
+    }
+    const s = f.source!
+    expect(s.x).toBeGreaterThanOrEqual(-1e-9)
+    expect(s.y).toBeGreaterThanOrEqual(-1e-9)
+    expect(s.x + s.w).toBeLessThanOrEqual(1 + 1e-9)
+    expect(s.y + s.h).toBeLessThanOrEqual(1 + 1e-9)
+    // Not stretched: the photo pixels drawn have the bled rectangle's shape.
+    expect((s.w * 1270) / (s.h * 1524)).toBeCloseTo(131 / 156.4, 6)
+  })
+
+  it('covers the bleed on the axis where a zoom-1 crop uses the whole photo', () => {
+    // A 3:2 photo on a portrait page uses its full height at zoom 1.
+    const b = book({ style: EDGE_TO_EDGE })
+    const page = { ...b.pages[1], frames: [{ photoId: 'b', crop: CENTRED }] }
+    const plain = pageDraw(b, page).frames[0]
+    const f = pageDraw(b, page, { bleedMm: 2 }).frames[0]
+    expect(plain.source!.h).toBeCloseTo(1, 9)
+    expect(f.rect.y).toBeCloseTo(-2, 9)
+    expect(f.rect.h).toBeCloseTo(156.4, 9)
+    expect(f.rect.x).toBeCloseTo(-2, 9)
+    expect(f.rect.w).toBeCloseTo(131, 9)
+    expect(f.source!.y).toBeGreaterThanOrEqual(-1e-9)
+    expect(f.source!.y + f.source!.h).toBeLessThanOrEqual(1 + 1e-9)
+    expect((f.source!.w * 3000) / (f.source!.h * 2000)).toBeCloseTo(131 / 156.4, 6)
+  })
+
+  it('only grows a frame into the bleed on the sides that touch the page edge', () => {
+    const b = book({ style: EDGE_TO_EDGE })
+    const page = { ...b.pages[0], frames: [{ photoId: 'b', crop: CENTRED }, { photoId: 'a', crop: CENTRED }] }
+    const plain = pageDraw(b, page).frames
+    const bled = pageDraw(b, page, { bleedMm: 2 }).frames
+    for (let i = 0; i < 2; i++) {
+      const p = plain[i].rect
+      const r = bled[i].rect
+      const inner = (edge: number) => edge > 1e-6 && edge < PAGE.widthMm - 1e-6
+      // An inner edge (the gap between the two photos) stays where it was.
+      if (inner(p.x)) expect(r.x).toBeCloseTo(p.x, 9)
+      else expect(r.x).toBeCloseTo(-2, 9)
+      if (inner(p.x + p.w)) expect(r.x + r.w).toBeCloseTo(p.x + p.w, 9)
+      else expect(r.x + r.w).toBeCloseTo(PAGE.widthMm + 2, 9)
+      // Both photos run from the top edge to the bottom edge.
+      expect(r.y).toBeCloseTo(-2, 9)
+      expect(r.y + r.h).toBeCloseTo(PAGE.heightMm + 2, 9)
+      const s = bled[i].source!
+      expect(s.x).toBeGreaterThanOrEqual(-1e-9)
+      expect(s.y).toBeGreaterThanOrEqual(-1e-9)
+      expect(s.x + s.w).toBeLessThanOrEqual(1 + 1e-9)
+      expect(s.y + s.h).toBeLessThanOrEqual(1 + 1e-9)
     }
   })
 

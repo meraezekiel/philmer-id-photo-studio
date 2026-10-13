@@ -57,15 +57,27 @@ export function pageDraw(book: Book, page: BookPage, options: { bleedMm?: number
       const sx = crop.w / box.w
       const sy = crop.h / box.h
       const want = (touching: boolean) => (touching ? bleed : 0)
-      const l = Math.min(want(box.x <= EPS), crop.x / sx)
-      const t = Math.min(want(box.y <= EPS), crop.y / sy)
-      const r = Math.min(want(box.x + box.w >= size.widthMm - EPS), (1 - crop.x - crop.w) / sx)
-      const b = Math.min(want(box.y + box.h >= size.heightMm - EPS), (1 - crop.y - crop.h) / sy)
-      rect = { x: box.x - l, y: box.y - t, w: box.w + l + r, h: box.h + t + b }
-      source = { x: crop.x - l * sx, y: crop.y - t * sy, w: crop.w + (l + r) * sx, h: crop.h + (t + b) * sy }
-      if (l === 0 && t === 0 && r === 0 && b === 0) {
+      const wl = want(box.x <= EPS)
+      const wt = want(box.y <= EPS)
+      const wr = want(box.x + box.w >= size.widthMm - EPS)
+      const wb = want(box.y + box.h >= size.heightMm - EPS)
+      const l = Math.min(wl, crop.x / sx)
+      const t = Math.min(wt, crop.y / sy)
+      const r = Math.min(wr, (1 - crop.x - crop.w) / sx)
+      const b = Math.min(wb, (1 - crop.y - crop.h) / sy)
+      if (wl === 0 && wt === 0 && wr === 0 && wb === 0) {
         rect = box
         source = crop
+      } else if (l < wl - EPS || t < wt - EPS || r < wr - EPS || b < wb - EPS) {
+        // The photo runs out before the bleed does (a zoom-1 crop uses the
+        // whole photo on one axis). Crop for the bled rectangle instead, so
+        // the bleed is always photo, never a band of page colour that shows
+        // on a miscut. The trim then shows the middle of a ~3% larger crop.
+        rect = { x: box.x - wl, y: box.y - wt, w: box.w + wl + wr, h: box.h + wt + wb }
+        source = cropRect(aspect, rect.w / rect.h, frame.crop)
+      } else {
+        rect = { x: box.x - l, y: box.y - t, w: box.w + l + r, h: box.h + t + b }
+        source = { x: crop.x - l * sx, y: crop.y - t * sy, w: crop.w + (l + r) * sx, h: crop.h + (t + b) * sy }
       }
     }
     const dpi = effectiveDpi(photo, source, rect)
