@@ -1,7 +1,6 @@
 /**
  * Photo Book's window: the same shell as the other modes over its own steps.
- * Print & Export is added in a later task; until then that step renders
- * nothing.
+ * Print & Export is the last step.
  */
 
 import { useCallback, useEffect } from 'react'
@@ -15,6 +14,7 @@ import { clearThumbCache } from './bookPaint'
 import { PageStrip } from './PageStrip'
 import { PageView } from './PageView'
 import { PagesPanel } from './PagesPanel'
+import { BookPrintButton, BookPrintCanvas, BookPrintPanel } from './BookPrintStep'
 import { SetupCanvas, SetupPanel } from './SetupStep'
 import { DragLayer, useDrag } from './useBookDrag'
 
@@ -119,11 +119,13 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
               <PageStrip />
             </div>
           )}
+          {step === 'print' && <BookPrintCanvas />}
         </div>
         {showChrome && (
           <aside className="flex w-[var(--panel-width)] flex-none flex-col overflow-y-auto border-l-2 border-divider" style={{ background: 'var(--panel)' }}>
             {step === 'setup' && <SetupPanel />}
             {step === 'pages' && <PagesPanel />}
+            {step === 'print' && <BookPrintPanel />}
           </aside>
         )}
       </div>
@@ -135,6 +137,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
           nextLabel={nextLabel}
           onNewPhoto={() => void newCustomer()}
           isLast={!nextStep}
+          primaryAction={step === 'print' ? <BookPrintButton /> : undefined}
         />
       )}
       <DragLayer />
