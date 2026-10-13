@@ -50,6 +50,7 @@ export interface BookState {
   coalesceKey: string | null
   coalesceAt: number
   gestureStart: Book | null
+  gestureDirty: boolean
 
   setStep: (step: BookStep) => void
   startLoading: () => void
@@ -96,6 +97,7 @@ export const useBook = create<BookState>((set, get) => ({
   coalesceKey: null,
   coalesceAt: 0,
   gestureStart: null,
+  gestureDirty: false,
 
   setStep: (step) => set({ step }),
   startLoading: () => set({ status: 'loading', progress: null, loadErrors: [], notice: null }),
@@ -148,19 +150,24 @@ export const useBook = create<BookState>((set, get) => ({
       return
     }
     s.update(change)
-    set({ coalesceKey: key, coalesceAt: now })
+    if (!get().gestureStart) set({ coalesceKey: key, coalesceAt: now })
   },
 
-  beginGesture: () => set((s) => ({ gestureStart: s.book })),
+  beginGesture: () => set((s) => ({ gestureStart: s.book, gestureDirty: s.dirty, coalesceKey: null })),
   endGesture: () => {
-    const { gestureStart: start, book, past } = get()
+    const { gestureStart: start, gestureDirty, book, past } = get()
     if (!start) return
     const changed = start !== book && JSON.stringify(start) !== JSON.stringify(book)
-    set(changed ? { gestureStart: null, past: [...past, start].slice(-UNDO_LIMIT), future: [] } : { gestureStart: null, book: start })
+    set(
+      changed
+        ? { gestureStart: null, coalesceKey: null, past: [...past, start].slice(-UNDO_LIMIT), future: [] }
+        : { gestureStart: null, coalesceKey: null, book: start, dirty: gestureDirty },
+    )
   },
 
   undo: () => {
     const s = get()
+    if (s.gestureStart) return
     const previous = s.past[s.past.length - 1]
     if (!previous) return
     set({
@@ -175,6 +182,7 @@ export const useBook = create<BookState>((set, get) => ({
 
   redo: () => {
     const s = get()
+    if (s.gestureStart) return
     const next = s.future[0]
     if (!next) return
     set({
@@ -218,6 +226,8 @@ export const useBook = create<BookState>((set, get) => ({
       loadErrors: [],
       notice: null,
       fillError: null,
+      gestureStart: null,
+      coalesceKey: null,
       selectedPage: 0,
       selectedFrame: null,
       step: book.pages.length ? 'pages' : 'setup',

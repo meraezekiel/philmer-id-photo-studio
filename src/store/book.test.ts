@@ -116,6 +116,7 @@ describe('history', () => {
   it('records a drag as one step, and nothing if it ends where it began', () => {
     const depth = s().past.length
     const start = s().book
+    const wasDirty = s().dirty
     s().beginGesture()
     s().update((b) => ({ ...b, style: { ...b.style, gapMm: 5 } }))
     s().update((b) => ({ ...b, style: { ...b.style, gapMm: 6 } }))
@@ -129,6 +130,70 @@ describe('history', () => {
     s().update(() => start)
     s().endGesture()
     expect(s().past).toHaveLength(depth)
+    expect(s().dirty).toBe(wasDirty)
+  })
+
+  it('leaves a clean book clean after a gesture that changes nothing', () => {
+    s().markSaved('D:\a.photobook')
+    s().beginGesture()
+    s().update((b) => ({ ...b, style: { ...b.style, gapMm: 8 } }))
+    s().update((b) => ({ ...b, style: { ...b.style, gapMm: b.style.gapMm } }))
+    s().endGesture()
+    expect(s().dirty).toBe(true)
+    s().markSaved('D:\a.photobook')
+    s().beginGesture()
+    s().endGesture()
+    expect(s().dirty).toBe(false)
+  })
+
+  it('ignores undo and redo while a gesture is open', () => {
+    const start = s().book
+    const depth = s().past.length
+    s().beginGesture()
+    s().update((b) => ({ ...b, style: { ...b.style, gapMm: 5 } }))
+    s().undo()
+    s().redo()
+    s().endGesture()
+    expect(s().past).toHaveLength(depth + 1)
+    expect(s().book.style.gapMm).toBe(5)
+    s().undo()
+    expect(s().book).toBe(start)
+    s().redo()
+    expect(s().book.style.gapMm).toBe(5)
+  })
+
+  it('keeps a coalesced edit inside a gesture as part of its one step', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1000)
+    const depth = s().past.length
+    s().beginGesture()
+    s().updateCoalesced('gap', (b) => ({ ...b, style: { ...b.style, gapMm: 1 } }))
+    s().endGesture()
+    expect(s().past).toHaveLength(depth + 1)
+  })
+
+  it('gives a coalesced edit right after a gesture its own step', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1000)
+    s().beginGesture()
+    s().updateCoalesced('gap', (b) => ({ ...b, style: { ...b.style, gapMm: 1 } }))
+    s().endGesture()
+    const depth = s().past.length
+    vi.setSystemTime(1100)
+    s().updateCoalesced('gap', (b) => ({ ...b, style: { ...b.style, gapMm: 2 } }))
+    expect(s().past).toHaveLength(depth + 1)
+    s().undo()
+    expect(s().book.style.gapMm).toBe(1)
+  })
+
+  it('copes with a book that has no pages', () => {
+    s().selectPage(1)
+    s().update((b) => ({ ...b, pages: [] }))
+    expect(s().selectedPage).toBe(0)
+    expect(s().selectedFrame).toBeNull()
+    s().undo()
+    s().undo()
+    expect(s().selectedFrame).toBeNull()
   })
 })
 
