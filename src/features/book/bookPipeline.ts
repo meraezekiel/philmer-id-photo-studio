@@ -39,19 +39,24 @@ export function bookPlan(book: Book): SheetPlan {
 
 export async function loadBookPhotos(paths: string[]): Promise<void> {
   if (paths.length === 0) return
-  const store = useBook.getState()
-  store.startLoading()
+  if (useBook.getState().status === 'loading') return
+  const generation = useBook.getState().generation
+  const stale = () => useBook.getState().generation !== generation
+  useBook.getState().startLoading()
   try {
     const { files, skipped } = await bookExpandPaths(paths)
+    if (stale()) return
     const known = new Set(useBook.getState().book.photos.map((p) => p.path.toLowerCase()))
     const fresh = files.filter((f) => !known.has(f.toLowerCase()))
     const infos = fresh.length ? await bookAddPhotos(fresh.map((path) => ({ id: newPhotoId(), path }))) : []
+    if (stale()) return
     const errors = [
       ...skipped.map((name) => `${name}: not a photo the app can open (use JPG, PNG, WebP or BMP)`),
       ...infos.filter((i) => i.error).map((i) => `${i.name}: ${i.error}`),
     ]
     useBook.getState().photosAdded(infos.filter((i) => !i.error).map(toBookPhoto), errors, files.length - fresh.length)
   } catch (error) {
+    if (stale()) return
     useBook.getState().loadFailed(asAppError(error).message)
   }
 }

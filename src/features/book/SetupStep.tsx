@@ -24,6 +24,7 @@ export const PAGE_COLOURS = [
 ]
 
 export async function pickMorePhotos(): Promise<void> {
+  if (useBook.getState().status === 'loading') return
   const selected = await openDialog({ multiple: true, filters: [{ name: 'Photos', extensions: EXTENSIONS }] })
   if (Array.isArray(selected)) await loadBookPhotos(selected)
   else if (typeof selected === 'string') await loadBookPhotos([selected])
@@ -73,11 +74,14 @@ export function SetupPanel() {
   const loadErrors = useBook((s) => s.loadErrors)
   const notice = useBook((s) => s.notice)
   const dismiss = useBook((s) => s.dismissLoadErrors)
+  const loading = useBook((s) => s.status === 'loading')
+  const progress = useBook((s) => s.progress)
   const [unit, setUnit] = useState<LengthUnit>('in')
   const [showAllErrors, setShowAllErrors] = useState(false)
 
   const setStyle = (key: string, patch: Partial<BookStyle>) => updateCoalesced(key, (b) => ({ ...b, style: clampStyle({ ...b.style, ...patch }) }))
   const built = book.pages.length > 0
+  const plan = bookPlan(book)
 
   const build = async () => {
     if (built) {
@@ -98,13 +102,14 @@ export function SetupPanel() {
     <>
       <Section title="Photos">
         <p className="tabular text-sm">{book.photos.length} photo{book.photos.length === 1 ? '' : 's'} in the book</p>
-        <Button onClick={() => void pickMorePhotos()}>Add photos…</Button>
+        {loading && <Notice tone="info">{progress ? `Loading ${progress.done} / ${progress.total}` : 'Finding the photos…'}</Notice>}
+        <Button disabled={loading} onClick={() => void pickMorePhotos()}>Add photos…</Button>
         {notice && <Notice tone="info">{notice}</Notice>}
         {loadErrors.length > 0 && (
           <Notice tone="warn" action={<button type="button" onClick={dismiss} className="text-[13px] font-bold underline">OK</button>}>
             <span className="block font-bold">{loadErrors.length} file{loadErrors.length === 1 ? '' : 's'} could not be used</span>
-            {shownErrors.map((e) => (
-              <span key={e} className="block text-[13px]">{e}</span>
+            {shownErrors.map((e, i) => (
+              <span key={`${i}-${e}`} className="block text-[13px]">{e}</span>
             ))}
             {loadErrors.length > 5 && !showAllErrors && (
               <button type="button" onClick={() => setShowAllErrors(true)} className="text-[13px] underline">
@@ -194,7 +199,8 @@ export function SetupPanel() {
 
       <Section title={built ? 'Rebuild' : 'Build'} last>
         {fillError && <Notice tone="danger" icon={<Icon path={ICONS.warning} size={18} />}>{fillError}</Notice>}
-        <Button variant="primary" block onClick={() => void build()} disabled={book.photos.length === 0}>
+        {!plan.ok && <p className="text-xs text-muted">{plan.message}</p>}
+        <Button variant="primary" block onClick={() => void build()} disabled={book.photos.length === 0 || loading || !plan.ok}>
           {built ? 'Rebuild pages' : 'Build pages'}
         </Button>
       </Section>

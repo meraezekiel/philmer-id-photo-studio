@@ -57,7 +57,7 @@ export function ImportStep() {
   const busy = idStatus === 'loading' || idStatus === 'segmenting' || editStatus === 'loading' || bookStatus === 'loading'
   const error = mode === 'edit' ? editError : idError
   const setError = mode === 'edit' ? setEditError : setIdError
-  const bookError = mode === 'book' && bookErrors.length > 0 ? bookErrors.join(' · ') : null
+  const bookError = mode === 'book' && bookErrors.length > 0 ? (bookErrors.length > 5 ? [...bookErrors.slice(0, 5), `and ${bookErrors.length - 5} more`] : bookErrors).join(' · ') : null
   /** The card the pointer is over while a file is dragged. */
   const [hover, setHover] = useState<AppMode | null>(null)
   const busyRef = useRef(busy)
@@ -85,7 +85,8 @@ export function ImportStep() {
     async (target: AppMode) => {
       if (target === 'book') {
         const selected = await openDialog({ multiple: true, filters: [{ name: 'Photos', extensions: EXTENSIONS }] })
-        openBook(Array.isArray(selected) ? selected : selected ? [selected] : [])
+        const paths = Array.isArray(selected) ? selected : selected ? [selected] : []
+        if (paths.length > 0) openBook(paths)
         return
       }
       const selected = await openDialog({ multiple: false, filters: [{ name: 'Photos', extensions: EXTENSIONS }] })
@@ -249,7 +250,7 @@ export function ImportStep() {
           />
         </div>
         <p className="text-muted" style={{ fontSize: 'clamp(13px, 1.2vw, 17px)' }}>
-          Drop photos onto a card, or click one to browse. Photo Book takes many photos or a whole folder.
+          Drop photos onto a card, or click one to browse. Photo Book takes many photos or a whole folder. Ctrl+V pastes into the ID Photo or Photo Print card.
         </p>
       </div>
     </div>

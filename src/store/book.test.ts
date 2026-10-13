@@ -261,6 +261,14 @@ describe('files', () => {
     expect(s().dirty).toBe(false)
   })
 
+  it('bumps the generation on opened and reset', () => {
+    const g = s().generation
+    s().opened({ ...newBook(), photos: photos(1) }, null, [], false)
+    expect(s().generation).toBe(g + 1)
+    s().reset()
+    expect(s().generation).toBe(g + 2)
+  })
+
   it('opens a book without pages on Setup', () => {
     s().opened({ ...newBook(), photos: photos(2) }, null, [], true)
     expect(s().step).toBe('setup')

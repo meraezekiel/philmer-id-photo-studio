@@ -31,6 +31,8 @@ export interface FrameSelection {
 export interface BookState {
   step: BookStep
   status: 'empty' | 'loading' | 'ready'
+  /** Bumped by reset() and opened() so an in-flight photo load can tell it is stale. */
+  generation: number
   progress: { done: number; total: number } | null
   /** Files that could not be used, shown until dismissed. */
   loadErrors: string[]
@@ -82,6 +84,7 @@ function clampSelection(book: Book, page: number, frame: FrameSelection | null) 
 export const useBook = create<BookState>((set, get) => ({
   step: 'import',
   status: 'empty',
+  generation: 0,
   progress: null,
   loadErrors: [],
   notice: null,
@@ -214,7 +217,8 @@ export const useBook = create<BookState>((set, get) => ({
   },
 
   opened: (book, filePath, missing, dirty) =>
-    set({
+    set((st) => ({
+      generation: st.generation + 1,
       book,
       filePath,
       missing,
@@ -231,7 +235,7 @@ export const useBook = create<BookState>((set, get) => ({
       selectedPage: 0,
       selectedFrame: null,
       step: book.pages.length ? 'pages' : 'setup',
-    }),
+    })),
 
   setMissing: (missing) => set({ missing }),
   markSaved: (filePath) => set({ filePath, dirty: false }),
@@ -252,6 +256,7 @@ export const useBook = create<BookState>((set, get) => ({
       },
       step: 'import',
       status: 'empty',
+      generation: get().generation + 1,
       progress: null,
       loadErrors: [],
       notice: null,

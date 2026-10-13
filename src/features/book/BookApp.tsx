@@ -26,6 +26,7 @@ export async function confirmDiscard(): Promise<boolean> {
 }
 
 export async function newCustomer(): Promise<void> {
+  if (useBook.getState().status === 'loading') return
   if (!(await confirmDiscard())) return
   await bookClear().catch(() => {})
   clearThumbCache()
@@ -51,13 +52,17 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
   const previousStep = index > 1 ? BOOK_STEPS[index - 1] : undefined
 
   const goNext = useCallback(() => {
+    if (useBook.getState().status === 'loading') return
     if (step === 'setup' && pageCount === 0) {
       useBook.getState().buildPages()
       return
     }
     if (nextStep && canEnter(nextStep)) setStep(nextStep)
   }, [step, pageCount, nextStep, setStep])
-  const goBack = useCallback(() => previousStep && setStep(previousStep), [previousStep, setStep])
+  const goBack = useCallback(() => {
+    if (useBook.getState().status === 'loading') return
+    if (previousStep) setStep(previousStep)
+  }, [previousStep, setStep])
 
   useEffect(() => {
     const unlisten = onBookProgress((p) => useBook.getState().setProgress(p))
@@ -71,6 +76,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
       const target = event.target as HTMLElement | null
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
       if (!event.ctrlKey && !event.metaKey) return
+      if (useBook.getState().status === 'loading') return
       const key = event.key.toLowerCase()
       if (event.key === 'ArrowRight') goNext()
       else if (event.key === 'ArrowLeft') goBack()
@@ -94,7 +100,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
         activeSteps={BOOK_STEPS}
         current={step}
         ready={status === 'ready'}
-        onSelect={(key) => canEnter(key as BookStep) && setStep(key as BookStep)}
+        onSelect={(key) => status !== 'loading' && canEnter(key as BookStep) && setStep(key as BookStep)}
       />
       <div className="flex min-h-0 flex-1">
         <div className="relative min-w-0 flex-1 overflow-hidden" style={{ background: 'var(--canvas)' }}>
