@@ -222,11 +222,22 @@ export function setCover(book: Book, cover: BookCover | null): Book {
   return first ? withFrame(withPage, { page: 0, frame: 0 }, first.id) : withPage
 }
 
+const sameEnhance = (a: EnhanceSettings, b: EnhanceSettings) =>
+  (Object.keys(b) as (keyof EnhanceSettings)[]).every((k) => a[k] === b[k])
+
 export function setPhotoEnhance(book: Book, photoId: string, patch: EnhanceSettings): Book {
-  if (!book.photos.some((p) => p.id === photoId)) return book
-  return { ...book, photos: book.photos.map((p) => (p.id === photoId ? { ...p, enhance: { ...p.enhance, ...patch } } : p)) }
+  const photo = book.photos.find((p) => p.id === photoId)
+  if (!photo || sameEnhance(photo.enhance, patch)) return book
+  return { ...book, photos: book.photos.map((p) => (p === photo ? { ...p, enhance: { ...p.enhance, ...patch } } : p)) }
 }
 
 export function setEnhanceAll(book: Book, byId: Record<string, Required<EnhanceSettings>>): Book {
-  return { ...book, photos: book.photos.map((p) => (byId[p.id] ? { ...p, enhance: byId[p.id] } : p)) }
+  let changed = false
+  const photos = book.photos.map((p) => {
+    const next = byId[p.id]
+    if (!next || sameEnhance(p.enhance, next)) return p
+    changed = true
+    return { ...p, enhance: next }
+  })
+  return changed ? { ...book, photos } : book
 }

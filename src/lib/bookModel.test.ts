@@ -242,4 +242,13 @@ describe('photos', () => {
     expect(all.photos[1].enhance).toEqual(NEUTRAL_ENHANCE)
     expect(setPhotoEnhance(book(), 'zz', { brightness: 1 }).photos).toEqual(book().photos)
   })
+
+  it('returns the same book when an enhance change is a no-op', () => {
+    const b = book()
+    expect(setPhotoEnhance(b, 'zz', { brightness: 1 })).toBe(b)
+    expect(setPhotoEnhance(b, 'p2', { brightness: 0 })).toBe(b)
+    expect(setEnhanceAll(b, {})).toBe(b)
+    expect(setEnhanceAll(b, { zz: { ...NEUTRAL_ENHANCE, warmth: 5 } })).toBe(b)
+    expect(setEnhanceAll(b, { p1: { ...NEUTRAL_ENHANCE } })).toBe(b)
+  })
 })
