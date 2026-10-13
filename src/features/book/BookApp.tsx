@@ -16,7 +16,7 @@ import { PageStrip } from './PageStrip'
 import { PageView } from './PageView'
 import { PagesPanel } from './PagesPanel'
 import { SetupCanvas, SetupPanel } from './SetupStep'
-import { DragLayer } from './useBookDrag'
+import { DragLayer, useDrag } from './useBookDrag'
 
 /** True when there is nothing unsaved, or the operator agrees to lose it. */
 export async function confirmDiscard(): Promise<boolean> {
@@ -86,6 +86,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
       else if (event.key === 'ArrowLeft') goBack()
       else if (key === 'n') void newCustomer()
       else if (key === 'p' && canEnter('print')) setStep('print')
+      else if ((key === 'z' || key === 'y') && useDrag.getState().item) return
       else if (key === 'z' && !event.shiftKey) useBook.getState().undo()
       else if (key === 'y' || (key === 'z' && event.shiftKey)) useBook.getState().redo()
       else return

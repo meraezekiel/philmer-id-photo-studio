@@ -26,7 +26,7 @@ function LayoutIcon({ layout, active, onPick }: { layout: BookLayout; active: bo
       <svg viewBox="0 0 40 50" className="block h-[50px] w-[40px]">
         <rect width="40" height="50" fill="var(--color-surface)" />
         {layout.frames.map((f, i) => (
-          <rect key={i} x={2 + f.x * 36 + 0.5} y={2 + f.y * 46 + 0.5} width={f.w * 36 - 1} height={f.h * 46 - 1} fill="var(--color-neutral-400)" rx={f.fit ? 0 : 0} />
+          <rect key={i} x={2 + f.x * 36 + 0.5} y={2 + f.y * 46 + 0.5} width={f.w * 36 - 1} height={f.h * 46 - 1} fill="var(--color-neutral-400)" />
         ))}
       </svg>
     </button>
@@ -67,6 +67,7 @@ function PhotoSection() {
   const update = useBook((s) => s.update)
   const updateCoalesced = useBook((s) => s.updateCoalesced)
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const page = selected ? book.pages[selected.page] : undefined
   const frame = selected && page ? page.frames[selected.frame] : undefined
   const photo = frame?.photoId ? book.photos.find((p) => p.id === frame.photoId) : undefined
@@ -80,9 +81,12 @@ function PhotoSection() {
   const draw = pageDraw(book, page).frames[selected.frame]
   const auto = async () => {
     setBusy(true)
+    setError(null)
     try {
       const tone = autoEnhance(await thumbPixels(photo.id))
       update((b) => setPhotoEnhance(b, photo.id, tone))
+    } catch (e) {
+      setError(`Could not enhance this photo: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
       setBusy(false)
     }
@@ -101,6 +105,7 @@ function PhotoSection() {
         <Button onClick={() => update((b) => clearFrame(b, selected))}>Remove from page</Button>
       </div>
       <Button onClick={() => void auto()} disabled={busy}>{busy ? 'Enhancing…' : 'Auto enhance'}</Button>
+      {error && <Notice tone="danger">{error}</Notice>}
       {SLIDERS.map((s) => (
         <Slider key={s.key} label={s.label} value={photo.enhance[s.key]} min={s.min} max={s.max} onChange={(v) => updateCoalesced(`enhance-${photo.id}-${s.key}`, (b) => setPhotoEnhance(b, photo.id, { [s.key]: v }))} />
       ))}
@@ -112,18 +117,26 @@ function BookEnhanceSection() {
   const update = useBook((s) => s.update)
   const [progress, setProgress] = useState<string | null>(null)
   const enhanceAll = async () => {
-    const { photos } = useBook.getState().book
-    const byId: Record<string, Required<EnhanceSettings>> = {}
-    for (const [i, photo] of photos.entries()) {
-      setProgress(`Enhancing ${i + 1} / ${photos.length}`)
-      try {
-        byId[photo.id] = { ...photo.enhance, ...autoEnhance(await thumbPixels(photo.id)) }
-      } catch {
-        // A missing photo keeps its settings.
+    const start = useBook.getState()
+    const photos = start.book.photos
+    const generation = start.generation
+    const tones: Record<string, EnhanceSettings> = {}
+    try {
+      for (const [i, photo] of photos.entries()) {
+        setProgress(`Enhancing ${i + 1} / ${photos.length}`)
+        try {
+          tones[photo.id] = autoEnhance(await thumbPixels(photo.id))
+        } catch {
+          // A missing photo keeps its settings.
+        }
       }
+      // A different book was opened meanwhile: these tones are not for it.
+      if (useBook.getState().generation !== generation) return
+      // Merge into the book as it is now; photos removed meanwhile are skipped.
+      update((b) => setEnhanceAll(b, Object.fromEntries(b.photos.filter((p) => tones[p.id]).map((p) => [p.id, { ...p.enhance, ...tones[p.id] }]))))
+    } finally {
+      setProgress(null)
     }
-    update((b) => setEnhanceAll(b, byId))
-    setProgress(null)
   }
   const resetAll = () => update((b) => setEnhanceAll(b, Object.fromEntries(b.photos.map((p) => [p.id, NEUTRAL_ENHANCE]))))
   return (
@@ -152,9 +165,11 @@ function TraySection() {
     const cleanup = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', cleanup)
+      window.removeEventListener('pointercancel', cleanup)
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', cleanup)
+    window.addEventListener('pointercancel', cleanup)
   }
   return (
     <Section title={`Not on a page (${tray.length})`} last>
@@ -176,13 +191,14 @@ export function PagesPanel() {
   const index = useBook((s) => s.selectedPage)
   const update = useBook((s) => s.update)
   const missing = useBook((s) => s.missing)
+  const fillError = useBook((s) => s.fillError)
   const page = book.pages[index]
   if (!page) return null
   const isCover = page.layoutId === 'cover'
 
   const rebuild = async () => {
     const yes = await ask('Rebuilding replaces every page, including your changes. Rebuild the pages?', { title: 'Rebuild pages', kind: 'warning', okLabel: 'Rebuild', cancelLabel: 'Keep my pages' })
-    if (yes) useBook.getState().buildPages()
+    if (yes) useBook.getState().buildPages() // On failure the store sets fillError, shown below.
   }
 
   return (
@@ -209,6 +225,7 @@ export function PagesPanel() {
       <BookEnhanceSection />
       <Section title="Pages">
         <Button onClick={() => void rebuild()}>Rebuild all pages…</Button>
+        {fillError && <Notice tone="danger">{fillError}</Notice>}
       </Section>
       <TraySection />
     </>

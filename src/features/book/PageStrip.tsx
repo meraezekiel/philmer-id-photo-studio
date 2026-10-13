@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { Icon, ICONS } from '../../app/components/ui'
 import { addPage, deletePage, duplicatePage, pageMmOf } from '../../lib/bookModel'
@@ -11,23 +11,29 @@ const THUMB_HEIGHT = 88
 
 function PageThumb({ book, page, index, selected }: { book: Book; page: BookPage; index: number; selected: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  // The photos on this page; a change to their enhance redraws the thumb.
-  const photos = useMemo(() => page.frames.map((f) => book.photos.find((p) => p.id === f.photoId)), [page, book.photos])
+  const missingList = useBook((s) => s.missing)
+  // This page's own photos (id, enhance, missing): other photos' edits do not repaint it.
+  const photosKey = page.frames
+    .map((f) => {
+      const photo = book.photos.find((p) => p.id === f.photoId)
+      return photo ? `${photo.id}:${JSON.stringify(photo.enhance)}:${missingList.includes(photo.id)}` : ''
+    })
+    .join('|')
   useEffect(() => {
     let live = true
     const dpi = THUMB_HEIGHT / (pageMmOf(book).heightMm / 25.4)
-    void renderPage(book, index, { dpi: dpi * (window.devicePixelRatio || 1), source: previewSource(book), preview: true }).then((off) => {
+    void renderPage(book, index, { dpi: dpi * (window.devicePixelRatio || 1), source: previewSource(book), preview: true, missing: new Set(missingList) }).then((off) => {
       const canvas = canvasRef.current
       if (!live || !canvas) return
       canvas.width = off.width
       canvas.height = off.height
       canvas.getContext('2d')!.drawImage(off, 0, 0)
-    })
+    }).catch((e) => console.warn('Page thumbnail failed', e))
     return () => {
       live = false
     }
     // Re-render when this page, the book's look or its photos' enhance change.
-  }, [page, photos, book.size, book.orientation, book.style, book.cover, index])
+  }, [page, photosKey, book.size, book.orientation, book.style, book.cover, index])
 
   return (
     <canvas
@@ -58,9 +64,11 @@ export function PageStrip() {
     const cleanup = () => {
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', cleanup)
+      window.removeEventListener('pointercancel', cleanup)
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', cleanup)
+    window.addEventListener('pointercancel', cleanup)
   }
 
   const add = () => {

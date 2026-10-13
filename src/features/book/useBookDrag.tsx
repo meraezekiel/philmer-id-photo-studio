@@ -40,8 +40,11 @@ export function applyDrop(item: DragItem, target: DropTarget | null): void {
   else if (item.kind === 'frame' && target.kind === 'tray') update((b) => clearFrame(b, item))
   else if (item.kind === 'tray' && target.kind === 'frame') update((b) => placePhoto(b, target, item.photoId))
   else if (item.kind === 'page' && target.kind === 'page') {
+    const id = useBook.getState().book.pages[item.index]?.id
     update((b) => movePage(b, item.index, target.index))
-    selectPage(target.index)
+    // The cover pins the first slot, so the page may land away from target.index.
+    const moved = useBook.getState().book.pages.findIndex((p) => p.id === id)
+    if (moved >= 0) selectPage(moved)
   }
 }
 

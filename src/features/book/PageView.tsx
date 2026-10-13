@@ -35,11 +35,26 @@ export function PageView() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const renderToken = useRef(0)
   const wheelTimer = useRef<number | null>(null)
+  /** Ends the pan in progress, if any. */
+  const panEnd = useRef<(() => void) | null>(null)
   const [fontsReady, setFontsReady] = useState(false)
 
   useEffect(() => {
     void ensureFonts().then(() => setFontsReady(true))
   }, [])
+
+  // A pan or wheel burst never outlives the page or the view.
+  useEffect(
+    () => () => {
+      panEnd.current?.()
+      if (wheelTimer.current !== null) {
+        window.clearTimeout(wheelTimer.current)
+        wheelTimer.current = null
+        useBook.getState().endGesture()
+      }
+    },
+    [index],
+  )
 
   const page = book.pages[index]
   const missing = useMemo(() => new Set(missingList), [missingList])
@@ -63,7 +78,7 @@ export function PageView() {
       canvas.width = off.width
       canvas.height = off.height
       canvas.getContext('2d')!.drawImage(off, 0, 0)
-    })
+    }).catch((e) => console.warn('Page preview failed', e))
   }, [draw, scale, book, index, fontsReady])
 
   if (!page || !draw) {
@@ -88,6 +103,13 @@ export function PageView() {
     const startCrop = store.book.pages[index].frames[f.index].crop
     const ref = { page: index, frame: f.index }
     let moved = false
+    // A wheel burst still open would be overwritten by this gesture.
+    if (wheelTimer.current !== null) {
+      window.clearTimeout(wheelTimer.current)
+      wheelTimer.current = null
+      store.endGesture()
+    }
+    panEnd.current?.()
     store.beginGesture()
     el.setPointerCapture(event.pointerId)
 
@@ -97,6 +119,7 @@ export function PageView() {
       const outside = e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom
       if (outside) {
         // Leaving the frame turns the pan into a move: undo the pan, carry the photo.
+        panEnd.current = null
         finish()
         useBook.getState().update((b) => setCrop(b, ref, startCrop))
         useBook.getState().endGesture()
@@ -107,6 +130,8 @@ export function PageView() {
       useBook.getState().update((b) => setCrop(b, ref, crop))
     }
     const up = () => {
+      if (panEnd.current !== up) return
+      panEnd.current = null
       finish()
       useBook.getState().endGesture()
     }
@@ -114,16 +139,19 @@ export function PageView() {
       el.removeEventListener('pointermove', move)
       el.removeEventListener('pointerup', up)
       el.removeEventListener('pointercancel', up)
+      el.removeEventListener('lostpointercapture', up)
       if (el.hasPointerCapture(event.pointerId)) el.releasePointerCapture(event.pointerId)
     }
     el.addEventListener('pointermove', move)
     el.addEventListener('pointerup', up)
     el.addEventListener('pointercancel', up)
+    el.addEventListener('lostpointercapture', up)
+    panEnd.current = up
   }
 
   const onWheel = (event: React.WheelEvent<HTMLDivElement>, f: DrawFrame) => {
     const a = aspects(f)
-    if (!a) return
+    if (!a || panEnd.current) return
     const store = useBook.getState()
     if (wheelTimer.current === null) store.beginGesture()
     else window.clearTimeout(wheelTimer.current)
