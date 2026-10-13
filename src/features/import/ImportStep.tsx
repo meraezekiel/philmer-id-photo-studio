@@ -13,9 +13,11 @@ import { getCurrentWebview } from '@tauri-apps/api/webview'
 
 import { Icon, ICONS, Notice } from '../../app/components/ui'
 import { drawBitmap, imageFromClipboard } from '../../lib/bitmap'
+import { useBook } from '../../store/book'
 import { useEdit } from '../../store/edit'
 import { useJob } from '../../store/job'
 import { useMode, type AppMode } from '../../store/mode'
+import { loadBookPhotos } from '../book/bookPipeline'
 import { loadEditPhoto } from '../edit/editPipeline'
 import { usePhotoPipeline } from './usePhotoPipeline'
 
@@ -34,7 +36,7 @@ function cardAt(position?: { x: number; y: number }): AppMode | null {
   const ratio = window.devicePixelRatio || 1
   const el = document.elementFromPoint(position.x / ratio, position.y / ratio)
   const mode = el?.closest<HTMLElement>('[data-mode]')?.dataset.mode
-  return mode === 'id' || mode === 'edit' ? mode : null
+  return mode === 'id' || mode === 'edit' || mode === 'book' ? mode : null
 }
 
 export function ImportStep() {
@@ -46,11 +48,16 @@ export function ImportStep() {
   const editStatus = useEdit((s) => s.status)
   const editError = useEdit((s) => s.error)
   const setEditError = useEdit((s) => s.setError)
+  const bookStatus = useBook((s) => s.status)
+  const bookProgress = useBook((s) => s.progress)
+  const bookErrors = useBook((s) => s.loadErrors)
+  const dismissBookErrors = useBook((s) => s.dismissLoadErrors)
   const { run } = usePhotoPipeline()
 
-  const busy = idStatus === 'loading' || idStatus === 'segmenting' || editStatus === 'loading'
+  const busy = idStatus === 'loading' || idStatus === 'segmenting' || editStatus === 'loading' || bookStatus === 'loading'
   const error = mode === 'edit' ? editError : idError
   const setError = mode === 'edit' ? setEditError : setIdError
+  const bookError = mode === 'book' && bookErrors.length > 0 ? bookErrors.join(' · ') : null
   /** The card the pointer is over while a file is dragged. */
   const [hover, setHover] = useState<AppMode | null>(null)
   const busyRef = useRef(busy)
@@ -66,17 +73,35 @@ export function ImportStep() {
     [run, setMode],
   )
 
+  const openBook = useCallback(
+    (paths: string[]) => {
+      setMode('book')
+      void loadBookPhotos(paths)
+    },
+    [setMode],
+  )
+
   const pick = useCallback(
     async (target: AppMode) => {
+      if (target === 'book') {
+        const selected = await openDialog({ multiple: true, filters: [{ name: 'Photos', extensions: EXTENSIONS }] })
+        openBook(Array.isArray(selected) ? selected : selected ? [selected] : [])
+        return
+      }
       const selected = await openDialog({ multiple: false, filters: [{ name: 'Photos', extensions: EXTENSIONS }] })
       if (typeof selected === 'string') openSource(target, { path: selected })
     },
-    [openSource],
+    [openSource, openBook],
   )
 
   useEffect(() => {
     const onPaste = async (event: ClipboardEvent) => {
       if (busy) return
+      if (useMode.getState().mode === 'book') {
+        event.preventDefault()
+        useBook.getState().loadFailed('Photo Book needs photo files: drop them or click the card to browse.')
+        return
+      }
       const file = imageFromClipboard(event)
       if (file) {
         event.preventDefault()
@@ -119,6 +144,10 @@ export function ImportStep() {
         const path = payload.paths[0]
         if (!path) return
         const target = cardAt(payload.position) ?? useMode.getState().mode
+        if (target === 'book') {
+          openBook(payload.paths)
+          return
+        }
         const extension = path.split('.').pop()?.toLowerCase() ?? ''
         if (!EXTENSIONS.includes(extension)) {
           const report = target === 'edit' ? useEdit.getState().setError : useJob.getState().setError
@@ -139,9 +168,21 @@ export function ImportStep() {
       cancelled = true
       unlisten?.()
     }
-  }, [openSource])
+  }, [openSource, openBook])
 
   if (idStatus === 'loading' || idStatus === 'segmenting') return <Processing />
+  if (bookStatus === 'loading') {
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'var(--color-bg)' }}>
+        <span className="text-[15px] font-bold">
+          {bookProgress ? `Loading ${bookProgress.done} / ${bookProgress.total}` : 'Finding the photos…'}
+        </span>
+        <div className="relative h-1.5 w-[min(520px,80%)]" style={{ background: 'var(--color-surface)' }}>
+          <div className="absolute inset-y-0 left-0" style={{ width: `${bookProgress ? (bookProgress.done / Math.max(1, bookProgress.total)) * 100 : 0}%`, background: 'var(--color-accent)' }} />
+        </div>
+      </div>
+    )
+  }
   if (editStatus === 'loading') {
     return (
       <div
@@ -159,14 +200,14 @@ export function ImportStep() {
       style={{ background: 'var(--color-bg)' }}
     >
       <div className="flex w-full max-w-[1040px] flex-col gap-4">
-        {error && (
+        {(mode === 'book' ? bookError : error) && (
           <Notice
             tone="warn"
             icon={<Icon path={ICONS.warning} size={20} />}
             action={
               <button
                 type="button"
-                onClick={() => setError(null)}
+                onClick={() => (mode === 'book' ? dismissBookErrors() : setError(null))}
                 title="Dismiss"
                 className="grid h-8 w-8 place-items-center"
               >
@@ -174,11 +215,11 @@ export function ImportStep() {
               </button>
             }
           >
-            {error.message}
+            {mode === 'book' ? bookError : error?.message}
           </Notice>
         )}
 
-        <div className="grid w-full grid-cols-2 gap-4">
+        <div className="grid w-full grid-cols-3 gap-4">
           <DropCard
             mode="id"
             tour="dropzone"
@@ -197,9 +238,18 @@ export function ImportStep() {
             highlighted={(hover ?? mode) === 'edit'}
             onClick={() => void pick('edit')}
           />
+          <DropCard
+            mode="book"
+            tour="photo-book-card"
+            title="Photo Book"
+            sizes="5x6 · 5x7 · 8x8 · 8x10 · A4"
+            detail="Many photos laid out as pages, to cut and bind"
+            highlighted={(hover ?? mode) === 'book'}
+            onClick={() => void pick('book')}
+          />
         </div>
         <p className="text-muted" style={{ fontSize: 'clamp(13px, 1.2vw, 17px)' }}>
-          Drop a photo onto a card, or click one to browse. Ctrl+V pastes into the highlighted card.
+          Drop photos onto a card, or click one to browse. Photo Book takes many photos or a whole folder.
         </p>
       </div>
     </div>

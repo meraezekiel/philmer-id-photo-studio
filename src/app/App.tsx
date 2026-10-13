@@ -14,6 +14,7 @@ import { AdjustCanvas } from '../features/adjust/AdjustCanvas'
 import { AdjustPanel } from '../features/adjust/AdjustStep'
 import { AttireCanvas, AttirePanel } from '../features/attire/AttireStep'
 import { BackgroundCanvas, BackgroundPanel } from '../features/background/BackgroundStep'
+import { BookApp } from '../features/book/BookApp'
 import { ExportCanvas, ExportPanel } from '../features/export/ExportStep'
 import { ImportStep } from '../features/import/ImportStep'
 import { EditApp } from '../features/edit/EditApp'
@@ -55,7 +56,9 @@ export function App() {
     return () => window.removeEventListener('keydown', block, true)
   }, [])
 
-  return mode === 'edit' ? <EditApp runtime={runtime} /> : <IdApp runtime={runtime} />
+  if (mode === 'edit') return <EditApp runtime={runtime} />
+  if (mode === 'book') return <BookApp runtime={runtime} />
+  return <IdApp runtime={runtime} />
 }
 
 function IdApp({ runtime }: { runtime: RuntimeInfo | null }) {

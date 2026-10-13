@@ -151,7 +151,7 @@ function CustomPaperFields() {
   )
 }
 
-function LengthField({ label, mm, unit, onChange }: { label: string; mm: number; unit: LengthUnit; onChange: (mm: number) => void }) {
+export function LengthField({ label, mm, unit, onChange }: { label: string; mm: number; unit: LengthUnit; onChange: (mm: number) => void }) {
   const [text, setText] = useState(() => formatLength(mm, unit))
   const typing = useRef(false)
   // Follow the stored size and the unit, except while the operator is typing.
