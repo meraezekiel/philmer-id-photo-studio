@@ -7,6 +7,7 @@
 import { create } from 'zustand'
 
 import { autoFill } from '../lib/autoFill'
+import { applyPhotoFiles, type PhotoFile } from '../lib/bookFile'
 import { addPhotos, pageMmOf, photoAspect } from '../lib/bookModel'
 import { newBook, type Book, type BookPhoto } from '../lib/bookTypes'
 
@@ -75,7 +76,7 @@ export interface BookState {
   /** Remember where the book was written without touching the unsaved flag. */
   setFilePath: (path: string) => void
   /** Point photos at new files everywhere (book and undo history); not an undo step. */
-  relinkPaths: (paths: Record<string, string>, missing: string[]) => void
+  relinkPaths: (files: Record<string, PhotoFile>, missing: string[]) => void
   reset: () => void
 }
 
@@ -244,11 +245,8 @@ export const useBook = create<BookState>((set, get) => ({
   setMissing: (missing) => set({ missing }),
   markSaved: (filePath) => set({ filePath, dirty: false }),
   setFilePath: (filePath) => set({ filePath }),
-  relinkPaths: (paths, missing) => {
-    const apply = (b: Book): Book =>
-      b.photos.some((p) => paths[p.id])
-        ? { ...b, photos: b.photos.map((p) => (paths[p.id] ? { ...p, path: paths[p.id] } : p)) }
-        : b
+  relinkPaths: (files, missing) => {
+    const apply = (b: Book): Book => applyPhotoFiles(b, files)
     set((s) => ({
       book: apply(s.book),
       past: s.past.map(apply),

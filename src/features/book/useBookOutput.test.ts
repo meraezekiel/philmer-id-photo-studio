@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { CENTRED } from '../../lib/bookCrop'
 import { NEUTRAL_ENHANCE } from '../../lib/enhance'
 import { newBook, type Book, type BookPage, type BookPhoto } from '../../lib/bookTypes'
-import { bookIssues, pageFileName } from './useBookOutput'
+import { bookIssues, pageFileName, printFailure } from './useBookOutput'
 
 const photo = (id: string, width = 3000, height = 2000): BookPhoto => ({
-  id, path: `C:\${id}.jpg`, name: `${id}.jpg`, width, height, takenAt: null, face: null, enhance: NEUTRAL_ENHANCE,
+  id, path: `C:/${id}.jpg`, name: `${id}.jpg`, width, height, takenAt: null, face: null, enhance: NEUTRAL_ENHANCE,
 })
 
 const inside = (n: number): BookPage[] =>
@@ -40,5 +40,15 @@ describe('bookIssues', () => {
     }
     expect(bookIssues(book, new Set())).toEqual({ empty: 1, lowRes: 1, missing: 0 })
     expect(bookIssues(book, new Set(['a']))).toEqual({ empty: 1, lowRes: 1, missing: 2 })
+  })
+})
+
+describe('printFailure', () => {
+  it('names the book sheet and the range to print again', () => {
+    const error = { kind: 'other', message: 'printing stopped at sheet 7: the page could not be started' }
+    expect(printFailure(error, 5, 9)).toBe('Printing stopped at sheet 7: the page could not be started. Nothing was printed; print sheets 5–9 again.')
+  })
+  it('handles a plain error and a one-sheet range', () => {
+    expect(printFailure(new Error('Disk full.'), 3, 3)).toBe('Disk full. Nothing was printed; print sheet 3 again.')
   })
 })

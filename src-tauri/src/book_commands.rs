@@ -8,7 +8,7 @@ use std::time::UNIX_EPOCH;
 
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use tauri::ipc::Response;
+use tauri::ipc::{InvokeBody, Request, Response};
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::book::{self, Expanded, NormRect};
@@ -147,7 +147,7 @@ pub async fn book_expand_paths(paths: Vec<String>) -> Result<Expanded> {
 }
 
 #[tauri::command]
-pub async fn book_find_in_folder(folder: String, names: Vec<String>) -> Result<HashMap<String, String>> {
+pub async fn book_find_in_folder(folder: String, names: Vec<String>) -> Result<HashMap<String, Vec<String>>> {
     tauri::async_runtime::spawn_blocking(move || Ok(book::find_in_folder(Path::new(&folder), &names)))
         .await
         .map_err(|e| task_failed("book_find_in_folder", e))?
@@ -217,19 +217,46 @@ pub fn book_autosave_clear(app: AppHandle) -> Result<()> {
     }
 }
 
-#[derive(Debug, Deserialize)]
-pub struct StageSheetArgs {
-    pub index: u32,
-    pub bytes: Vec<u8>,
+/// Raw-body commands: the bytes arrive as the request body, not as a JSON
+/// number array, so a 200 MB print PDF never becomes a 1 GB string.
+fn raw_body<'a>(request: &'a Request<'_>) -> Result<&'a [u8]> {
+    match request.body() {
+        InvokeBody::Raw(bytes) => Ok(bytes),
+        _ => Err(AppError::Other("expected the file's bytes as the request body".into())),
+    }
+}
+
+fn header(request: &Request<'_>, name: &str) -> Result<String> {
+    let value = request
+        .headers()
+        .get(name)
+        .ok_or_else(|| AppError::Other(format!("the {name} header is missing")))?;
+    let value = value.to_str().map_err(|_| AppError::Other(format!("the {name} header is not text")))?;
+    book::decode_header(value)
+}
+
+/// The book's exports (PDFs and JPGs). Licence-gated like `save_file`.
+///
+/// The write runs right here rather than on a blocking thread: the body is
+/// borrowed from the request, and copying a large PDF to move it would double
+/// the memory it costs.
+#[tauri::command]
+pub async fn book_save_bytes(request: Request<'_>) -> Result<String> {
+    crate::license::require_active()?;
+    let path = PathBuf::from(header(&request, "path")?);
+    let bytes = raw_body(&request)?;
+    book::save_bytes(&path, bytes)?;
+    log::info!("book: wrote {} ({} bytes)", path.display(), bytes.len());
+    Ok(path.display().to_string())
 }
 
 #[tauri::command]
-pub async fn book_stage_sheet(args: StageSheetArgs) -> Result<String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        Ok(book::stage_sheet(&book::staging_dir(), args.index, &args.bytes)?.display().to_string())
-    })
-    .await
-    .map_err(|e| task_failed("book_stage_sheet", e))?
+pub async fn book_stage_sheet(request: Request<'_>) -> Result<String> {
+    let index: u32 = header(&request, "index")?
+        .parse()
+        .map_err(|_| AppError::Other("the sheet index is not a number".into()))?;
+    let bytes = raw_body(&request)?;
+    Ok(book::stage_sheet(&book::staging_dir(), index, bytes)?.display().to_string())
 }
 
 #[tauri::command]

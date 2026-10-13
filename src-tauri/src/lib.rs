@@ -71,6 +71,7 @@ pub fn run() {
             book_commands::book_autosave_write,
             book_commands::book_autosave_read,
             book_commands::book_autosave_clear,
+            book_commands::book_save_bytes,
             book_commands::book_stage_sheet,
             book_commands::book_clear_staged,
         ])

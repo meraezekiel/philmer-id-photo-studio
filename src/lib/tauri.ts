@@ -291,8 +291,8 @@ export function bookExpandPaths(paths: string[]): Promise<{ files: string[]; ski
   return invoke('book_expand_paths', { paths })
 }
 
-/** Keys are lower-cased file names. */
-export function bookFindInFolder(folder: string, names: string[]): Promise<Record<string, string>> {
+/** Keys are lower-cased file names; every file with that name, in walk order. */
+export function bookFindInFolder(folder: string, names: string[]): Promise<Record<string, string[]>> {
   return invoke('book_find_in_folder', { folder, names })
 }
 
@@ -316,8 +316,16 @@ export function bookAutosaveClear(): Promise<void> {
   return invoke('book_autosave_clear')
 }
 
-export function bookStageSheet(index: number, bytes: ArrayBuffer): Promise<string> {
-  return invoke('book_stage_sheet', { args: { index, bytes } })
+/**
+ * The book's exports go as a raw request body with the path in a header: a
+ * print PDF can be hundreds of MB, far too big to pass as a JSON number array.
+ */
+export function bookSaveBytes(path: string, bytes: Uint8Array): Promise<string> {
+  return invoke('book_save_bytes', bytes, { headers: { path: encodeURIComponent(path) } })
+}
+
+export function bookStageSheet(index: number, bytes: Uint8Array): Promise<string> {
+  return invoke('book_stage_sheet', bytes, { headers: { index: String(index) } })
 }
 
 export function bookClearStaged(): Promise<void> {
@@ -336,6 +344,8 @@ export function printSheets(job: {
   heightMm: number
   copies?: number
   jobName?: string
+  /** The book's sheet number of `paths[0]` (1-based), for error messages. */
+  firstSheet?: number
 }): Promise<void> {
   return invoke('print_sheets', { job })
 }

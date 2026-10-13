@@ -17,7 +17,8 @@ import { saveBookWithFeedback, useBookAutosave } from './bookProject'
 import { PageStrip } from './PageStrip'
 import { PageView } from './PageView'
 import { PagesPanel } from './PagesPanel'
-import { BookPrintButton, BookPrintCanvas, BookPrintPanel } from './BookPrintStep'
+import { BookPrintButton, BookPrintCanvas, BookPrintPanel, usePrintRange } from './BookPrintStep'
+import { bookPlan } from './bookPipeline'
 import { SetupCanvas, SetupPanel } from './SetupStep'
 import { DragLayer, useDrag } from './useBookDrag'
 
@@ -32,12 +33,18 @@ export async function confirmDiscard(): Promise<boolean> {
   })
 }
 
+/** Loading photos, or an export or print running: the steps stay put. */
+function locked(): boolean {
+  return useBook.getState().status === 'loading' || usePrintRange.getState().busy
+}
+
 export async function newCustomer(): Promise<void> {
-  if (useBook.getState().status === 'loading') return
+  if (locked()) return
   if (!(await confirmDiscard())) return
   await bookClear().catch(() => {})
   clearThumbCache()
   void bookAutosaveClear().catch(() => {})
+  usePrintRange.getState().setMessage(null)
   useBook.getState().reset()
 }
 
@@ -53,6 +60,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
   const status = useBook((s) => s.status)
   const pageCount = useBook((s) => s.book.pages.length)
   const setStep = useBook((s) => s.setStep)
+  const busy = usePrintRange((s) => s.busy)
   useBookAutosave()
 
   const index = BOOK_STEPS.indexOf(step)
@@ -60,15 +68,16 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
   const previousStep = index > 1 ? BOOK_STEPS[index - 1] : undefined
 
   const goNext = useCallback(() => {
-    if (useBook.getState().status === 'loading') return
+    if (locked()) return
     if (step === 'setup' && pageCount === 0) {
-      useBook.getState().buildPages()
+      // A sheet plan that cannot work is already explained on Setup.
+      if (bookPlan(useBook.getState().book).ok) useBook.getState().buildPages()
       return
     }
     if (nextStep && canEnter(nextStep)) setStep(nextStep)
   }, [step, pageCount, nextStep, setStep])
   const goBack = useCallback(() => {
-    if (useBook.getState().status === 'loading') return
+    if (locked()) return
     if (previousStep) setStep(previousStep)
   }, [previousStep, setStep])
 
@@ -90,7 +99,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
       const target = event.target as HTMLElement | null
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
       if (!event.ctrlKey && !event.metaKey) return
-      if (useBook.getState().status === 'loading') return
+      if (locked()) return
       const key = event.key.toLowerCase()
       if (event.key === 'ArrowRight') goNext()
       else if (event.key === 'ArrowLeft') goBack()
@@ -135,7 +144,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
         activeSteps={BOOK_STEPS}
         current={step}
         ready={status === 'ready'}
-        onSelect={(key) => status !== 'loading' && canEnter(key as BookStep) && setStep(key as BookStep)}
+        onSelect={(key) => !locked() && canEnter(key as BookStep) && setStep(key as BookStep)}
       />
       <div className="flex min-h-0 flex-1">
         <div className="relative min-w-0 flex-1 overflow-hidden" style={{ background: 'var(--canvas)' }}>
@@ -162,7 +171,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
         <ActionBar
           onBack={goBack}
           onNext={goNext}
-          canGoBack={Boolean(previousStep)}
+          canGoBack={Boolean(previousStep) && !busy}
           nextLabel={nextLabel}
           onNewPhoto={() => void newCustomer()}
           isLast={!nextStep}

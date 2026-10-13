@@ -6,7 +6,16 @@
 import { useEffect } from 'react'
 import { ask, message, open as openDialog, save } from '@tauri-apps/plugin-dialog'
 
-import { BOOK_FILE_EXTENSION, fileNameOf, parseBook, relinkPhotos, serializeBook } from '../../lib/bookFile'
+import {
+  applyPhotoFiles,
+  autosaveText,
+  BOOK_FILE_EXTENSION,
+  fileNameOf,
+  parseBook,
+  relinkPhotos,
+  serializeBook,
+  type PhotoFile,
+} from '../../lib/bookFile'
 import type { Book } from '../../lib/bookTypes'
 import {
   asAppError,
@@ -17,6 +26,7 @@ import {
   bookFindInFolder,
   bookReadProject,
   bookWriteProject,
+  type BookPhotoInfo,
 } from '../../lib/tauri'
 import { useBook } from '../../store/book'
 import { clearThumbCache } from './bookPaint'
@@ -62,28 +72,35 @@ export async function saveBookWithFeedback(saveAs = false): Promise<SaveResult> 
   }
 }
 
-/** Load thumbnails for these photos; returns the ids that could not be read. */
-async function loadThumbnails(book: Book, ids?: Set<string>): Promise<string[]> {
+/** Load thumbnails for these photos; returns what each file said. */
+async function loadThumbnails(book: Book, ids?: Set<string>): Promise<BookPhotoInfo[]> {
   const photos = book.photos.filter((p) => !ids || ids.has(p.id))
   if (photos.length === 0) return []
-  const infos = await bookAddPhotos(photos.map((p) => ({ id: p.id, path: p.path })))
-  return infos.filter((i) => i.error).map((i) => i.id)
+  return bookAddPhotos(photos.map((p) => ({ id: p.id, path: p.path })))
 }
+
+const failedIds = (infos: BookPhotoInfo[]) => infos.filter((i) => i.error).map((i) => i.id)
 
 async function relink(
   book: Book,
   missing: string[],
-): Promise<{ book: Book; missing: string[]; changed: boolean; paths: Record<string, string> }> {
+): Promise<{ book: Book; missing: string[]; changed: boolean; files: Record<string, PhotoFile> }> {
   const folder = await openDialog({ directory: true, title: 'Find the folder with the photos' })
-  if (typeof folder !== 'string') return { book, missing, changed: false, paths: {} }
+  if (typeof folder !== 'string') return { book, missing, changed: false, files: {} }
   const names = book.photos.filter((p) => missing.includes(p.id)).map((p) => fileNameOf(p.path))
   const found = await bookFindInFolder(folder, names)
   const result = relinkPhotos(book, found, missing)
-  if (result.relinked.length === 0) return { book, missing, changed: false, paths: {} }
-  const failed = await loadThumbnails(result.book, new Set(result.relinked))
-  const paths: Record<string, string> = {}
-  for (const p of result.book.photos) if (result.relinked.includes(p.id)) paths[p.id] = p.path
-  return { book: result.book, missing: [...result.stillMissing, ...failed], changed: true, paths }
+  if (result.relinked.length === 0) return { book, missing, changed: false, files: {} }
+  // The new file may differ (an edited copy): take its size, date and face.
+  // A file that cannot be read keeps the old path and stays missing.
+  const infos = await loadThumbnails(result.book, new Set(result.relinked))
+  const files: Record<string, PhotoFile> = {}
+  for (const i of infos) {
+    if (!i.error) files[i.id] = { path: i.path, width: i.width, height: i.height, takenAt: i.takenAt, face: i.face }
+  }
+  const failed = failedIds(infos)
+  if (Object.keys(files).length === 0) return { book, missing, changed: false, files: {} }
+  return { book: applyPhotoFiles(book, files), missing: [...result.stillMissing, ...failed], changed: true, files }
 }
 
 /** Open a book's text; resolves to an error message, or null when opened. */
@@ -96,7 +113,7 @@ export async function openBookText(text: string, path: string | null, dirty: boo
   try {
     await bookClear()
     clearThumbCache()
-    let missing = await loadThumbnails(book)
+    let missing = failedIds(await loadThumbnails(book))
     let changed = false
     if (missing.length > 0) {
       const locate = await ask(`${missing.length} of ${book.photos.length} photos are not where this book was saved. Find the photo folder?`, {
@@ -125,18 +142,24 @@ export async function openBookDialog(): Promise<string | null> {
   }
 }
 
-/** Relink the photos still missing in the open book. */
+let locating = false
+
+/** Relink the photos still missing in the open book. A second click while one runs is ignored. */
 export async function locateMissing(): Promise<string | null> {
-  const { book, missing } = useBook.getState()
-  if (missing.length === 0) return null
+  const { book, missing, status } = useBook.getState()
+  if (missing.length === 0 || locating) return null
+  if (status === 'loading') return BOOK_BUSY_MESSAGE
+  locating = true
   try {
     const result = await relink(book, missing)
     if (result.changed) {
-      useBook.getState().relinkPaths(result.paths, result.missing)
+      useBook.getState().relinkPaths(result.files, result.missing)
     }
     return result.changed ? null : 'None of the missing photos were found in that folder.'
   } catch (error) {
     return asAppError(error).message
+  } finally {
+    locating = false
   }
 }
 
@@ -145,10 +168,10 @@ export function useBookAutosave(): void {
   useEffect(() => {
     let last: Book | null = null
     const timer = window.setInterval(() => {
-      const { dirty, book } = useBook.getState()
+      const { dirty, book, filePath } = useBook.getState()
       if (!dirty || book === last || book.photos.length === 0) return
       last = book
-      void bookAutosaveWrite(serializeBook(book)).catch(() => {})
+      void bookAutosaveWrite(autosaveText(book, filePath)).catch(() => {})
     }, AUTOSAVE_MS)
     return () => window.clearInterval(timer)
   }, [])

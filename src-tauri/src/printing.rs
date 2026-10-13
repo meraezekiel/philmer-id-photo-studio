@@ -49,10 +49,20 @@ pub struct MultiPrintJob {
     #[serde(default = "one")]
     pub copies: u32,
     pub job_name: Option<String>,
+    /// The book's sheet number (1-based) of `paths[0]`, so an error names
+    /// the sheet the operator sees, not the position in this job.
+    #[serde(default = "one")]
+    pub first_sheet: u32,
 }
 
 fn one() -> u32 {
     1
+}
+
+/// The book's sheet number of page `i` of a job that prints `n` sheets,
+/// starting at `first_sheet`, once per copy.
+pub fn book_sheet_number(first_sheet: u32, i: usize, n: usize) -> usize {
+    first_sheet.max(1) as usize + i % n.max(1)
 }
 
 #[cfg(windows)]
@@ -243,6 +253,7 @@ mod imp {
         height_mm: f64,
         count: usize,
         page: &dyn Fn(usize) -> Result<Cow<'a, image::RgbImage>>,
+        sheet_number: &dyn Fn(usize) -> usize,
     ) -> Result<()> {
         let printer = match printer.filter(|p| !p.is_empty()) {
             Some(p) => p,
@@ -312,7 +323,7 @@ mod imp {
             };
 
             for i in 0..count {
-                let sheet = i + 1;
+                let sheet = sheet_number(i);
                 let image = match page(i) {
                     Ok(image) => image,
                     Err(e) => return fail(format!("printing stopped at sheet {sheet}: {e}")),
@@ -397,6 +408,7 @@ mod imp {
             job.height_mm,
             copies,
             &|_| Ok(Cow::Borrowed(&image)),
+            &|i| i + 1,
         )?;
         log::info!("sent {copies} cop{}", if copies == 1 { "y" } else { "ies" });
         Ok(())
@@ -409,6 +421,7 @@ mod imp {
         }
         let copies = job.copies.clamp(1, 99) as usize;
         let paths = job.paths;
+        let first_sheet = job.first_sheet;
         print_pages(
             job.printer,
             job.job_name.as_deref().unwrap_or("Photo book"),
@@ -424,6 +437,7 @@ mod imp {
                         .to_rgb8(),
                 ))
             },
+            &|i| book_sheet_number(first_sheet, i, n),
         )?;
         log::info!("sent {n} sheet(s) x {copies}");
         Ok(())
@@ -453,3 +467,25 @@ mod imp {
 }
 
 pub use imp::{clear_settings, has_custom_settings, list, print, print_many, show_properties};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn book_sheet_numbers_count_from_the_first_sheet_printed() {
+        // Sheets 5-7 of the book, two copies: 5 6 7 5 6 7.
+        let numbers: Vec<usize> = (0..6).map(|i| book_sheet_number(5, i, 3)).collect();
+        assert_eq!(numbers, [5, 6, 7, 5, 6, 7]);
+        assert_eq!(book_sheet_number(0, 0, 0), 1, "a bad job still names a real sheet");
+    }
+
+    #[test]
+    fn a_job_without_first_sheet_starts_at_one() {
+        let job: MultiPrintJob = serde_json::from_str(r#"{"paths":["a"],"widthMm":210,"heightMm":297}"#).unwrap();
+        assert_eq!(job.first_sheet, 1);
+        let job: MultiPrintJob =
+            serde_json::from_str(r#"{"paths":["a"],"widthMm":210,"heightMm":297,"firstSheet":9}"#).unwrap();
+        assert_eq!(job.first_sheet, 9);
+    }
+}

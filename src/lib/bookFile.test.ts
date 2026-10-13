@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { NEUTRAL_ENHANCE } from './enhance'
 import { CENTRED } from './bookCrop'
-import { fileNameOf, parseBook, relinkPhotos, serializeBook } from './bookFile'
+import { applyPhotoFiles, autosaveText, fileNameOf, parseBook, readAutosave, relinkPhotos, serializeBook } from './bookFile'
 import { DEFAULT_COVER, newBook, type Book } from './bookTypes'
 
 function sample(): Book {
@@ -68,6 +68,14 @@ describe('saving and opening', () => {
     expect(book.pages[1].frames[0].crop).toEqual({ cx: 0.5, cy: 0.5, zoom: 5 })
   })
 
+  it('does not take an inherited property name for a book size', () => {
+    for (const size of ['constructor', 'toString', '__proto__']) {
+      const raw = JSON.parse(serializeBook(sample()))
+      raw.size = size
+      expect(parsed(JSON.stringify(raw)).size).toBe('5x6')
+    }
+  })
+
   it('keeps the cover page and the cover setting consistent', () => {
     const raw = JSON.parse(serializeBook(sample()))
     raw.cover = null
@@ -82,7 +90,7 @@ describe('saving and opening', () => {
 
 describe('relinking moved photos', () => {
   it('relinkPhotos matches names ignoring case', () => {
-    const found = { 'img 001.jpg': 'E:\\Moved\\Kasal\\IMG 001.jpg' }
+    const found = { 'img 001.jpg': ['E:\\Moved\\Kasal\\IMG 001.jpg'] }
     const result = relinkPhotos(sample(), found, ['p1', 'p2'])
     expect(result.relinked).toEqual(['p1'])
     expect(result.stillMissing).toEqual(['p2'])
@@ -90,9 +98,79 @@ describe('relinking moved photos', () => {
     expect(result.book.photos[1].path).toBe(sample().photos[1].path)
   })
 
+  const twoCameras = (): Book => ({
+    ...sample(),
+    photos: [
+      { ...sample().photos[0], id: 'a', path: 'D:/Wedding/Cam A/IMG_0001.JPG' },
+      { ...sample().photos[1], id: 'b', path: 'D:/Wedding/Cam B/IMG_0001.JPG' },
+    ],
+  })
+
+  it('tells same-name photos apart by the folders above them', () => {
+    const found = { 'img_0001.jpg': ['E:/Moved/Cam B/IMG_0001.JPG', 'E:/Moved/cam a/IMG_0001.jpg'] }
+    const result = relinkPhotos(twoCameras(), found, ['a', 'b'])
+    expect(result.relinked).toEqual(['a', 'b'])
+    expect(result.book.photos.map((p) => p.path)).toEqual(['E:/Moved/cam a/IMG_0001.jpg', 'E:/Moved/Cam B/IMG_0001.JPG'])
+  })
+
+  it('leaves a photo missing rather than guess between equal matches', () => {
+    const found = { 'img 001.jpg': ['E:/One/IMG 001.JPG', 'E:/Two/IMG 001.JPG'] }
+    const result = relinkPhotos(sample(), found, ['p1'])
+    expect(result.relinked).toEqual([])
+    expect(result.stillMissing).toEqual(['p1'])
+    expect(result.book.photos[0].path).toBe(sample().photos[0].path)
+  })
+
+  it('never points two photos at the same file', () => {
+    const found = { 'img_0001.jpg': ['E:/Moved/IMG_0001.JPG'] }
+    const result = relinkPhotos(twoCameras(), found, ['a', 'b'])
+    expect(result.relinked).toEqual([])
+    expect(result.stillMissing).toEqual(['a', 'b'])
+  })
+
+  it('does not reuse a file another photo of the book already uses', () => {
+    const book = twoCameras()
+    const found = { 'img_0001.jpg': [book.photos[1].path.toLowerCase()] }
+    expect(relinkPhotos(book, found, ['a']).relinked).toEqual([])
+  })
+
+  it('ignores lookups on inherited keys', () => {
+    const book = { ...sample(), photos: [{ ...sample().photos[0], path: 'D:/x/constructor' }] }
+    expect(relinkPhotos(book, {}, ['p1']).stillMissing).toEqual(['p1'])
+  })
+
+  it('applyPhotoFiles takes the new path and what the new file says', () => {
+    const book = applyPhotoFiles(sample(), {
+      p2: { path: 'E:/IMG 002.JPG', width: 3000, height: 2000, takenAt: '2026-10-12T15:00:00', face: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } },
+    })
+    expect(book.photos[1]).toMatchObject({ path: 'E:/IMG 002.JPG', width: 3000, height: 2000, takenAt: '2026-10-12T15:00:00', face: { x: 0.1, y: 0.1, w: 0.2, h: 0.2 } })
+    expect(book.photos[1].enhance).toEqual(sample().photos[1].enhance)
+    expect(book.photos[0]).toEqual(sample().photos[0])
+    expect(applyPhotoFiles(sample(), {}).photos).toEqual(sample().photos)
+  })
+
   it('takes the file name from either slash', () => {
     expect(fileNameOf('C:\\a\\b.jpg')).toBe('b.jpg')
     expect(fileNameOf('/a/b c.jpg')).toBe('b c.jpg')
     expect(fileNameOf('plain.jpg')).toBe('plain.jpg')
+  })
+})
+
+describe('autosave', () => {
+  it('keeps the book file path with the book', () => {
+    const text = autosaveText(sample(), 'D:/Books/Juan & María.photobook')
+    const restored = readAutosave(text)
+    expect(restored.path).toBe('D:/Books/Juan & María.photobook')
+    expect(parsed(restored.text)).toEqual(sample())
+  })
+
+  it('remembers that an unsaved book had no file', () => {
+    expect(readAutosave(autosaveText(sample(), null)).path).toBeNull()
+  })
+
+  it('still reads an autosave that is a plain book', () => {
+    const plain = serializeBook(sample())
+    expect(readAutosave(plain)).toEqual({ text: plain, path: null })
+    expect(readAutosave('not json')).toEqual({ text: 'not json', path: null })
   })
 })

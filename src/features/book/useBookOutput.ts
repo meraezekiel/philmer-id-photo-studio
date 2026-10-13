@@ -11,8 +11,8 @@ import { sheetCount } from '../../lib/bookSheets'
 import type { Book } from '../../lib/bookTypes'
 import { mmToPoints, setJpegDpi } from '../../lib/dpi'
 import { PRINT_DPI } from '../../lib/presets'
-import { bookClearStaged, bookStageSheet, printSheets, saveFile } from '../../lib/tauri'
-import { canvasBytes, pageLabel, printSource, renderPage, renderSheet } from './bookPaint'
+import { asAppError, bookClearStaged, bookSaveBytes, bookStageSheet, printSheets } from '../../lib/tauri'
+import { canvasBytes, ensureFonts, pageLabel, printSource, renderPage, renderSheet } from './bookPaint'
 import { bookPlan } from './bookPipeline'
 
 export const APPROVAL_DPI = 150
@@ -30,6 +30,23 @@ export interface Progress {
 
 function check(p: Progress) {
   if (p.cancelled()) throw new Cancelled()
+}
+
+/** A thrown Error or a rejected Rust command, as one line of text. */
+export function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : asAppError(error).message
+}
+
+/**
+ * What the operator reads when printing fails. Rust names the book's sheet;
+ * this adds what to do next. The job is aborted on any failure, so nothing
+ * from it reaches the paper.
+ */
+export function printFailure(error: unknown, from: number, to: number): string {
+  const text = errorText(error).trim().replace(/\.$/, '')
+  const why = text.charAt(0).toUpperCase() + text.slice(1)
+  const range = from === to ? `sheet ${from}` : `sheets ${from}–${to}`
+  return `${why}. Nothing was printed; print ${range} again.`
 }
 
 export function pageFileName(book: Book, index: number): string {
@@ -54,6 +71,8 @@ export function bookIssues(book: Book, missing: ReadonlySet<string>): { empty: n
 }
 
 export async function exportApprovalPdf(book: Book, missing: ReadonlySet<string>, path: string, p: Progress): Promise<void> {
+  // The cover title must not be drawn in a fallback font.
+  await ensureFonts()
   const doc = await PDFDocument.create()
   doc.setTitle(book.cover?.title || 'Photo book')
   doc.setProducer('Philmer ID Photo Studio')
@@ -67,12 +86,13 @@ export async function exportApprovalPdf(book: Book, missing: ReadonlySet<string>
     doc.addPage([w, h]).drawImage(image, { x: 0, y: 0, width: w, height: h })
   }
   const bytes = await doc.save()
-  await saveFile({ path, bytes: bytes.buffer as ArrayBuffer })
+  await bookSaveBytes(path, bytes)
 }
 
 export async function exportPrintPdf(book: Book, missing: ReadonlySet<string>, path: string, p: Progress): Promise<void> {
   const plan = bookPlan(book)
   if (!plan.ok) throw new Error(plan.message)
+  await ensureFonts()
   const doc = await PDFDocument.create()
   doc.setTitle(`${book.cover?.title || 'Photo book'} (print sheets)`)
   doc.setProducer('Philmer ID Photo Studio')
@@ -87,17 +107,18 @@ export async function exportPrintPdf(book: Book, missing: ReadonlySet<string>, p
     doc.addPage([w, h]).drawImage(image, { x: 0, y: 0, width: w, height: h })
   }
   const bytes = await doc.save()
-  await saveFile({ path, bytes: bytes.buffer as ArrayBuffer })
+  await bookSaveBytes(path, bytes)
 }
 
 export async function exportJpgs(book: Book, missing: ReadonlySet<string>, folder: string, p: Progress, onSaved?: (count: number) => void): Promise<number> {
+  await ensureFonts()
   const sep = folder.includes('\\') ? '\\' : '/'
   for (let i = 0; i < book.pages.length; i++) {
     check(p)
     p.report(`Page ${i + 1} / ${book.pages.length}`)
     const canvas = await renderPage(book, i, { dpi: PRINT_DPI, source: printSource(book), preview: false, missing })
     const bytes = setJpegDpi(await canvasBytes(canvas, 'image/jpeg', 0.95), PRINT_DPI)
-    await saveFile({ path: `${folder.replace(/[\\/]$/, '')}${sep}${pageFileName(book, i)}`, bytes: bytes.buffer as ArrayBuffer })
+    await bookSaveBytes(`${folder.replace(/[\\/]$/, '')}${sep}${pageFileName(book, i)}`, bytes)
     onSaved?.(i + 1)
   }
   return book.pages.length
@@ -116,6 +137,7 @@ export async function printBook(
   const count = sheetCount(book.pages.length, plan.perSheet)
   const from = Math.max(0, Math.min(range.from, count - 1))
   const to = Math.max(from, Math.min(range.to, count - 1))
+  await ensureFonts()
   await bookClearStaged()
   try {
     const paths: string[] = []
@@ -124,7 +146,7 @@ export async function printBook(
       p.report(`Preparing sheet ${s + 1} / ${to + 1}`)
       const canvas = await renderSheet(book, plan, s, { dpi: PRINT_DPI, source: printSource(book), preview: false, missing })
       const bytes = await canvasBytes(canvas, 'image/jpeg', 0.95)
-      paths.push(await bookStageSheet(s, bytes.buffer as ArrayBuffer))
+      paths.push(await bookStageSheet(s, bytes))
     }
     check(p)
     p.report('Sending to the printer…')
@@ -135,6 +157,7 @@ export async function printBook(
       heightMm: plan.paper.heightMm,
       copies: request.copies,
       jobName: `Photo book ${book.cover?.title || ''}`.trim(),
+      firstSheet: from + 1,
     })
   } finally {
     await bookClearStaged().catch(() => {})

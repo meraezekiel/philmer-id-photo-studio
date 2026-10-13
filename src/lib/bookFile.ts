@@ -153,7 +153,7 @@ export function parseBook(text: string): ParseResult {
     ok: true,
     book: {
       version: BOOK_VERSION,
-      size: typeof raw.size === 'string' && raw.size in BOOK_SIZES ? (raw.size as BookSizeId) : defaults.size,
+      size: typeof raw.size === 'string' && Object.hasOwn(BOOK_SIZES, raw.size) ? (raw.size as BookSizeId) : defaults.size,
       orientation: raw.orientation === 'landscape' ? 'landscape' : ('portrait' as BookOrientation),
       paper: EDIT_PAPER_CHOICES.includes(raw.paper as EditPaperChoice) ? (raw.paper as EditPaperChoice) : defaults.paper,
       customPaper: { widthMm: side(custom.widthMm, defaults.customPaper.widthMm), heightMm: side(custom.heightMm, defaults.customPaper.heightMm) },
@@ -166,18 +166,55 @@ export function parseBook(text: string): ParseResult {
   }
 }
 
-/** Point missing photos at files of the same name found in another folder. */
+/** How many path segments match, counted from the file name back. */
+function trailingMatch(a: string, b: string): number {
+  const sa = a.toLowerCase().split(/[\\/]/)
+  const sb = b.toLowerCase().split(/[\\/]/)
+  let n = 0
+  while (n < sa.length && n < sb.length && sa[sa.length - 1 - n] === sb[sb.length - 1 - n]) n++
+  return n
+}
+
+/**
+ * Point missing photos at files of the same name found in another folder.
+ *
+ * `found` lists every file with each (lower-cased) name. Two cameras both
+ * shoot IMG_0001.JPG, so a photo takes the candidate whose folders best match
+ * where it used to be. A tie, or a file another photo also wants or already
+ * uses, leaves the photo missing: a wrong photo in a book is worse than a gap.
+ */
 export function relinkPhotos(
   book: Book,
-  found: Record<string, string>,
+  found: Record<string, string[]>,
   missingIds: string[],
 ): { book: Book; relinked: string[]; stillMissing: string[] } {
   const missing = new Set(missingIds)
+  const taken = new Set(book.photos.filter((p) => !missing.has(p.id)).map((p) => p.path.toLowerCase()))
+  const best = new Map<string, string>()
+  const claims = new Map<string, number>()
+  for (const p of book.photos) {
+    if (!missing.has(p.id)) continue
+    const name = fileNameOf(p.path).toLowerCase()
+    const candidates = (Object.hasOwn(found, name) && Array.isArray(found[name]) ? found[name] : []).filter((c) => !taken.has(c.toLowerCase()))
+    let top = 0
+    let pick: string | null = null
+    for (const c of candidates) {
+      const score = trailingMatch(p.path, c)
+      if (score > top) {
+        top = score
+        pick = c
+      } else if (score === top) {
+        pick = null
+      }
+    }
+    if (!pick) continue
+    best.set(p.id, pick)
+    claims.set(pick.toLowerCase(), (claims.get(pick.toLowerCase()) ?? 0) + 1)
+  }
   const relinked: string[] = []
   const photos = book.photos.map((p) => {
-    if (!missing.has(p.id)) return p
-    const path = found[fileNameOf(p.path).toLowerCase()]
-    if (!path) return p
+    const path = best.get(p.id)
+    if (!path || claims.get(path.toLowerCase())! > 1) return p
     relinked.push(p.id)
     return { ...p, path }
   })
@@ -186,4 +223,47 @@ export function relinkPhotos(
     relinked,
     stillMissing: missingIds.filter((id) => !relinked.includes(id)),
   }
+}
+
+/** What a relinked photo's new file says about itself. */
+export interface PhotoFile {
+  path: string
+  width: number
+  height: number
+  takenAt: string | null
+  face: NormRect | null
+}
+
+/** Update photos (by id) from their new files; edits such as enhance are kept. */
+export function applyPhotoFiles(book: Book, files: Record<string, PhotoFile>): Book {
+  const has = (id: string) => Object.hasOwn(files, id)
+  if (!book.photos.some((p) => has(p.id))) return book
+  return {
+    ...book,
+    photos: book.photos.map((p) => {
+      if (!has(p.id)) return p
+      const { path, width, height, takenAt, face } = files[p.id]
+      return { ...p, path, width, height, takenAt, face }
+    }),
+  }
+}
+
+const AUTOSAVE_MARKER = 'philmer-photo-book-autosave'
+
+/** The autosave keeps the book's file too, so Save after a restore goes back to it. */
+export function autosaveText(book: Book, path: string | null): string {
+  return JSON.stringify({ app: AUTOSAVE_MARKER, path, book: serializeBook(book) })
+}
+
+/** The book text and file of an autosave; an older autosave is the plain book. */
+export function readAutosave(text: string): { text: string; path: string | null } {
+  try {
+    const raw: unknown = JSON.parse(text)
+    if (isObject(raw) && raw.app === AUTOSAVE_MARKER && typeof raw.book === 'string') {
+      return { text: raw.book, path: typeof raw.path === 'string' && raw.path ? raw.path : null }
+    }
+  } catch {
+    // Not JSON: hand it on as it is and let opening say what is wrong.
+  }
+  return { text, path: null }
 }

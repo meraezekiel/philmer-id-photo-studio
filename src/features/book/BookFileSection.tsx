@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Button, Notice, Section } from '../../app/components/ui'
 import { bookAutosaveClear, bookAutosaveRead } from '../../lib/tauri'
 import { useBook } from '../../store/book'
-import { fileNameOf } from '../../lib/bookFile'
+import { fileNameOf, readAutosave } from '../../lib/bookFile'
 import { locateMissing, openBookText, saveBookWithFeedback } from './bookProject'
 
 export function BookFileSection() {
@@ -11,6 +11,7 @@ export function BookFileSection() {
   const dirty = useBook((s) => s.dirty)
   const missing = useBook((s) => s.missing)
   const [message, setMessage] = useState<{ tone: 'ok' | 'danger'; text: string } | null>(null)
+  const [locating, setLocating] = useState(false)
   const run = async (task: () => Promise<string | null>, ok: string) => {
     try {
       const error = await task()
@@ -34,7 +35,17 @@ export function BookFileSection() {
         <Button onClick={() => void save(false)}>Save</Button>
         <Button onClick={() => void save(true)}>Save as…</Button>
       </div>
-      {missing.length > 0 && <Button onClick={() => void run(locateMissing, 'Photos found.')}>Locate photos…</Button>}
+      {missing.length > 0 && (
+        <Button
+          disabled={locating}
+          onClick={() => {
+            setLocating(true)
+            void run(locateMissing, 'Photos found.').finally(() => setLocating(false))
+          }}
+        >
+          {locating ? 'Locating photos…' : 'Locate photos…'}
+        </Button>
+      )}
       {message && <Notice tone={message.tone} action={<button type="button" onClick={() => setMessage(null)}>OK</button>}>{message.text}</Notice>}
     </Section>
   )
@@ -54,7 +65,10 @@ export function AutosaveOffer() {
       tone="info"
       action={
         <span className="flex gap-3">
-          <button type="button" className="font-bold underline" onClick={() => void openBookText(saved.text, null, true).then((e) => (e ? setError(e) : setSaved(null)))}>Restore</button>
+          <button type="button" className="font-bold underline" onClick={() => {
+              const restored = readAutosave(saved.text)
+              void openBookText(restored.text, restored.path, true).then((e) => (e ? setError(e) : setSaved(null)))
+            }}>Restore</button>
           <button type="button" className="underline" onClick={() => void bookAutosaveClear().then(() => setSaved(null))}>Discard</button>
         </span>
       }

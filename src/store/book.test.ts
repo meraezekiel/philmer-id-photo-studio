@@ -134,13 +134,13 @@ describe('history', () => {
   })
 
   it('leaves a clean book clean after a gesture that changes nothing', () => {
-    s().markSaved('D:\a.photobook')
+    s().markSaved('D:/a.photobook')
     s().beginGesture()
     s().update((b) => ({ ...b, style: { ...b.style, gapMm: 8 } }))
     s().update((b) => ({ ...b, style: { ...b.style, gapMm: b.style.gapMm } }))
     s().endGesture()
     expect(s().dirty).toBe(true)
-    s().markSaved('D:\a.photobook')
+    s().markSaved('D:/a.photobook')
     s().beginGesture()
     s().endGesture()
     expect(s().dirty).toBe(false)
@@ -270,24 +270,24 @@ describe('files', () => {
   })
 
   it('relinks photos everywhere, so undo keeps the new paths', () => {
-    s().opened({ ...newBook(), photos: photos(2) }, 'D:\a.photobook', ['p1', 'p2'], false)
+    s().opened({ ...newBook(), photos: photos(2) }, 'D:/a.photobook', ['p1', 'p2'], false)
     s().update((b) => ({ ...b, pageCount: 8 }))
-    s().relinkPaths({ p1: 'E:\new\IMG_001.jpg' }, ['p2'])
-    expect(s().book.photos[0].path).toBe('E:\new\IMG_001.jpg')
+    s().relinkPaths({ p1: { path: 'E:/new/IMG_001.jpg', width: 2000, height: 3000, takenAt: '2026-10-12T10:00:00', face: null } }, ['p2'])
+    expect(s().book.photos[0]).toMatchObject({ path: 'E:/new/IMG_001.jpg', width: 2000, height: 3000, takenAt: '2026-10-12T10:00:00' })
     expect(s().missing).toEqual(['p2'])
     expect(s().dirty).toBe(true)
     expect(s().past).toHaveLength(1)
     s().undo()
     expect(s().book.pageCount).not.toBe(8)
-    expect(s().book.photos[0].path).toBe('E:\new\IMG_001.jpg')
+    expect(s().book.photos[0].path).toBe('E:/new/IMG_001.jpg')
     s().redo()
-    expect(s().book.photos[0].path).toBe('E:\new\IMG_001.jpg')
+    expect(s().book.photos[0].path).toBe('E:/new/IMG_001.jpg')
   })
 
   it('remembers the path without marking clean', () => {
     s().photosAdded(photos(1), [], 0)
-    s().setFilePath('D:\b.photobook')
-    expect(s().filePath).toBe('D:\b.photobook')
+    s().setFilePath('D:/b.photobook')
+    expect(s().filePath).toBe('D:/b.photobook')
     expect(s().dirty).toBe(true)
   })
 

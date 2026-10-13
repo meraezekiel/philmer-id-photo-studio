@@ -15,15 +15,30 @@ import { useLicense } from '../license/LicenseDialog'
 import { PrintDialog, type PrintRequest } from '../sheet/PrintDialog'
 import { previewSource, renderSheet } from './bookPaint'
 import { bookPlan } from './bookPipeline'
-import { bookIssues, Cancelled, exportApprovalPdf, exportJpgs, exportPrintPdf, printBook, type Progress } from './useBookOutput'
+import { bookIssues, Cancelled, errorText, exportApprovalPdf, exportJpgs, exportPrintPdf, printBook, printFailure, type Progress } from './useBookOutput'
 
 const PREVIEW_DPI = 40
 
-/** Which sheets to print (1-based, inclusive); shared by the panel's inputs and the Print button. */
+export interface JobMessage {
+  tone: 'info' | 'ok' | 'danger'
+  text: string
+}
+
+/**
+ * Which sheets to print (1-based, inclusive), shared by the panel's inputs and
+ * the Print button, and the running job. The job lives here rather than in a
+ * component so its progress and Cancel survive the panel unmounting.
+ */
 interface PrintRange {
   /** One job at a time: printing and the panel's exports share this. */
   busy: boolean
   setBusy: (busy: boolean) => void
+  /** The panel's export progress or result. */
+  message: JobMessage | null
+  setMessage: (message: JobMessage | null) => void
+  /** Set by Cancel; the running job checks it between sheets. */
+  cancelRequested: boolean
+  requestCancel: () => void
   from: number
   to: number
   setFrom: (value: number, sheets: number) => void
@@ -35,7 +50,11 @@ const clampSheet = (value: number, sheets: number) => Math.max(1, Math.min(Math.
 
 export const usePrintRange = create<PrintRange>((set) => ({
   busy: false,
-  setBusy: (busy) => set({ busy }),
+  setBusy: (busy) => set(busy ? { busy, cancelRequested: false } : { busy }),
+  message: null,
+  setMessage: (message) => set({ message }),
+  cancelRequested: false,
+  requestCancel: () => set({ cancelRequested: true }),
   from: 1,
   to: 1,
   setFrom: (value, sheets) => set((s) => ({ from: clampSheet(value, sheets), to: Math.max(s.to, clampSheet(value, sheets)) })),
@@ -92,24 +111,54 @@ export function BookPrintCanvas() {
   )
 }
 
+const jobCancelled = () => usePrintRange.getState().cancelRequested
+
 function useJob() {
-  const [message, setMessage] = useState<{ tone: 'info' | 'ok' | 'danger'; text: string } | null>(null)
+  const message = usePrintRange((s) => s.message)
   const busy = usePrintRange((s) => s.busy)
-  const setBusy = usePrintRange((s) => s.setBusy)
-  const cancelRef = useRef(false)
   const run = async (task: (p: Progress) => Promise<string>) => {
+    const { setBusy, setMessage } = usePrintRange.getState()
+    if (usePrintRange.getState().busy) return
     setBusy(true)
-    cancelRef.current = false
     try {
-      const done = await task({ report: (text) => setMessage({ tone: 'info', text }), cancelled: () => cancelRef.current })
+      const done = await task({ report: (text) => setMessage({ tone: 'info', text }), cancelled: jobCancelled })
       setMessage({ tone: 'ok', text: done })
     } catch (error) {
-      setMessage(error instanceof Cancelled ? { tone: 'info', text: 'Stopped.' } : { tone: 'danger', text: error instanceof Error ? error.message : String(error) })
+      setMessage(error instanceof Cancelled ? { tone: 'info', text: 'Stopped.' } : { tone: 'danger', text: errorText(error) })
     } finally {
       setBusy(false)
     }
   }
-  return { message, busy, run, cancel: () => (cancelRef.current = true), dismiss: () => setMessage(null) }
+  return { message, busy, run, cancel: () => usePrintRange.getState().requestCancel(), dismiss: () => usePrintRange.getState().setMessage(null) }
+}
+
+/** A sheet number that may be empty while typing; it settles on blur. */
+function SheetInput({ value, sheets, onCommit }: { value: number; sheets: number; onCommit: (value: number) => void }) {
+  const [text, setText] = useState(String(value))
+  const [editing, setEditing] = useState(false)
+  useEffect(() => {
+    if (!editing) setText(String(value))
+  }, [value, editing])
+  return (
+    <input
+      type="number"
+      min={1}
+      max={sheets}
+      value={text}
+      disabled={sheets === 0}
+      onFocus={() => setEditing(true)}
+      onChange={(e) => {
+        setText(e.target.value)
+        const n = Number(e.target.value)
+        if (e.target.value.trim() !== '' && Number.isFinite(n)) onCommit(n)
+      }}
+      onBlur={() => {
+        setEditing(false)
+        setText(String(value))
+      }}
+      className="tabular h-8 w-16 border border-divider px-2"
+    />
+  )
 }
 
 async function confirmProblems(missing: number): Promise<boolean> {
@@ -153,7 +202,7 @@ export function BookPrintPanel() {
         return `Saved ${await exportJpgs(book, missing, folder, p, (n) => (saved = n))} JPGs at 300 DPI.`
       } catch (error) {
         if (error instanceof Cancelled) return `Stopped after ${saved} of ${book.pages.length} pages.`
-        throw new Error(`${error instanceof Error ? error.message : String(error)} (${saved} of ${book.pages.length} JPGs were saved.)`)
+        throw new Error(`${errorText(error)} (${saved} of ${book.pages.length} JPGs were saved.)`)
       }
     })
   }
@@ -192,9 +241,9 @@ export function BookPrintPanel() {
       <Section title="Print">
         <div className="flex items-center gap-2 text-sm">
           <span>Sheets from</span>
-          <input type="number" min={1} max={sheets} value={from} disabled={sheets === 0} onChange={(e) => setFrom(Number(e.target.value), sheets)} className="tabular h-8 w-16 border border-divider px-2" />
+          <SheetInput value={from} sheets={sheets} onCommit={(v) => setFrom(v, sheets)} />
           <span>to</span>
-          <input type="number" min={1} max={sheets} value={to} disabled={sheets === 0} onChange={(e) => setTo(Number(e.target.value), sheets)} className="tabular h-8 w-16 border border-divider px-2" />
+          <SheetInput value={to} sheets={sheets} onCommit={(v) => setTo(v, sheets)} />
         </div>
         <p className="text-xs text-muted">Use the Print button below. Of {sheets} sheet{sheets === 1 ? '' : 's'}.</p>
       </Section>
@@ -223,22 +272,21 @@ export function BookPrintButton() {
   const sheets = plan.ok ? sheetCount(book.pages.length, plan.perSheet) : 0
   useResetRange(sheets)
   const { from, to } = usePrintRange()
-  const cancelRef = useRef(false)
 
   const onPrint = async (request: PrintRequest) => {
     const missing = new Set(missingList)
     if (!(await confirmProblems(bookIssues(book, missing).missing))) return
+    if (usePrintRange.getState().busy) return
     setBusy(true)
-    cancelRef.current = false
     setStatus(null)
     try {
       await printBook(book, missing, { from: from - 1, to: to - 1 }, request, {
         report: (message) => setStatus({ tone: 'ok', message }),
-        cancelled: () => cancelRef.current,
+        cancelled: jobCancelled,
       })
       setStatus({ tone: 'ok', message: `Sent sheets ${from}–${to} to the printer.` })
     } catch (error) {
-      setStatus({ tone: 'danger', message: error instanceof Cancelled ? 'Stopped before printing.' : error instanceof Error ? error.message : String(error) })
+      setStatus({ tone: 'danger', message: error instanceof Cancelled ? 'Stopped before printing.' : printFailure(error, from, to) })
     } finally {
       setBusy(false)
     }
@@ -268,7 +316,7 @@ export function BookPrintButton() {
           printDisabled={!valid}
           status={status}
           onPrint={(r) => void onPrint(r)}
-          onCancel={() => (cancelRef.current = true)}
+          onCancel={() => usePrintRange.getState().requestCancel()}
           onClose={() => setOpen(false)}
         />
       )}

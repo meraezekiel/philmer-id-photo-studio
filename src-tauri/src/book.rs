@@ -230,8 +230,8 @@ pub fn expand_paths(paths: &[String]) -> Expanded {
     out
 }
 
-fn find_walk(dir: &Path, depth: usize, wanted: &HashSet<String>, found: &mut HashMap<String, String>) {
-    if depth > FOLDER_DEPTH || found.len() == wanted.len() {
+fn find_walk(dir: &Path, depth: usize, wanted: &HashSet<String>, found: &mut HashMap<String, Vec<String>>) {
+    if depth > FOLDER_DEPTH {
         return;
     }
     for path in sorted_entries(dir) {
@@ -239,15 +239,16 @@ fn find_walk(dir: &Path, depth: usize, wanted: &HashSet<String>, found: &mut Has
             find_walk(&path, depth + 1, wanted, found);
         } else {
             let key = file_name(&path).to_lowercase();
-            if wanted.contains(&key) && !found.contains_key(&key) {
-                found.insert(key, path.display().to_string());
+            if wanted.contains(&key) {
+                found.entry(key).or_default().push(path.display().to_string());
             }
         }
     }
 }
 
-/// Files with these names under `folder`, keyed by lower-cased name.
-pub fn find_in_folder(folder: &Path, names: &[String]) -> HashMap<String, String> {
+/// Every file with these names under `folder`, keyed by lower-cased name.
+/// Two cameras both shoot IMG_0001.JPG, so the caller chooses between them.
+pub fn find_in_folder(folder: &Path, names: &[String]) -> HashMap<String, Vec<String>> {
     let wanted: HashSet<String> = names.iter().map(|n| n.to_lowercase()).collect();
     let mut found = HashMap::new();
     find_walk(folder, 0, &wanted, &mut found);
@@ -292,6 +293,45 @@ pub fn stage_sheet(dir: &Path, index: u32, bytes: &[u8]) -> Result<PathBuf> {
 
 pub fn clear_staged(dir: &Path) {
     let _ = std::fs::remove_dir_all(dir);
+}
+
+/// Undo `encodeURIComponent`: raw-body commands carry their target in an
+/// HTTP header, and a header is ASCII, so the path travels percent-encoded.
+pub fn decode_header(raw: &str) -> Result<String> {
+    let bad = || AppError::Other(format!("could not read the header {raw:?}"));
+    let src = raw.as_bytes();
+    let mut out = Vec::with_capacity(src.len());
+    let mut i = 0;
+    while i < src.len() {
+        if src[i] == b'%' {
+            let hex = src.get(i + 1..i + 3).filter(|h| h.iter().all(u8::is_ascii_hexdigit)).ok_or_else(bad)?;
+            let hex = std::str::from_utf8(hex).map_err(|_| bad())?;
+            out.push(u8::from_str_radix(hex, 16).map_err(|_| bad())?);
+            i += 3;
+        } else {
+            out.push(src[i]);
+            i += 1;
+        }
+    }
+    String::from_utf8(out).map_err(|_| bad())
+}
+
+/// Write an exported file, swapping it in so a failed write never leaves a
+/// half file under the operator's name.
+pub fn save_bytes(path: &Path, bytes: &[u8]) -> Result<()> {
+    if let Some(dir) = path.parent() {
+        if !dir.as_os_str().is_empty() {
+            std::fs::create_dir_all(dir).map_err(|e| io_error(dir, e))?;
+        }
+    }
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(".tmp");
+    let tmp = PathBuf::from(tmp);
+    std::fs::write(&tmp, bytes).map_err(|e| io_error(&tmp, e))?;
+    std::fs::rename(&tmp, path).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp);
+        io_error(path, e)
+    })
 }
 
 #[cfg(test)]
@@ -440,7 +480,23 @@ mod tests {
         std::fs::write(dir.join("Kasal ni Juan & María").join("María 01.JPG"), b"x").unwrap();
         let found = find_in_folder(&dir, &["MARÍA 01.jpg".to_string(), "absent.jpg".to_string()]);
         assert_eq!(found.len(), 1);
-        assert!(found["maría 01.jpg"].ends_with("María 01.JPG"));
+        assert_eq!(found["maría 01.jpg"].len(), 1);
+        assert!(found["maría 01.jpg"][0].ends_with("María 01.JPG"));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn find_in_folder_returns_every_file_with_the_name() {
+        let dir = temp_dir("find-all");
+        for cam in ["Cam A", "Cam B"] {
+            std::fs::create_dir_all(dir.join(cam)).unwrap();
+            std::fs::write(dir.join(cam).join("IMG_0001.JPG"), b"x").unwrap();
+        }
+        let found = find_in_folder(&dir, &["img_0001.jpg".to_string()]);
+        let hits = &found["img_0001.jpg"];
+        assert_eq!(hits.len(), 2);
+        assert!(hits[0].ends_with(&format!("Cam A{}IMG_0001.JPG", std::path::MAIN_SEPARATOR)), "{hits:?}");
+        assert!(hits[1].ends_with(&format!("Cam B{}IMG_0001.JPG", std::path::MAIN_SEPARATOR)), "{hits:?}");
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -466,6 +522,30 @@ mod tests {
         clear_staged(&dir);
         assert!(!dir.exists());
         clear_staged(&dir);
+    }
+
+    #[test]
+    fn header_paths_are_percent_decoded() {
+        // encodeURIComponent("D:\\Bodas\\Juan & María 100%.pdf")
+        let raw = "D%3A%5CBodas%5CJuan%20%26%20Mar%C3%ADa%20100%25.pdf";
+        assert_eq!(decode_header(raw).unwrap(), "D:\\Bodas\\Juan & María 100%.pdf");
+        assert_eq!(decode_header("plain-name.jpg").unwrap(), "plain-name.jpg");
+        assert_eq!(decode_header("12").unwrap(), "12");
+        assert!(decode_header("bad%2").is_err());
+        assert!(decode_header("bad%zz").is_err());
+        assert!(decode_header("%+1").is_err());
+        assert!(decode_header("%C3").is_err(), "half a UTF-8 character");
+    }
+
+    #[test]
+    fn save_bytes_makes_the_folder_and_replaces_the_file() {
+        let dir = temp_dir("save-bytes");
+        let path = dir.join("out").join("book.pdf");
+        save_bytes(&path, b"one").unwrap();
+        save_bytes(&path, b"two").unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"two");
+        assert!(!dir.join("out").join("book.pdf.tmp").exists());
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]
