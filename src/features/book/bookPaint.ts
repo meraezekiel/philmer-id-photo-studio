@@ -31,7 +31,9 @@ export function thumbImage(id: string): Promise<HTMLImageElement> {
         }),
     )
     // A failure is not cached: the photo may be relinked and loaded again.
-    pending.catch(() => thumbs.delete(id))
+    pending.catch(() => {
+      if (thumbs.get(id) === pending) thumbs.delete(id)
+    })
     thumbs.set(id, pending)
   }
   return pending
@@ -143,8 +145,13 @@ export async function paintPage(ctx: Context2D, draw: PageDraw, text: TextLine[]
       }
       continue
     }
-    const image = await o.source(frame, w, h).catch(() => null)
+    // Print and export must stop on a failed photo rather than ship a blank frame; only the screen preview tolerates it.
+    const image = o.preview ? await o.source(frame, w, h).catch(() => null) : await o.source(frame, w, h)
     if (image) ctx.drawImage(image, x, y, w, h)
+    else if (o.preview) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.07)'
+      ctx.fillRect(x, y, w, h)
+    }
   }
   for (const line of text) {
     ctx.save()
