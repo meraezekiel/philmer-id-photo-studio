@@ -5,12 +5,15 @@
 
 import { useCallback, useEffect } from 'react'
 import { ask } from '@tauri-apps/plugin-dialog'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 
 import { ActionBar, StepHeader } from '../../app/Shell'
 import { bookAutosaveClear, bookClear, onBookProgress, type RuntimeInfo } from '../../lib/tauri'
 import { BOOK_STEP_LABELS, BOOK_STEPS, useBook, type BookStep } from '../../store/book'
 import { ImportStep } from '../import/ImportStep'
+import { BookFileSection } from './BookFileSection'
 import { clearThumbCache } from './bookPaint'
+import { saveBook, useBookAutosave } from './bookProject'
 import { PageStrip } from './PageStrip'
 import { PageView } from './PageView'
 import { PagesPanel } from './PagesPanel'
@@ -50,6 +53,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
   const status = useBook((s) => s.status)
   const pageCount = useBook((s) => s.book.pages.length)
   const setStep = useBook((s) => s.setStep)
+  useBookAutosave()
 
   const index = BOOK_STEPS.indexOf(step)
   const nextStep = BOOK_STEPS[index + 1]
@@ -77,6 +81,12 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault()
+        const s = useBook.getState()
+        if (s.status !== 'loading' && s.book.photos.length > 0) void saveBook(event.shiftKey)
+        return
+      }
       const target = event.target as HTMLElement | null
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
       if (!event.ctrlKey && !event.metaKey) return
@@ -95,6 +105,24 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [goNext, goBack, setStep])
+
+  // The window does not close by itself while there is unsaved work.
+  useEffect(() => {
+    const unlisten = getCurrentWindow().onCloseRequested(async (event) => {
+      if (!useBook.getState().dirty) return
+      event.preventDefault()
+      const close = await ask('This book has changes that are not saved. Close anyway?', {
+        title: 'Unsaved book',
+        kind: 'warning',
+        okLabel: 'Close anyway',
+        cancelLabel: 'Keep editing',
+      })
+      if (close) await getCurrentWindow().destroy()
+    })
+    return () => {
+      void unlisten.then((fn) => fn())
+    }
+  }, [])
 
   const showChrome = step !== 'import'
   const nextLabel = step === 'setup' && pageCount === 0 ? 'Build pages' : nextStep ? `Next: ${BOOK_STEP_LABELS[nextStep]}` : 'New book'
@@ -124,6 +152,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
         {showChrome && (
           <aside className="flex w-[var(--panel-width)] flex-none flex-col overflow-y-auto border-l-2 border-divider" style={{ background: 'var(--panel)' }}>
             {step === 'setup' && <SetupPanel />}
+            {(step === 'pages' || step === 'print') && <BookFileSection />}
             {step === 'pages' && <PagesPanel />}
             {step === 'print' && <BookPrintPanel />}
           </aside>

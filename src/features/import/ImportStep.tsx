@@ -11,13 +11,16 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
 
-import { Icon, ICONS, Notice } from '../../app/components/ui'
+import { Button, Icon, ICONS, Notice } from '../../app/components/ui'
 import { drawBitmap, imageFromClipboard } from '../../lib/bitmap'
+import { asAppError, bookReadProject } from '../../lib/tauri'
 import { useBook } from '../../store/book'
 import { useEdit } from '../../store/edit'
 import { useJob } from '../../store/job'
 import { useMode, type AppMode } from '../../store/mode'
+import { AutosaveOffer } from '../book/BookFileSection'
 import { loadBookPhotos } from '../book/bookPipeline'
+import { openBookDialog, openBookText } from '../book/bookProject'
 import { loadEditPhoto } from '../edit/editPipeline'
 import { usePhotoPipeline } from './usePhotoPipeline'
 
@@ -146,6 +149,14 @@ export function ImportStep() {
         if (!path) return
         const target = cardAt(payload.position) ?? useMode.getState().mode
         if (target === 'book') {
+          if (payload.paths.length === 1 && path.toLowerCase().endsWith('.photobook')) {
+            setMode('book')
+            void bookReadProject(path)
+              .then((text) => openBookText(text, path, false))
+              .then((e) => e && useBook.getState().loadFailed(e))
+              .catch((e) => useBook.getState().loadFailed(asAppError(e).message))
+            return
+          }
           openBook(payload.paths)
           return
         }
@@ -169,7 +180,7 @@ export function ImportStep() {
       cancelled = true
       unlisten?.()
     }
-  }, [openSource, openBook])
+  }, [openSource, openBook, setMode])
 
   if (idStatus === 'loading' || idStatus === 'segmenting') return <Processing />
   if (bookStatus === 'loading') {
@@ -249,6 +260,15 @@ export function ImportStep() {
             onClick={() => void pick('book')}
           />
         </div>
+        {mode === 'book' && (
+          <div className="flex flex-col gap-3">
+            <AutosaveOffer />
+            <div className="flex gap-2">
+              <Button onClick={() => void openBookDialog().then((e) => e && useBook.getState().loadFailed(e))}>Open saved book…</Button>
+              <Button onClick={() => void openDialog({ directory: true }).then((d) => typeof d === 'string' && openBook([d]))}>Choose a folder…</Button>
+            </div>
+          </div>
+        )}
         <p className="text-muted" style={{ fontSize: 'clamp(13px, 1.2vw, 17px)' }}>
           Drop photos onto a card, or click one to browse. Photo Book takes many photos or a whole folder. Ctrl+V pastes into the ID Photo or Photo Print card.
         </p>
