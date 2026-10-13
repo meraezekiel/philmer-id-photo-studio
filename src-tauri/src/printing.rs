@@ -59,6 +59,7 @@ fn one() -> u32 {
 mod imp {
     use super::*;
 
+    use std::borrow::Cow;
     use std::collections::HashMap;
     use std::ffi::c_void;
     use std::mem::size_of;
@@ -80,7 +81,7 @@ mod imp {
         ClosePrinter, DocumentPropertiesW, EnumPrintersW, GetDefaultPrinterW, OpenPrinterW,
         PRINTER_ENUM_CONNECTIONS, PRINTER_ENUM_LOCAL, PRINTER_HANDLE, PRINTER_INFO_4W,
     };
-    use windows::Win32::Storage::Xps::{EndDoc, EndPage, StartDocW, StartPage, DOCINFOW};
+    use windows::Win32::Storage::Xps::{AbortDoc, EndDoc, EndPage, StartDocW, StartPage, DOCINFOW};
 
     fn wide(value: &str) -> Vec<u16> {
         value.encode_utf16().chain(std::iter::once(0)).collect()
@@ -235,13 +236,13 @@ mod imp {
     }
 
     /// One print job of `count` pages, the `i`-th drawn from `page(i)`.
-    fn print_pages(
+    fn print_pages<'a>(
         printer: Option<String>,
         job_name: &str,
         width_mm: f64,
         height_mm: f64,
         count: usize,
-        page: &dyn Fn(usize) -> Result<image::RgbImage>,
+        page: &dyn Fn(usize) -> Result<Cow<'a, image::RgbImage>>,
     ) -> Result<()> {
         let printer = match printer.filter(|p| !p.is_empty()) {
             Some(p) => p,
@@ -301,8 +302,11 @@ mod imp {
                 return Err(AppError::Other("the print job was refused".into()));
             }
 
+            // Once the job is open, any failure must cancel it. EndDoc would
+            // submit the pages already drawn: a truncated book plus an error.
+            // AbortDoc also discards a page that was started but not ended.
             let fail = |message: String| -> Result<()> {
-                let _ = EndDoc(hdc);
+                let _ = AbortDoc(hdc);
                 let _ = DeleteDC(hdc);
                 Err(AppError::Other(message))
             };
@@ -363,7 +367,6 @@ mod imp {
                     SRCCOPY,
                 );
                 if written == 0 {
-                    let _ = EndPage(hdc);
                     return fail(format!("printing stopped at sheet {sheet}: it could not be drawn"));
                 }
                 if EndPage(hdc) <= 0 {
@@ -393,7 +396,7 @@ mod imp {
             job.width_mm,
             job.height_mm,
             copies,
-            &|_| Ok(image.clone()),
+            &|_| Ok(Cow::Borrowed(&image)),
         )?;
         log::info!("sent {copies} cop{}", if copies == 1 { "y" } else { "ies" });
         Ok(())
@@ -415,9 +418,11 @@ mod imp {
             &|i| {
                 let path = &paths[i % n];
                 let bytes = std::fs::read(path).map_err(|e| AppError::Io { path: path.clone(), source: e })?;
-                Ok(image::load_from_memory(&bytes)
-                    .map_err(|e| AppError::Other(format!("could not decode {path}: {e}")))?
-                    .to_rgb8())
+                Ok(Cow::Owned(
+                    image::load_from_memory(&bytes)
+                        .map_err(|e| AppError::Other(format!("could not decode {path}: {e}")))?
+                        .to_rgb8(),
+                ))
             },
         )?;
         log::info!("sent {n} sheet(s) x {copies}");
