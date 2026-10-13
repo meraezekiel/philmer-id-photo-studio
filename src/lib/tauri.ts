@@ -245,3 +245,85 @@ export function removeAttire(id: string): Promise<void> {
 export function readAttire(id: string): Promise<ArrayBuffer> {
   return invoke('read_attire', { id })
 }
+
+// --- photo book -----------------------------------------------------------
+
+export interface BookPhotoInfo {
+  id: string
+  path: string
+  name: string
+  width: number
+  height: number
+  takenAt: string | null
+  face: { x: number; y: number; w: number; h: number } | null
+  /** Why the file could not be read; the other fields are then empty. */
+  error: string | null
+}
+
+export interface BookProgress {
+  done: number
+  total: number
+}
+
+export function bookAddPhotos(photos: { id: string; path: string }[]): Promise<BookPhotoInfo[]> {
+  return invoke('book_add_photos', { photos })
+}
+
+export function bookThumb(id: string): Promise<ArrayBuffer> {
+  return invoke('book_thumb', { id })
+}
+
+/** RGBA pixels, exactly `width` x `height`. */
+export function bookRenderPhoto(args: {
+  path: string
+  crop: { x: number; y: number; w: number; h: number }
+  width: number
+  height: number
+}): Promise<ArrayBuffer> {
+  return invoke('book_render_photo', { args })
+}
+
+export function bookClear(): Promise<void> {
+  return invoke('book_clear')
+}
+
+export function bookExpandPaths(paths: string[]): Promise<{ files: string[]; skipped: string[] }> {
+  return invoke('book_expand_paths', { paths })
+}
+
+/** Keys are lower-cased file names. */
+export function bookFindInFolder(folder: string, names: string[]): Promise<Record<string, string>> {
+  return invoke('book_find_in_folder', { folder, names })
+}
+
+export function bookReadProject(path: string): Promise<string> {
+  return invoke('book_read_project', { path })
+}
+
+export function bookWriteProject(path: string, text: string): Promise<void> {
+  return invoke('book_write_project', { path, text })
+}
+
+export function bookAutosaveWrite(text: string): Promise<void> {
+  return invoke('book_autosave_write', { text })
+}
+
+export function bookAutosaveRead(): Promise<{ text: string; savedAtMs: number } | null> {
+  return invoke('book_autosave_read')
+}
+
+export function bookAutosaveClear(): Promise<void> {
+  return invoke('book_autosave_clear')
+}
+
+export function bookStageSheet(index: number, bytes: ArrayBuffer): Promise<string> {
+  return invoke('book_stage_sheet', { args: { index, bytes } })
+}
+
+export function bookClearStaged(): Promise<void> {
+  return invoke('book_clear_staged')
+}
+
+export function onBookProgress(handler: (progress: BookProgress) => void): Promise<UnlistenFn> {
+  return listen<BookProgress>('book://progress', (event) => handler(event.payload))
+}

@@ -6,6 +6,7 @@ use std::sync::Arc;
 use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Manager};
 
+use crate::book::ThumbStore;
 use crate::engine::Engine;
 use crate::models::ModelPaths;
 use crate::store::ImageStore;
@@ -15,6 +16,8 @@ pub struct AppState {
     pub images: Arc<ImageStore>,
     /// The operator's uploaded attire templates (`attire.rs`).
     pub attire_dir: PathBuf,
+    /// Photo Book thumbnails; the originals stay on disk (`book.rs`).
+    pub book_thumbs: Arc<ThumbStore>,
 }
 
 impl AppState {
@@ -37,6 +40,7 @@ impl AppState {
             })),
             images: Arc::new(ImageStore::default()),
             attire_dir,
+            book_thumbs: Arc::new(ThumbStore::default()),
         })
     }
 }

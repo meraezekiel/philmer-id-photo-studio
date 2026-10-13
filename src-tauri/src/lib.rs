@@ -5,6 +5,8 @@
 //! run out of memory on a 12 MP photo. The frontend owns UI and compositing.
 
 pub mod attire;
+pub mod book;
+pub mod book_commands;
 pub mod commands;
 pub mod engine;
 pub mod error;
@@ -57,6 +59,19 @@ pub fn run() {
             commands::import_attire,
             commands::remove_attire,
             commands::read_attire,
+            book_commands::book_add_photos,
+            book_commands::book_thumb,
+            book_commands::book_render_photo,
+            book_commands::book_clear,
+            book_commands::book_expand_paths,
+            book_commands::book_find_in_folder,
+            book_commands::book_read_project,
+            book_commands::book_write_project,
+            book_commands::book_autosave_write,
+            book_commands::book_autosave_read,
+            book_commands::book_autosave_clear,
+            book_commands::book_stage_sheet,
+            book_commands::book_clear_staged,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Philmer ID Photo Studio");
