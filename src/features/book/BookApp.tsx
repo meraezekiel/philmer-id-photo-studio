@@ -1,7 +1,7 @@
 /**
  * Photo Book's window: the same shell as the other modes over its own steps.
- * Pages and Print & Export are added in later tasks; until then those steps
- * render nothing.
+ * Print & Export is added in a later task; until then that step renders
+ * nothing.
  */
 
 import { useCallback, useEffect } from 'react'
@@ -12,7 +12,11 @@ import { bookAutosaveClear, bookClear, onBookProgress, type RuntimeInfo } from '
 import { BOOK_STEP_LABELS, BOOK_STEPS, useBook, type BookStep } from '../../store/book'
 import { ImportStep } from '../import/ImportStep'
 import { clearThumbCache } from './bookPaint'
+import { PageStrip } from './PageStrip'
+import { PageView } from './PageView'
+import { PagesPanel } from './PagesPanel'
 import { SetupCanvas, SetupPanel } from './SetupStep'
+import { DragLayer } from './useBookDrag'
 
 /** True when there is nothing unsaved, or the operator agrees to lose it. */
 export async function confirmDiscard(): Promise<boolean> {
@@ -82,6 +86,8 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
       else if (event.key === 'ArrowLeft') goBack()
       else if (key === 'n') void newCustomer()
       else if (key === 'p' && canEnter('print')) setStep('print')
+      else if (key === 'z' && !event.shiftKey) useBook.getState().undo()
+      else if (key === 'y' || (key === 'z' && event.shiftKey)) useBook.getState().redo()
       else return
       event.preventDefault()
     }
@@ -106,10 +112,17 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
         <div className="relative min-w-0 flex-1 overflow-hidden" style={{ background: 'var(--canvas)' }}>
           {step === 'import' && <ImportStep />}
           {step === 'setup' && <SetupCanvas />}
+          {step === 'pages' && (
+            <div className="flex h-full flex-col">
+              <div className="min-h-0 flex-1"><PageView /></div>
+              <PageStrip />
+            </div>
+          )}
         </div>
         {showChrome && (
           <aside className="flex w-[var(--panel-width)] flex-none flex-col overflow-y-auto border-l-2 border-divider" style={{ background: 'var(--panel)' }}>
             {step === 'setup' && <SetupPanel />}
+            {step === 'pages' && <PagesPanel />}
           </aside>
         )}
       </div>
@@ -123,6 +136,7 @@ export function BookApp({ runtime }: { runtime: RuntimeInfo | null }) {
           isLast={!nextStep}
         />
       )}
+      <DragLayer />
     </div>
   )
 }
