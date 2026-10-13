@@ -5,13 +5,14 @@
 
 import { create } from 'zustand'
 
-export type AppMode = 'id' | 'edit'
+export type AppMode = 'id' | 'edit' | 'book'
 
 const MODE_KEY = 'philmer.mode'
 
 function readMode(): AppMode {
   try {
-    return window.localStorage.getItem(MODE_KEY) === 'edit' ? 'edit' : 'id'
+    const stored = window.localStorage.getItem(MODE_KEY)
+    return stored === 'edit' || stored === 'book' ? stored : 'id'
   } catch {
     // Private mode, blocked storage, or tests with no window.
     return 'id'
