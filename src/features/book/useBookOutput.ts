@@ -7,7 +7,7 @@
 import { PDFDocument } from 'pdf-lib'
 
 import { pageDraw } from '../../lib/bookDraw'
-import { pagesOnSheet, sheetCount } from '../../lib/bookSheets'
+import { sheetCount } from '../../lib/bookSheets'
 import type { Book } from '../../lib/bookTypes'
 import { mmToPoints, setJpegDpi } from '../../lib/dpi'
 import { PRINT_DPI } from '../../lib/presets'
@@ -90,7 +90,7 @@ export async function exportPrintPdf(book: Book, missing: ReadonlySet<string>, p
   await saveFile({ path, bytes: bytes.buffer as ArrayBuffer })
 }
 
-export async function exportJpgs(book: Book, missing: ReadonlySet<string>, folder: string, p: Progress): Promise<number> {
+export async function exportJpgs(book: Book, missing: ReadonlySet<string>, folder: string, p: Progress, onSaved?: (count: number) => void): Promise<number> {
   const sep = folder.includes('\\') ? '\\' : '/'
   for (let i = 0; i < book.pages.length; i++) {
     check(p)
@@ -98,6 +98,7 @@ export async function exportJpgs(book: Book, missing: ReadonlySet<string>, folde
     const canvas = await renderPage(book, i, { dpi: PRINT_DPI, source: printSource(book), preview: false, missing })
     const bytes = setJpegDpi(await canvasBytes(canvas, 'image/jpeg', 0.95), PRINT_DPI)
     await saveFile({ path: `${folder.replace(/[\\/]$/, '')}${sep}${pageFileName(book, i)}`, bytes: bytes.buffer as ArrayBuffer })
+    onSaved?.(i + 1)
   }
   return book.pages.length
 }
@@ -139,5 +140,3 @@ export async function printBook(
     await bookClearStaged().catch(() => {})
   }
 }
-
-export { pagesOnSheet }

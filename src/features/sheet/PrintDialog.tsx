@@ -35,6 +35,8 @@ export function PrintDialog({
   status,
   onPrint,
   onClose,
+  onCancel,
+  printDisabled,
 }: {
   title: string
   summary: string
@@ -44,6 +46,10 @@ export function PrintDialog({
   status: { tone: 'ok' | 'danger'; message: string } | null
   onPrint: (request: PrintRequest) => void
   onClose: () => void
+  /** When given, a Cancel button is offered while `busy`. */
+  onCancel?: () => void
+  /** Extra reason to disable Print that is not a running job. */
+  printDisabled?: boolean
 }) {
   const [printers, setPrinters] = useState<PrinterInfo[]>([])
   const [printer, setPrinter] = useState<string>('')
@@ -171,13 +177,14 @@ export function PrintDialog({
         {status && <Notice tone={status.tone}>{status.message}</Notice>}
 
         <div className="mt-1 flex justify-end gap-2">
+          {busy && onCancel && <Button onClick={onCancel}>Cancel</Button>}
           <Button onClick={onClose} disabled={busy}>
             Close
           </Button>
           <button
             type="button"
             onClick={() => onPrint({ copies, printer: printer || undefined })}
-            disabled={busy || !printer}
+            disabled={busy || printDisabled || !printer}
             className="h-11 px-6 text-[15px] font-extrabold transition-colors duration-[var(--duration-fast)] disabled:opacity-45"
             style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
           >

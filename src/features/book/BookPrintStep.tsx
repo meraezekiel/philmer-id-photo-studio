@@ -21,6 +21,9 @@ const PREVIEW_DPI = 40
 
 /** Which sheets to print (1-based, inclusive); shared by the panel's inputs and the Print button. */
 interface PrintRange {
+  /** One job at a time: printing and the panel's exports share this. */
+  busy: boolean
+  setBusy: (busy: boolean) => void
   from: number
   to: number
   setFrom: (value: number, sheets: number) => void
@@ -31,6 +34,8 @@ interface PrintRange {
 const clampSheet = (value: number, sheets: number) => Math.max(1, Math.min(Math.max(1, sheets), Math.round(value) || 1))
 
 export const usePrintRange = create<PrintRange>((set) => ({
+  busy: false,
+  setBusy: (busy) => set({ busy }),
   from: 1,
   to: 1,
   setFrom: (value, sheets) => set((s) => ({ from: clampSheet(value, sheets), to: Math.max(s.to, clampSheet(value, sheets)) })),
@@ -89,7 +94,8 @@ export function BookPrintCanvas() {
 
 function useJob() {
   const [message, setMessage] = useState<{ tone: 'info' | 'ok' | 'danger'; text: string } | null>(null)
-  const [busy, setBusy] = useState(false)
+  const busy = usePrintRange((s) => s.busy)
+  const setBusy = usePrintRange((s) => s.setBusy)
   const cancelRef = useRef(false)
   const run = async (task: (p: Progress) => Promise<string>) => {
     setBusy(true)
@@ -141,7 +147,15 @@ export function BookPrintPanel() {
   const jpgs = async () => {
     const folder = await openDialog({ directory: true, title: 'Choose a folder for the page JPGs' })
     if (typeof folder !== 'string' || !(await confirmProblems(issues.missing))) return
-    await job.run(async (p) => `Saved ${await exportJpgs(book, missing, folder, p)} JPGs at 300 DPI.`)
+    await job.run(async (p) => {
+      let saved = 0
+      try {
+        return `Saved ${await exportJpgs(book, missing, folder, p, (n) => (saved = n))} JPGs at 300 DPI.`
+      } catch (error) {
+        if (error instanceof Cancelled) return `Stopped after ${saved} of ${book.pages.length} pages.`
+        throw new Error(`${error instanceof Error ? error.message : String(error)} (${saved} of ${book.pages.length} JPGs were saved.)`)
+      }
+    })
   }
 
   const paper = editPaper(book.paper, book.customPaper)
@@ -202,7 +216,8 @@ export function BookPrintButton() {
   const missingList = useBook((s) => s.missing)
   const { canProduce, open: openLicence } = useLicense()
   const [open, setOpen] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const busy = usePrintRange((s) => s.busy)
+  const setBusy = usePrintRange((s) => s.setBusy)
   const [status, setStatus] = useState<{ tone: 'ok' | 'danger'; message: string } | null>(null)
   const plan = bookPlan(book)
   const sheets = plan.ok ? sheetCount(book.pages.length, plan.perSheet) : 0
@@ -237,7 +252,7 @@ export function BookPrintButton() {
       <button
         type="button"
         onClick={canProduce ? () => { setStatus(null); setOpen(true) } : openLicence}
-        disabled={!plan.ok || sheets === 0}
+        disabled={!plan.ok || sheets === 0 || (busy && !open)}
         className="flex h-11 items-center justify-center gap-2 px-5 text-[15px] font-extrabold disabled:opacity-45"
         style={{ background: 'var(--color-accent)', color: 'var(--on-accent)' }}
       >
@@ -249,13 +264,12 @@ export function BookPrintButton() {
           title="Print book"
           summary={`Sheets ${from}–${to} of ${sheets}, ${plan.ok && plan.borderless ? 'borderless, ' : ''}at true size. Copies print the whole range each time.`}
           paperLabel={book.paper === 'custom' ? paper.longLabel : paper.label}
-          busy={busy || !valid}
+          busy={busy}
+          printDisabled={!valid}
           status={status}
           onPrint={(r) => void onPrint(r)}
-          onClose={() => {
-            if (busy) cancelRef.current = true
-            else setOpen(false)
-          }}
+          onCancel={() => (cancelRef.current = true)}
+          onClose={() => setOpen(false)}
         />
       )}
     </>
