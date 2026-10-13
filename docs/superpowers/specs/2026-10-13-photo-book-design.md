@@ -1,6 +1,8 @@
 # Photo Book mode: design
 
-Date: 2026-10-13. Status: approved design, not yet planned.
+Date: 2026-10-13.
+
+Status: implemented 2026-10-13 (printer check pending); see plan docs/superpowers/plans/2026-10-13-photo-book.md
 
 ## Why
 
@@ -275,3 +277,24 @@ Changed:
 Double-sided printing and its page ordering; copying photos into the book
 file; free-form frames; stickers and decorations; text on inside pages;
 background removal inside the book.
+
+## Amendments made while planning and building
+
+Decided while planning:
+
+- A **5-photo** layout family is added (counts 1-6), so auto-fill can distribute any count without parity problems.
+- Layout frames may be marked `fit: 'photo'`: the frame shrinks to the photo's shape and never crops ("Whole photo"). This guarantees a non-cropping choice for single photos of any shape.
+- The cover is a page with `layoutId: 'cover'` that is always `pages[0]` while `book.cover` is set. The target page count counts **inside pages**; the cover is extra.
+- Printing stages each rendered sheet as a temp JPEG and Rust prints them in **one** job by reading them one at a time (memory stays flat; no printer handle crosses IPC calls).
+- Book project files are read and written by dedicated, **unlicensed** Rust commands (saving work is not "producing output"); exports and printing keep the licence gate.
+- Fonts come from `@fontsource/playfair-display` and `@fontsource/great-vibes` (OFL, bundled by Vite, offline).
+
+Decided while building:
+
+- Printing calls AbortDoc on any failure, so a failed job never leaves a partial book at the printer.
+- Print and export errors stop the job instead of leaving blank frames in the output.
+- One photo load runs at a time; a load started before New customer is discarded.
+- Undo is paused during a drag.
+- The sheet range is chosen in the Print & Export panel; Cancel lives in the print dialog.
+- Closing the window with an unsaved book asks first.
+- Relinked photo paths are not an undo step.

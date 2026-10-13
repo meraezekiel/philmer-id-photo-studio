@@ -5,6 +5,8 @@ Fully offline after install: AI background removal at the photo's **original
 resolution**, automatic face alignment, size presets, and print sheets at true
 300 DPI.
 
+**Photo Book:** many photos auto-laid-out into 5x6, 5x7, 8x8, 8x10 or A4 pages, adjusted by hand, printed several to a sheet with cut marks for manual binding; books save as `.photobook` files.
+
 See `BUILD_PLAN.md` for the engineering plan and `DESIGN_BRIEF.md` for the UI.
 
 **Status: milestone M0 (scaffold + runtime smoke test).**
